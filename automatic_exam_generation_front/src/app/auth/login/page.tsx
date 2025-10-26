@@ -30,13 +30,17 @@ export default function LoginPage() {
     login(values.email, values.password)
     .then((data) => {
       console.log("Login exitoso:", data)
-      if(data == "Administrator")
+      if(data[0] == "Administrator")
         {
           router.push("/dashboard/admin")
         }
-      else if(data == "Teacher")
+      else if(data[0] == "Teacher" && !data[1])
         {
           router.push("/dashboard/teacher")
+        }
+      else if(data[0] == "Teacher" && data[1])
+        {
+          router.push("/dashboard/head_teacher")
         }
       else
         {

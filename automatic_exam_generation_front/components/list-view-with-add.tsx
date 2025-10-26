@@ -5,16 +5,12 @@ import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
-  Home,
-  Bell,
-  Search,
   MoreHorizontal,
   RefreshCw,
   Filter,
@@ -42,7 +38,6 @@ export interface ListViewWithAddProps<T extends Entity> {
   sortFields: SortFieldConfig[]
   filterFields: SortFieldConfig[]
   renderEntity: (entity: T) => React.ReactNode
-  onHome?: () => void
   onAdd?: () => void
 }
 
@@ -60,15 +55,12 @@ export function ListViewWithAdd<T extends Entity>({
   sortFields,
   filterFields,
   renderEntity,
-  onHome,
   onAdd,
 }: ListViewWithAddProps<T>) {
-  const [searchQuery, setSearchQuery] = useState("")
   const [filters, setFilters] = useState<FilterType[]>([])
   const [currentFilter, setCurrentFilter] = useState({ field: "", operation: "", value: "" })
   const [sortField, setSortField] = useState<string>(sortFields[0]?.value || "")
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
-  const [notificationCount] = useState(3)
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set())
   const [isMouseDown, setIsMouseDown] = useState(false)
   const [dragStartValue, setDragStartValue] = useState<boolean | null>(null)
@@ -91,14 +83,6 @@ export function ListViewWithAdd<T extends Entity>({
 
   const handleRefresh = () => {
     window.location.reload()
-  }
-
-  const handleHome = () => {
-    if (onHome) {
-      onHome()
-    } else {
-      console.log("Navegando al dashboard")
-    }
   }
 
   const toggleSelection = (id: string | number) => {
@@ -149,12 +133,6 @@ export function ListViewWithAdd<T extends Entity>({
 
   const filteredAndSortedEntities = entities
     .filter((entity) => {
-      if (searchQuery) {
-        const searchableValues = Object.values(entity).join(" ").toLowerCase()
-        if (!searchableValues.includes(searchQuery.toLowerCase())) {
-          return false
-        }
-      }
 
       for (const filter of filters) {
         const entityValue = entity[filter.field]
@@ -197,13 +175,8 @@ export function ListViewWithAdd<T extends Entity>({
 
   return (
     <div className="min-h-screen bg-background" onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-      <header className="border-b border-border bg-card">
-        <div className="flex items-center justify-between px-6 py-4">
-          <Button variant="ghost" size="sm" onClick={handleHome} className="gap-2">
-            <Home className="h-4 w-4" />
-            <span className="font-medium">Home</span>
-          </Button>
-
+      <header className="border-b border-border bg-card mt-6 rounded-xl shadow-md">
+        <div className="flex items-center justify-center px-6 py-4 gap-2">
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>
@@ -390,53 +363,6 @@ export function ListViewWithAdd<T extends Entity>({
                 <DropdownMenuItem>Ayuda</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <div className="relative w-64 hidden md:block">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar entidades..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="h-5 w-5" />
-              {notificationCount > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs text-destructive-foreground">
-                  {notificationCount}
-                </span>
-              )}
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="rounded-full p-0">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/abstract-geometric-shapes.png" alt="Usuario" />
-                    <AvatarFallback className="bg-accent text-accent-foreground">US</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>Mi perfil</DropdownMenuItem>
-                <DropdownMenuItem>Configuración</DropdownMenuItem>
-                <DropdownMenuItem>Cerrar sesión</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        <div className="px-6 pb-4 md:hidden">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar entidades..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
           </div>
         </div>
       </header>
