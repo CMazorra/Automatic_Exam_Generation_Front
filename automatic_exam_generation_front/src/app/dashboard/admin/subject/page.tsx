@@ -18,11 +18,9 @@ export default function SubjectPage() {
       entities = {entities}
       sortFields={[
         { value: "name", label: "Nombre" },
-        { value: "date", label: "Fecha" },
       ]}
       filterFields={[
         { value: "name", label: "Nombre" },
-        { value: "date", label: "Fecha" },
       ]}
       renderEntity={(subject) => (
         <div className="rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/5">

@@ -1,20 +1,25 @@
 "use client"
-import { useState, useEffect } from "react"
-import type React from "react"
-
+import React, { useEffect, useState, use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel, FieldGroup, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation"
-import { getSubtopicById , postSubtopic } from "@/services/subtopicService"
+import { getSubtopicById, updateSubtopic } from "@/services/subtopicService"
 
 interface Subtopic {
   id: string
-  nombre: string
+  topic_id: string
+  nombre?: string
+  name?: string
 }
 
-export default function SubtopicEdit({ params }: { params: { id: string } }) {
+export default function SubtopicEdit({
+  params,
+}: {
+  params: Promise<{ id: string; topic_id: string }>
+}) {
+  const { id, topic_id } = use(params)
   const [subtopic, setSubtopic] = useState<Subtopic | null>(null)
   const [nombre, setNombre] = useState("")
   const [isLoading, setIsLoading] = useState(true)
@@ -24,33 +29,30 @@ export default function SubtopicEdit({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchSubtopic = async () => {
       try {
-        const data = await getSubtopicById(params.id);
-        setSubtopic(data);
-        setNombre(data.nombre);
+        const data = await (getSubtopicById as any)(id, topic_id)
+        setSubtopic(data)
+        setNombre((data?.nombre || data?.name || "").toString())
       } catch (error) {
-        console.error("Error fetching subtopic:", error);
+        console.error("Error fetching subtopic:", error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
-
-    fetchSubtopic();
-  }, [params.id])
+    }
+    fetchSubtopic()
+  }, [id, topic_id])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (!nombre.trim()) return
-
     setIsSaving(true)
     try {
-      await postSubtopic({ name: nombre });
+      await (updateSubtopic as any)(id, topic_id, { name: nombre.trim() })
+      router.push(`/dashboard/admin/subtopic/${id}/${topic_id}`)
     } catch (error) {
-      console.error("Error creating subtopic:", error);
+      console.error("Error updating subtopic:", error)
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-
-    router.push(`/dashboard/admin/subtopic/${params.id}`)
   }
 
   if (isLoading) {
@@ -73,10 +75,7 @@ export default function SubtopicEdit({ params }: { params: { id: string } }) {
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-2xl">
         <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
-          <div>
-            <h1 className="text-2xl font-bold">Editar Subtema</h1>
-          </div>
-
+          <h1 className="text-2xl font-bold">Editar Subtema</h1>
           <form onSubmit={handleSubmit} className="space-y-6">
             <FieldGroup>
               <FieldSet>
@@ -92,9 +91,8 @@ export default function SubtopicEdit({ params }: { params: { id: string } }) {
                 </Field>
               </FieldSet>
             </FieldGroup>
-
             <div className="flex gap-3">
-              <Link href={`/dashboard/admin/subtopic/${subtopic.id}`}>
+              <Link href={`/dashboard/admin/subtopic/${id}/${topic_id}`}>
                 <Button type="button" variant="outline">
                   Cancelar
                 </Button>

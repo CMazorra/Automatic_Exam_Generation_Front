@@ -41,9 +41,9 @@ export async function postSubtopic(subtopic: { name: string }) {
   }
 }
 
-export async function getSubtopicById(id: string) {
+export async function getSubtopicById(id: string , topic_id: string) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subtopics/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subtopics/${id}/${topic_id}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -62,10 +62,10 @@ export async function getSubtopicById(id: string) {
   }
 }
 
-export async function updateSubtopic(id: string, subtopic: { name: string }) {
+export async function updateSubtopic(id: string, topic_id: string, subtopic: { name: string }) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subtopics/${id}`, {
-      method: "PATCH",
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subtopics/${id}/${topic_id}`, {
+      method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
@@ -83,9 +83,9 @@ export async function updateSubtopic(id: string, subtopic: { name: string }) {
   }
 }
 
-export async function deleteSubtopic(id: string) {
+export async function deleteSubtopic(id: string, topic_id: string) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subtopics/${id}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/subtopics/${id}/${topic_id}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
