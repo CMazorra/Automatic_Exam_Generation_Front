@@ -1,112 +1,98 @@
-// page.tsx - Crear nuevo usuario (solo admin)
-// Esta vista permite al administrador crear usuarios usando react-hook-form y zod.
-// Se conecta con userService.ts y explica cada paso con comentarios educativos.
-
 "use client"
 
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { useRouter } from "next/navigation"
-import { createUser } from "@/services/userService"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
+import type React from "react"
 import { useState } from "react"
+import { Button } from "@/components/ui/button"
+import { Field, FieldLabel, FieldGroup, FieldSet } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import { useRouter } from "next/navigation"
+import { postUser } from "@/services/userService"
 
-// Esquema de validación con Zod
-const userSchema = z.object({
-  name: z.string().min(3, "El nombre es obligatorio"),
-  email: z.string().email("Email inválido"),
-  role: z.string().min(1, "Rol requerido"),
-})
-
-export default function CreateUserPage() {
+export default function NewUserPage() {
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [role, setRole] = useState("")
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const [message, setMessage] = useState<string>("")
 
-  // Formulario con react-hook-form y zod
-  const form = useForm<z.infer<typeof userSchema>>({
-    resolver: zodResolver(userSchema),
-    defaultValues: { name: "", email: "", role: "" },
-  })
-
-  // Crear usuario
-  async function onSubmit(values: z.infer<typeof userSchema>) {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
     try {
-      await createUser(values)
-      setMessage("Usuario creado correctamente")
-      form.reset()
-      // Redirige a la lista de usuarios
-      setTimeout(() => router.push("/dashboard/admin/user"), 1000)
+      await postUser({ name, email, password, role })
+      router.push("/dashboard/admin/user")
     } catch (err) {
-      setMessage("Error al crear usuario")
       console.error(err)
+      alert("Error creando usuario.")
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <div className="max-w-xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">Crear Nuevo Usuario</h1>
-      <p className="mb-2 text-muted-foreground">
-        Solo el administrador puede crear usuarios. El formulario valida los datos antes de enviarlos a la API.
-      </p>
-      {message && <div className="mb-4 text-sm text-blue-600">{message}</div>}
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+      <form onSubmit={handleSubmit} className="w-full max-w-2xl">
+        <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+          <h2 className="font-semibold leading-none text-xl">Nuevo Usuario</h2>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border rounded-lg">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nombre del usuario" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="Email del usuario" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Rol</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Administrador, Profesor, Estudiante" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit">Crear Usuario</Button>
-        </form>
-      </Form>
+          <FieldGroup>
+            <FieldSet>
+              <Field>
+                <FieldLabel htmlFor="name">Nombre</FieldLabel>
+                <Input
+                  id="name"
+                  placeholder="Nombre del usuario"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </Field>
 
-      {/* Comentarios educativos */}
-      <div className="mt-8 p-4 bg-muted rounded-lg text-xs text-muted-foreground">
-        {/*
-          - Solo el admin puede crear usuarios.
-          - La validación de formularios se realiza con Zod y react-hook-form.
-          - Los datos se envían a la API usando fetch.
-          - Se redirige a la lista de usuarios tras crear uno nuevo.
-        */}
-      </div>
-    </div>
-  )
-}
+              <Field>
+                <FieldLabel htmlFor="email">Email</FieldLabel>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Correo electrónico"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="role">Rol</FieldLabel>
+                <Input
+                  id="role"
+                  placeholder="admin / teacher / student"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                />
+              </Field>
+            </FieldSet>
+          </FieldGroup>
+
+          <div className="flex gap-3">
+            <Button type="submit" disabled={loading}>
+              {loading ? "Creando..." : "Crear Usuario"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push("/dashboard/admin/user")}
+            >
+              Cancelar
