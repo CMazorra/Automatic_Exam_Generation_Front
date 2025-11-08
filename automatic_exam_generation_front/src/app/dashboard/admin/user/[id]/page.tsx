@@ -1,152 +1,104 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { getUserById, updateUser } from "@/services/userService"
-import { Input } from "@/components/ui/input"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { 
-  Form, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormControl, 
-  FormMessage 
-} from "@/components/ui/form"
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select"
+import { useRouter } from "next/navigation"
+import { getUserById, deleteUser } from "@/services/userService"
 
-// Zod schema for user editing
-const userEditSchema = z.object({
-  name: z.string().min(3, "El nombre es obligatorio").max(100),
-  account: z.string().min(3, "La cuenta es obligatoria").max(50),
-  age: z.number().int().min(1, "La edad debe ser mayor a 0"),
-  course: z.string().min(1, "El curso es obligatorio").max(100),
-  role: z.enum(["ADMIN", "TEACHER", "STUDENT"], {
-    errorMap: () => ({ message: "Rol es obligatorio" })
-  }),
-  // Optional password field for optional updates
-  password: z.string().max(100).optional()
-})
+// Define interface based on backend DTO
+interface User {
+  id: string
+  name: string
+  account: string
+  age?: number
+  course?: string
+  role: "ADMIN" | "TEACHER" | "STUDENT"
+}
 
-export default function UserEditPage({ params }: { params: { id: string } }) {
-  const [user, setUser] = useState<any | null>(null)
+export default function UserView({ params }: { params: { id: string } }) {
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [message, setMessage] = useState<string>("")
   const router = useRouter()
 
-  const form = useForm<z.infer<typeof userEditSchema>>({
-    resolver: zodResolver(userEditSchema),
-    defaultValues: {
-      name: "",
-      account: "",
-      age: 18,
-      course: "",
-      role: "STUDENT",
-      password: "",
-    },
-  })
-
   useEffect(() => {
-    async function fetchUser() {
+    const fetchUser = async () => {
       try {
-        const userData = await getUserById(params.id)
-        setUser(userData)
-        form.reset({
-          name: userData.name,
-          account: userData.account,
-          age: userData.age,
-          course: userData.course,
-          role: userData.role,
-        })
-        setIsLoading(false)
+        const data = await getUserById(params.id)
+        setUser(data)
       } catch (error) {
         console.error("Error fetching user:", error)
+      } finally {
         setIsLoading(false)
-        setMessage("Error al cargar usuario")
       }
     }
+
     fetchUser()
   }, [params.id])
 
-  async function onSubmit(values: z.infer<typeof userEditSchema>) {
-    try {
-      // Only send password if it's not empty
-      const updateData = values.password 
-        ? values 
-        : { ...values, password: undefined }
-
-      await updateUser(params.id, updateData)
-      setMessage("Usuario actualizado correctamente")
-      setTimeout(() => router.push("/dashboard/admin/user"), 1000)
-    } catch (err: any) {
-      setMessage(err.message || "Error al actualizar usuario")
-      console.error(err)
-    }
-  }
-
+  // --- Loading state ---
   if (isLoading) {
-    return <div>Cargando...</div>
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="text-center">Cargando...</div>
+      </main>
+    )
   }
 
+  // --- Not found ---
   if (!user) {
-    return <div>Usuario no encontrado</div>
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div className="text-center text-destructive">Usuario no encontrado</div>
+      </main>
+    )
   }
 
+  // --- Main content ---
   return (
-    <div className="max-w-xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">Editar Usuario</h1>
-      {message && <div className="mb-4 text-sm text-blue-600">{message}</div>}
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
+      <div className="w-full max-w-2xl">
+        <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+          <div>
+            <h2 className="font-semibold leading-none">{user.name}</h2>
+            <p className="text-sm text-muted-foreground">{user.account}</p>
+          </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 p-4 border rounded-lg">
-          {/* Form fields similar to create user page, but with optional password */}
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nombre del usuario" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-2">
+            {user.age && <p><strong>Edad:</strong> {user.age}</p>}
+            {user.course && <p><strong>Curso:</strong> {user.course}</p>}
+            <p><strong>Rol:</strong> {user.role}</p>
+          </div>
 
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Contraseña (opcional)</FormLabel>
-                <FormControl>
-                  <Input 
-                    type="password" 
-                    placeholder="Dejar en blanco si no desea cambiar" 
-                    {...field} 
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="flex gap-3 pt-4">
+            <Link href="/dashboard/admin/user">
+              <Button variant="outline">Volver</Button>
+            </Link>
+            <Link href={`/dashboard/admin/user/${user.id}/edit`}>
+              <Button>Editar</Button>
+            </Link>
+            <Button
+              variant="destructive"
+              onClick={async () => {
+                const confirmDelete = confirm(
+                  `¿Seguro que deseas eliminar al usuario "${user.name}"?`
+                )
+                if (!confirmDelete) return
 
-          {/* Add other fields like account, age, course, role similar to create user page */}
-          {/* ... */}
-
-          <Button type="submit" className="w-full">Actualizar Usuario</Button>
-        </form>
-      </Form>
-    </div>
+                try {
+                  await deleteUser(user.id)
+                  router.push("/dashboard/admin/user")
+                } catch (error) {
+                  console.error("Error deleting user:", error)
+                  alert("Hubo un error al eliminar el usuario.")
+                }
+              }}
+            >
+              Eliminar
+            </Button>
+          </div>
+        </div>
+      </div>
+    </main>
   )
 }
