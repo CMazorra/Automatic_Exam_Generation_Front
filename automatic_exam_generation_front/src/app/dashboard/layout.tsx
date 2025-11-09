@@ -79,7 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span className="ml-2">▾</span>
               </summary>
               <div className="pl-3 mt-2 flex flex-col gap-1">
-                <Link href="/dashboard/admin/subjects" className="text-sm">
+                <Link href="/dashboard/admin/subject" className="text-sm">
                   <span className="inline-block px-2 py-1 rounded hover:bg-sidebar-accent/10">Listado</span>
                 </Link>
                 <Link href="/dashboard/admin/subjects/new" className="text-sm">

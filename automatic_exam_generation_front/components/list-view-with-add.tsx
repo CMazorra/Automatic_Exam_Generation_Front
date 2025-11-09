@@ -39,6 +39,7 @@ export interface ListViewWithAddProps<T extends Entity> {
   filterFields: SortFieldConfig[]
   renderEntity: (entity: T) => React.ReactNode
   onAdd?: () => void
+  getEntityKey?: (entity: T) => string | number
 }
 
 type SortOrder = "asc" | "desc"
@@ -56,6 +57,7 @@ export function ListViewWithAdd<T extends Entity>({
   filterFields,
   renderEntity,
   onAdd,
+  getEntityKey,
 }: ListViewWithAddProps<T>) {
   const [filters, setFilters] = useState<FilterType[]>([])
   const [currentFilter, setCurrentFilter] = useState({ field: "", operation: "", value: "" })
@@ -64,6 +66,7 @@ export function ListViewWithAdd<T extends Entity>({
   const [selectedIds, setSelectedIds] = useState<Set<string | number>>(new Set())
   const [isMouseDown, setIsMouseDown] = useState(false)
   const [dragStartValue, setDragStartValue] = useState<boolean | null>(null)
+  const keyOf = (entity: T): string | number => (getEntityKey ? getEntityKey(entity) : entity.id)
 
   const addFilter = () => {
     if (currentFilter.field && currentFilter.operation && currentFilter.value) {
@@ -376,20 +379,24 @@ export function ListViewWithAdd<T extends Entity>({
         </div>
 
         <div className="space-y-3">
-          {filteredAndSortedEntities.map((entity) => (
-            <div key={entity.id} className="flex items-start gap-3" onMouseEnter={() => handleMouseEnter(entity.id)}>
-              <div
-                onMouseDown={(e) => {
-                  e.preventDefault()
-                  handleMouseDown(entity.id, selectedIds.has(entity.id))
-                }}
-                className="cursor-pointer select-none"
-              >
-                <Checkbox checked={selectedIds.has(entity.id)} className="mt-4 pointer-events-none" />
+          {filteredAndSortedEntities.map((entity) => {
+            const k = keyOf(entity)
+            const isSelected = selectedIds.has(k)
+            return (
+              <div key={k} className="flex items-start gap-3" onMouseEnter={() => handleMouseEnter(k)}>
+                <div
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    handleMouseDown(k, isSelected)
+                  }}
+                  className="cursor-pointer select-none"
+                >
+                  <Checkbox checked={isSelected} className="mt-4 pointer-events-none" />
+                </div>
+                <div className="flex-1">{renderEntity(entity)}</div>
               </div>
-              <div className="flex-1">{renderEntity(entity)}</div>
-            </div>
-          ))}
+            )
+          })}
 
           {filteredAndSortedEntities.length === 0 && (
             <div className="rounded-lg border border-dashed border-border bg-muted/20 p-12 text-center">
