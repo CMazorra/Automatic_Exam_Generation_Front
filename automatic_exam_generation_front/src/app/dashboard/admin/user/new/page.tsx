@@ -1,14 +1,12 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Field, FieldLabel, FieldGroup, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
 import { postUser } from "@/services/userService"
 
-// ✅ Use the exact role union expected by backend + service
 type Role = "ADMIN" | "TEACHER" | "STUDENT"
 
 const roles: { value: Role; label: string }[] = [
@@ -18,36 +16,44 @@ const roles: { value: Role; label: string }[] = [
 ]
 
 export default function NewUserPage() {
-  const [name, setName] = useState("")
-  const [account, setAccount] = useState("")
-  const [age, setAge] = useState<number | "">("")
-  const [course, setCourse] = useState("")
-  const [role, setRole] = useState<Role | "">("") // ✅ fixed typing
+  const [form, setForm] = useState({
+    name: "",
+    account: "",
+    password: "",
+    age: "",
+    course: "",
+    role: "" as Role | "",
+  })
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target
+    setForm((prev) => ({ ...prev, [id]: value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!name.trim() || !account.trim() || !role) return
+    if (!form.name.trim() || !form.account.trim() || !form.role) {
+      alert("Por favor, completa los campos obligatorios.")
+      return
+    }
 
     setIsLoading(true)
     try {
       await postUser({
-        name: name.trim(),
-        account: account.trim(),
-        age: age ? Number(age) : undefined,
-        course: course.trim() || undefined,
-        role, // ✅ already a Role type
+        name: form.name.trim(),
+        account: form.account.trim(),
+        password: form.password || "default123", // 🔹 si el backend lo requiere
+        age: form.age ? Number(form.age) : undefined,
+        course: form.course.trim() || undefined,
+        role: form.role,
       })
+      alert("✅ Usuario creado correctamente.")
       router.push("/dashboard/admin/user")
-      setName("")
-      setAccount("")
-      setAge("")
-      setCourse("")
-      setRole("")
     } catch (err) {
       console.error(err)
-      alert("Hubo un error al crear el usuario.")
+      alert("❌ Hubo un error al crear el usuario.")
     } finally {
       setIsLoading(false)
     }
@@ -58,7 +64,7 @@ export default function NewUserPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-2xl">
         <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
           <div>
-            <h2 className="font-semibold leading-none">Nuevo Usuario</h2>
+            <h2 className="font-semibold leading-none text-xl">Nuevo Usuario</h2>
           </div>
 
           <FieldGroup>
@@ -68,8 +74,8 @@ export default function NewUserPage() {
                 <Input
                   id="name"
                   placeholder="Nombre del usuario"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={form.name}
+                  onChange={handleChange}
                   required
                 />
               </Field>
@@ -79,9 +85,20 @@ export default function NewUserPage() {
                 <Input
                   id="account"
                   placeholder="Correo o identificador"
-                  value={account}
-                  onChange={(e) => setAccount(e.target.value)}
+                  value={form.account}
+                  onChange={handleChange}
                   required
+                />
+              </Field>
+
+              <Field>
+                <FieldLabel htmlFor="password">Contraseña</FieldLabel>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Contraseña del usuario"
+                  value={form.password}
+                  onChange={handleChange}
                 />
               </Field>
 
@@ -91,8 +108,8 @@ export default function NewUserPage() {
                   id="age"
                   type="number"
                   placeholder="Edad del usuario"
-                  value={age}
-                  onChange={(e) => setAge(e.target.value ? Number(e.target.value) : "")}
+                  value={form.age}
+                  onChange={handleChange}
                 />
               </Field>
 
@@ -101,8 +118,8 @@ export default function NewUserPage() {
                 <Input
                   id="course"
                   placeholder="Curso o grupo"
-                  value={course}
-                  onChange={(e) => setCourse(e.target.value)}
+                  value={form.course}
+                  onChange={handleChange}
                 />
               </Field>
 
@@ -110,10 +127,10 @@ export default function NewUserPage() {
                 <FieldLabel htmlFor="role">Rol</FieldLabel>
                 <select
                   id="role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as Role)} // ✅ type cast here
+                  value={form.role}
+                  onChange={handleChange}
                   required
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <option value="">Selecciona un rol</option>
                   {roles.map((r) => (
@@ -127,7 +144,7 @@ export default function NewUserPage() {
           </FieldGroup>
 
           <div className="flex gap-3">
-            <Button type="submit" disabled={isLoading || !name.trim() || !account.trim() || !role}>
+            <Button type="submit" disabled={isLoading}>
               {isLoading ? "Creando..." : "Crear Usuario"}
             </Button>
             <Button
