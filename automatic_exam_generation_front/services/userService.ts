@@ -1,13 +1,17 @@
+// src/services/userService.ts
+
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+
 export async function getUsers() {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
+    const response = await fetch(`${BASE_URL}/app/user`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
     })
 
     if (!response.ok) {
-      throw new Error("Error al obtener los usuarios")
+      throw new Error(`Error al obtener los usuarios: ${response.status}`)
     }
 
     const data = await response.json()
@@ -20,14 +24,14 @@ export async function getUsers() {
 
 export async function getUserById(id: string | number) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`, {
+    const response = await fetch(`${BASE_URL}/app/user/${id}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
       cache: "no-store",
     })
 
     if (!response.ok) {
-      throw new Error("Error al obtener el usuario")
+      throw new Error(`Error al obtener el usuario con ID ${id}: ${response.status}`)
     }
 
     const data = await response.json()
@@ -52,14 +56,14 @@ export async function postUser(user: {
       role: user.role.toUpperCase() as "ADMIN" | "TEACHER" | "STUDENT",
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, {
+    const response = await fetch(`${BASE_URL}/app/user`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
 
     if (!response.ok) {
-      throw new Error("Error al crear el usuario")
+      throw new Error(`Error al crear el usuario: ${response.status}`)
     }
 
     const data = await response.json()
@@ -86,14 +90,14 @@ export async function updateUser(
       ? { ...user, role: user.role.toUpperCase() as "ADMIN" | "TEACHER" | "STUDENT" }
       : user
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`, {
-      method: "PATCH", // PATCH is more appropriate for partial updates
+    const response = await fetch(`${BASE_URL}/app/user/${id}`, {
+      method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
 
     if (!response.ok) {
-      throw new Error("Error al actualizar el usuario")
+      throw new Error(`Error al actualizar el usuario con ID ${id}: ${response.status}`)
     }
 
     const data = await response.json()
@@ -106,13 +110,13 @@ export async function updateUser(
 
 export async function deleteUser(id: string | number) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`, {
+    const response = await fetch(`${BASE_URL}/app/user/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
     })
 
     if (!response.ok) {
-      throw new Error("Error al eliminar el usuario")
+      throw new Error(`Error al eliminar el usuario con ID ${id}: ${response.status}`)
     }
 
     const data = await response.json()
