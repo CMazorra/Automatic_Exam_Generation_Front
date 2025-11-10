@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useRouter } from "next/navigation"
 import { login } from "@/services/authService"
+import { Role } from "@/types/role"
 
 import * as z from "zod"
 
@@ -12,8 +13,8 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
 const formSchema = z.object({
-  email: z.email({ message: "Email inválido" }),
-  password: z.string().min(6, { message: "Mínimo 6 caracteres" }),
+  email: z.string(),
+  password: z.string(),
 })
 
 export default function LoginPage() {
@@ -28,17 +29,17 @@ export default function LoginPage() {
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     login(values.email, values.password)
-    .then((data) => {
-      console.log("Login exitoso:", data)
-      if(data[0] == "Administrator")
+    .then(({ user, headTeacher, token }) => {
+      console.log("Login exitoso:", { user, headTeacher, token })
+      if(user.role === Role.ADMIN)
         {
           router.push("/dashboard/admin")
         }
-      else if(data[0] == "Teacher" && !data[1])
+      else if(user.role === Role.TEACHER && !headTeacher)
         {
           router.push("/dashboard/teacher")
         }
-      else if(data[0] == "Teacher" && data[1])
+      else if(user.role === Role.TEACHER && headTeacher)
         {
           router.push("/dashboard/head_teacher")
         }
