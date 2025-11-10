@@ -1,42 +1,33 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { getUserById, deleteUser } from "@/services/userService"
 
-// Define interface based on backend DTO
-interface User {
-  id: string
-  name: string
-  account: string
-  age?: number
-  course?: string
-  role: "ADMIN" | "TEACHER" | "STUDENT"
-}
-
-export default function UserView({ params }: { params: { id: string } }) {
-  const [user, setUser] = useState<User | null>(null)
+export default function UserView() {
+  const params = useParams()
+  const id = params?.id as string
+  const [user, setUser] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
+    if (!id) return
     const fetchUser = async () => {
       try {
-        const data = await getUserById(params.id)
-        setUser(data)
+        const data = await getUserById(id)
+        setUser({ ...data, id_us: data.id_us ?? data.id ?? data._id })
       } catch (error) {
         console.error("Error fetching user:", error)
       } finally {
         setIsLoading(false)
       }
     }
-
     fetchUser()
-  }, [params.id])
+  }, [id])
 
-  // --- Loading state ---
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -45,7 +36,6 @@ export default function UserView({ params }: { params: { id: string } }) {
     )
   }
 
-  // --- Not found ---
   if (!user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -54,7 +44,6 @@ export default function UserView({ params }: { params: { id: string } }) {
     )
   }
 
-  // --- Main content ---
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-2xl">
@@ -65,28 +54,39 @@ export default function UserView({ params }: { params: { id: string } }) {
           </div>
 
           <div className="space-y-2">
-            {user.age && <p><strong>Edad:</strong> {user.age}</p>}
-            {user.course && <p><strong>Curso:</strong> {user.course}</p>}
-            <p><strong>Rol:</strong> {user.role}</p>
+            {user.age && (
+              <p>
+                <strong>Edad:</strong> {user.age}
+              </p>
+            )}
+            {user.course && (
+              <p>
+                <strong>Curso:</strong> {user.course}
+              </p>
+            )}
+            <p>
+              <strong>Rol:</strong> {user.role}</p>
           </div>
 
           <div className="flex gap-3 pt-4">
             <Link href="/dashboard/admin/user">
               <Button variant="outline">Volver</Button>
             </Link>
-            <Link href={`/dashboard/admin/user/${user.id}/edit`}>
-              <Button>Editar</Button>
-            </Link>
+
+            <Button
+              onClick={() =>
+                router.push(`/dashboard/admin/user/${user.id_us}/edit`)
+              }
+            >
+              Editar
+            </Button>
+
             <Button
               variant="destructive"
               onClick={async () => {
-                const confirmDelete = confirm(
-                  `¿Seguro que deseas eliminar al usuario "${user.name}"?`
-                )
-                if (!confirmDelete) return
-
+                if (!confirm(`¿Seguro que deseas eliminar al usuario "${user.name}"?`)) return
                 try {
-                  await deleteUser(user.id)
+                  await deleteUser(user.id_us)
                   router.push("/dashboard/admin/user")
                 } catch (error) {
                   console.error("Error deleting user:", error)
