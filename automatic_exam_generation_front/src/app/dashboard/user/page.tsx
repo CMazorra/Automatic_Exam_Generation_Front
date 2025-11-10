@@ -1,5 +1,5 @@
-// page.tsx - Lista de usuarios (solo admin)
-// Esta vista permite al administrador ver y editar usuarios.
+// page.tsx - Gestión de usuarios
+// Esta vista permite listar, crear y editar usuarios usando react-hook-form y zod.
 // Se conecta con userService.ts y explica cada paso con comentarios educativos.
 
 "use client"
@@ -10,15 +10,15 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
   getUsers,
+  createUser,
   updateUser,
   deleteUser,
 } from "@/services/userService"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
-import Link from "next/link"
 
-// Esquema de validación con Zod
+// Definimos el esquema de validación con Zod
 const userSchema = z.object({
   name: z.string().min(3, "El nombre es obligatorio"),
   email: z.string().email("Email inválido"),
@@ -30,7 +30,7 @@ interface User extends z.infer<typeof userSchema> {
   id: string | number
 }
 
-export default function AdminUserPage() {
+export default function UserPage() {
   // Estado para la lista de usuarios
   const [users, setUsers] = useState<User[]>([])
   // Estado para modo edición
@@ -60,18 +60,23 @@ export default function AdminUserPage() {
     }
   }
 
-  // Actualizar usuario
+  // Crear o actualizar usuario
   async function onSubmit(values: z.infer<typeof userSchema>) {
     try {
       if (editing) {
+        // Actualizar usuario existente
         await updateUser(editing.id, values)
         setMessage("Usuario actualizado correctamente")
-        form.reset()
-        setEditing(null)
-        fetchUsers()
+      } else {
+        // Crear nuevo usuario
+        await createUser(values)
+        setMessage("Usuario creado correctamente")
       }
+      form.reset()
+      setEditing(null)
+      fetchUsers()
     } catch (err) {
-      setMessage("Error al actualizar usuario")
+      setMessage("Error al guardar usuario")
       console.error(err)
     }
   }
@@ -103,65 +108,60 @@ export default function AdminUserPage() {
 
   return (
     <div className="max-w-3xl mx-auto py-8">
-      <h1 className="text-2xl font-bold mb-4">Usuarios del Sistema</h1>
+      <h1 className="text-2xl font-bold mb-4">Gestión de Usuarios</h1>
       <p className="mb-2 text-muted-foreground">
-        Solo el administrador puede ver y editar usuarios. Para crear uno nuevo, usa el botón abajo.
+        Aquí puedes ver, crear y editar usuarios. Cada acción se conecta con la API usando fetch.
       </p>
-      <Link href="/dashboard/admin/user/new">
-        <Button className="mb-4">Crear Nuevo Usuario</Button>
-      </Link>
       {message && <div className="mb-4 text-sm text-blue-600">{message}</div>}
 
-      {/* Formulario para editar usuario */}
-      {editing && (
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mb-8 p-4 border rounded-lg">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nombre del usuario" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Email del usuario" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rol</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: Administrador, Profesor, Estudiante" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex gap-2">
-              <Button type="submit">Actualizar Usuario</Button>
-              <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancelar</Button>
-            </div>
-          </form>
-        </Form>
-      )}
+      {/* Formulario para crear/editar usuario */}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 mb-8 p-4 border rounded-lg">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nombre</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nombre del usuario" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="Email del usuario" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Rol</FormLabel>
+                <FormControl>
+                  <Input placeholder="Ej: Administrador, Profesor, Estudiante" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="flex gap-2">
+            <Button type="submit">{editing ? "Actualizar" : "Crear"} Usuario</Button>
+            {editing && <Button type="button" variant="outline" onClick={handleCancelEdit}>Cancelar</Button>}
+          </div>
+        </form>
+      </Form>
 
       {/* Tabla/lista de usuarios */}
       <div className="border rounded-lg p-4">
@@ -205,7 +205,7 @@ export default function AdminUserPage() {
       {/* Comentarios educativos */}
       <div className="mt-8 p-4 bg-muted rounded-lg text-xs text-muted-foreground">
         {/*
-          - Solo el admin puede crear y editar usuarios.
+          - Cada acción (crear, editar, eliminar) llama a la API usando fetch y actualiza la interfaz.
           - La validación de formularios se realiza con Zod y react-hook-form.
           - Los datos se muestran en una tabla y se actualizan en tiempo real.
           - Los errores se manejan con try/catch y se muestran mensajes claros.
