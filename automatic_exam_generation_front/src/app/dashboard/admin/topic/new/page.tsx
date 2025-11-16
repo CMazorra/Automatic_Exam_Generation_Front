@@ -1,71 +1,80 @@
 "use client"
 
-import type React from "react"
 import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Field, FieldLabel, FieldGroup, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
-import { postTopic } from "@/services/topicService"
+import { postTopic, updateTopic_Subject } from "@/services/topicService"
 
-export default function Home() {
-  const [nombre, setNombre] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+export default function TopicNewPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const subjectId = searchParams.get("subjectId") || ""
+  const returnTo = searchParams.get("returnTo") || ""
+  const [name, setName] = useState("")
+  const [saving, setSaving] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-
-    if (!nombre.trim()) {
-      return
-    }
-
-    setIsLoading(true)
+    if (!name.trim()) return
+    setSaving(true)
     try {
-      console.log("Topic submitted:", { name: nombre.trim() })
+      const created = await postTopic({ name: name.trim() })
+      const topicId = String(created?.id ?? created?.topic?.id ?? "")
+      if (!topicId) throw new Error("No se pudo obtener el ID del tema creado.")
 
-      await postTopic({ name: nombre.trim() })
-      router.push(`/dashboard/admin/topic`)
+      if (subjectId) {
+        await updateTopic_Subject(topicId,subjectId)
+      }
 
-      setNombre("")
-    } catch (err) {
+      if (returnTo) {
+        router.push(returnTo)
+      } else if (subjectId) {
+        router.push(`/dashboard/admin/subject/${subjectId}`)
+      } else {
+        router.push(`/dashboard/admin/topic`)
+      }
+    } catch (err: any) {
       console.error(err)
-      alert("Hubo un error al crear el tema.")
+      alert(err?.message || "Error al crear el tema.")
     } finally {
-      setIsLoading(false)
+      setSaving(false)
     }
   }
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-2xl">
-        <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+      <div className="w-full max-w-xl space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+        <h1 className="text-xl font-semibold">Nuevo Tema</h1>
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <h2 className="font-semibold leading-none">Nuevo Tema</h2>
+            <label className="block text-sm mb-1">Nombre</label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nombre del tema"
+              required
+            />
           </div>
-
-          <FieldGroup>
-            <FieldSet>
-              <Field>
-                <FieldLabel htmlFor="nombre">Nombre</FieldLabel>
-                <Input
-                  id="nombre"
-                  placeholder="Nombre del tema"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  required
-                />
-              </Field>
-            </FieldSet>
-          </FieldGroup>
-
-          <div className="flex gap-3">
-            <Button type="submit" disabled={isLoading || !nombre.trim()}>
-              {isLoading ? "Creando..." : "Crear Tema"}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                returnTo
+                  ? router.push(returnTo)
+                  : router.push("/dashboard/admin/topic")
+              }
+              disabled={saving}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saving || !name.trim()}>
+              {saving ? "Guardando..." : "Crear"}
             </Button>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </main>
   )
 }

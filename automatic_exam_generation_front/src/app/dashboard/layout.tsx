@@ -73,38 +73,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Estudiantes</span>
             </Link>
 
-            <details className="group">
-              <summary className="flex items-center justify-between px-3 py-2 rounded-md bg-card border cursor-pointer hover:bg-primary/10">
-                <span>Asignaturas</span>
-                <span className="ml-2">▾</span>
-              </summary>
-              <div className="pl-3 mt-2 flex flex-col gap-1">
-                <Link href="/dashboard/admin/subject" className="text-sm">
-                  <span className="inline-block px-2 py-1 rounded hover:bg-sidebar-accent/10">Listado</span>
-                </Link>
-                <Link href="/dashboard/admin/subjects/new" className="text-sm">
-                  <span className="inline-block px-2 py-1 rounded hover:bg-sidebar-accent/10">Crear</span>
-                </Link>
-              </div>
-            </details>
+            <Link href="/dashboard/admin/subject" className="block">
+              <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Asignaturas</span>
+            </Link>
 
             <Link href="/dashboard/admin/exams" className="block">
               <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Exámenes</span>
             </Link>
-
             <Link href="/dashboard/admin/questions" className="block">
               <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Preguntas</span>
             </Link>
-
             <Link href="/dashboard/admin/publications" className="block">
               <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Publicaciones</span>
             </Link>
-
             <Link href="/dashboard/admin/reports" className="block">
               <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Reportes</span>
             </Link>
-
-
           </nav>
 
           <div className="mt-6">
