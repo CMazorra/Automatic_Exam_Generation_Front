@@ -2,9 +2,8 @@
 
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { login } from "@/services/authService"
-import { Role } from "@/types/role"
 
 import * as z from "zod"
 
@@ -13,45 +12,50 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
 const formSchema = z.object({
-  email: z.string(),
+  account: z.string(),
   password: z.string(),
 })
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const next = searchParams.get("next")
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      account: "",
       password: "",
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    login(values.email, values.password)
-    .then(({ user, headTeacher, token }) => {
-      console.log("Login exitoso:", { user, headTeacher, token })
-      if(user.role === Role.ADMIN)
-        {
-          router.push("/dashboard/admin")
-        }
-      else if(user.role === Role.TEACHER && !headTeacher)
-        {
-          router.push("/dashboard/teacher")
-        }
-      else if(user.role === Role.TEACHER && headTeacher)
-        {
-          router.push("/dashboard/head_teacher")
-        }
-      else
-        {
-          router.push("/dashboard/student")
-        }
-    })
-    .catch((err) => {
-      console.error(err)
-      alert("Error al iniciar sesión")
-    })
+  function setSessionCookies(role: string, headTeacher?: boolean) {
+    const maxAge = 60 * 60 * 24 * 7 // 7 días
+    document.cookie = `aeg_role=${role}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
+    document.cookie = `aeg_head=${headTeacher ? "1" : "0"}; Path=/; Max-Age=${maxAge}; SameSite=Lax`
+  }
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      const { user, headTeacher } = await login(values.account, values.password)
+
+      // ← Setear cookies que el middleware lee
+      setSessionCookies(user.role, headTeacher)
+
+      const base =
+        user.role === "ADMIN"
+          ? "/dashboard/admin"
+          : user.role === "TEACHER"
+            ? (headTeacher ? "/dashboard/head_teacher" : "/dashboard/teacher")
+            : "/dashboard/student"
+
+      if (next && next.startsWith("/") && next.startsWith(base)) {
+        router.push(next)
+      } else {
+        router.push(base)
+      }
+    } catch (err: any) {
+      alert(typeof err?.message === "string" ? err.message : "Error al iniciar sesión")
+    }
   }
 
   return (
@@ -63,12 +67,12 @@ export default function LoginPage() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="email"
+              name="account"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Cuenta</FormLabel>
                   <FormControl>
-                    <Input placeholder="tu@email.com" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
