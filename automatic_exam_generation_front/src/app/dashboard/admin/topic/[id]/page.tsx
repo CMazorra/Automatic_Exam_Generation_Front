@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { getTopicById, deleteTopic } from "@/services/topicService"
-import { getSubtopics } from "@/services/subtopicService"
+import { getSubtopics, deleteSubtopic } from "@/services/subtopicService"
 
 interface Topic {
   id: string
@@ -19,6 +19,7 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
   const [subtopics, setSubtopics] = useState<any[]>([])
   const [isLoadingTopic, setIsLoadingTopic] = useState(true)
   const [isLoadingSubs, setIsLoadingSubs] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -49,6 +50,35 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
     }
     fetchSubtopics()
   }, [id])
+
+  const handleDelete = async () => {
+    if (!topic) return
+    if (subtopics.length > 0) {
+      const ok = window.confirm(
+        `Este tema tiene ${subtopics.length} subtema(s). Se eliminarán todos los subtemas antes de eliminar el tema. ¿Deseas continuar?`
+      )
+      if (!ok) return
+    } else {
+      const ok = window.confirm("¿Eliminar este tema?")
+      if (!ok) return
+    }
+
+    setIsDeleting(true)
+    try {
+      if (subtopics.length > 0) {
+        await Promise.all(
+          subtopics.map((s) => deleteSubtopic(s.id, s.topic_id))
+        )
+      }
+      await deleteTopic(topic.id)
+      router.push(`/dashboard/admin/topic`)
+    } catch (e) {
+      console.error(e)
+      alert("No se pudo eliminar el tema.")
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   if (isLoadingTopic) {
     return (
@@ -82,16 +112,17 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
             </Link>
             <Button
               variant="destructive"
-              onClick={async () => {
-                try {
-                  await deleteTopic(topic.id)
-                  router.push(`/dashboard/admin/topic`)
-                } catch (e) {
-                  console.error(e)
-                }
-              }}
+              onClick={handleDelete}
+              disabled={isDeleting || isLoadingSubs}
+              title={
+                isLoadingSubs
+                  ? "Cargando subtemas..."
+                  : subtopics.length > 0
+                  ? "Se eliminarán los subtemas antes de eliminar el tema"
+                  : undefined
+              }
             >
-              Eliminar
+              {isDeleting ? "Eliminando..." : "Eliminar"}
             </Button>
           </div>
         </div>
@@ -152,6 +183,12 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
                 </div>
               ))}
             </div>
+          )}
+
+          {!isLoadingSubs && subtopics.length > 0 && (
+            <p className="text-xs text-muted-foreground">
+              Para eliminar el tema se eliminarán primero sus subtemas.
+            </p>
           )}
         </div>
       </div>

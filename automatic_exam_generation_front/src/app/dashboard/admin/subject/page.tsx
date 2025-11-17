@@ -29,9 +29,6 @@ export default function SubjectPage() {
               <div className="flex items-center gap-3">
                 <h3 className="font-semibold text-card-foreground">{subject.name}</h3>
               </div>
-              <div className="flex gap-4 text-sm text-muted-foreground">
-                <span>Fecha: {subject.date}</span>
-              </div>
             </div>
             <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/admin/subject/${subject.id}`)}>
               Ver detalles
