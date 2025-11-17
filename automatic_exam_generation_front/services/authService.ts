@@ -1,9 +1,11 @@
 export async function login(account: string, password: string) {
   try {
-    console.log("API URL:", process.env.NEXT_PUBLIC_API_URL);
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/login`, {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/user/login`
+    console.log("API URL:", url)
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ account, password }),
     })
 
@@ -20,4 +22,22 @@ export async function login(account: string, password: string) {
     console.error("Error en login:", error)
     throw error
   }
+}
+
+export async function logout() {
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/user/logout`
+  const res = await fetch(url, {
+    method: "POST",
+    credentials: "include",
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => "")
+    throw new Error(text || `HTTP ${res.status}`)
+  }
+  if (typeof document !== "undefined") {
+    document.cookie = "aeg_role=; Path=/; Max-Age=0; SameSite=Lax"
+    document.cookie = "aeg_head=; Path=/; Max-Age=0; SameSite=Lax"
+  }
+
+  return true
 }
