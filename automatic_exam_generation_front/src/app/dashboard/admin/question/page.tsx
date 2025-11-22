@@ -72,7 +72,7 @@ export default function QuestionPage() {
               variant="ghost"
               size="sm"
               onClick={() =>
-                router.push(`/dashboard/admin/question/${q.id_q}/page`)
+                router.push(`/dashboard/admin/question/${q.id_q}`)
               }
             >
               Ver detalles
