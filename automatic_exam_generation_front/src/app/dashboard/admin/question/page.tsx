@@ -80,7 +80,7 @@ export default function QuestionPage() {
           </div>
         </div>
       )}
-      onAdd={() => router.push("/dashboard/admin/question/create")}
+      onAdd={() => router.push("/dashboard/admin/question/new")}
     />
   )
 }
