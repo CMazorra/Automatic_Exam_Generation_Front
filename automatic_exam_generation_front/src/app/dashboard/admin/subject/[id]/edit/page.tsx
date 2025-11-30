@@ -7,7 +7,7 @@ import { Field, FieldGroup, FieldSet, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { getSubjectById, updateSubject, getSubjects } from "@/services/subjectService"
-import { getTeachers, updateTeacher } from "@/services/userService"
+import { getTeachers, updateTeacher } from "@/services/teacherService"
 import { postHeadTeacher, deleteHeadTeacher } from "@/services/headTeacerService"
 
 type TeacherApi = {

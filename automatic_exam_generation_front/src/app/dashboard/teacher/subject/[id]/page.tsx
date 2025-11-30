@@ -19,7 +19,6 @@ interface Subject {
 interface Topic {
   id: string | number
   name?: string
-  nombre?: string
 }
 
 export default function SubjectView({ params }: { params: Promise<{ id: string }> }) {
@@ -182,7 +181,7 @@ export default function SubjectView({ params }: { params: Promise<{ id: string }
                   key={t.id}
                   className="rounded-md border bg-muted/30 hover:bg-muted transition-colors p-4 flex items-center justify-between"
                 >
-                  <div className="font-medium">{t.name || t.nombre || "(Sin nombre)"}</div>
+                  <div className="font-medium">{t.name || "(Sin nombre)"}</div>
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"

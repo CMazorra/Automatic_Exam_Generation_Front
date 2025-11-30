@@ -10,7 +10,7 @@ const QUESTION_TYPES = ["VoF","Argumentacion","Opcion Multiple"]
 
 export default function ParamsNewPage() {
   const router = useRouter()
-  const [perc, setPerc] = useState<Record<string,string>>({ VoF:"", Argumentacion:"", "Opcion Multiple":"" })
+  const [perc, setPerc] = useState<Record<string,string>>({ VoF:"", Argumentación:"", "Opción Múltiple":"" })
   const [amount, setAmount] = useState("")
   const [topics, setTopics] = useState<string[]>([])
   const [available, setAvailable] = useState<string[]>([])

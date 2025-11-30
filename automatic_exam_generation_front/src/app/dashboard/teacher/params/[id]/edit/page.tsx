@@ -21,7 +21,7 @@ export default function ParamEditPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string|null>(null)
-  const [perc, setPerc] = useState<Record<string,string>>({ VoF:"", Argumentacion:"", "Opcion Multiple":"" })
+  const [perc, setPerc] = useState<Record<string,string>>({ VoF:"", Argumentación:"", "Opción Múltiple":"" })
   const [amount, setAmount] = useState("")
   const [topics, setTopics] = useState<string[]>([])
   const [available, setAvailable] = useState<string[]>([])
