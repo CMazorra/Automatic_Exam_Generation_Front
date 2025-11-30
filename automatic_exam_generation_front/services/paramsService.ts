@@ -5,6 +5,7 @@ export async function getParams() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
 
@@ -27,6 +28,7 @@ export async function postParams(params: { proportion: string , amount_quest: st
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(params),
     });
     if (!response.ok) {
@@ -48,6 +50,7 @@ export async function getParamsById(id: string) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
     if (!response.ok) {
@@ -69,6 +72,7 @@ export async function updateParams(id: string, params: { proportion: string , am
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(params),
     });
     if (!response.ok) {
@@ -90,6 +94,7 @@ export async function deleteParams(id: string) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     });
     if (!response.ok) {
       throw new Error("Error al eliminar la parametrización");

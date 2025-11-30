@@ -165,8 +165,8 @@ export function ListView<T extends Entity>({
 
   return (
     <div className="min-h-screen bg-background" onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp}>
-      <header className="border-b border-border bg-card">
-        <div className="flex items-center justify-between px-6 py-4">
+      <header className="border-b border-border bg-card mt-6 rounded-xl shadow-md">
+        <div className="flex items-center justify-center px-6 py-4 gap-2">
           <div className="flex items-center gap-2">
             <Popover>
               <PopoverTrigger asChild>

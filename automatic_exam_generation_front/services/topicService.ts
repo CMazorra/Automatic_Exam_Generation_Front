@@ -5,6 +5,7 @@ export async function getTopics() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
 
@@ -27,6 +28,7 @@ export async function postTopic(subtopic: { name: string }) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(subtopic),
     });
     if (!response.ok) {
@@ -48,6 +50,7 @@ export async function getTopicById(id: string) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
     if (!response.ok) {
@@ -69,6 +72,7 @@ export async function getTopicsBySubjectId(id: string) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
     if (!response.ok) {
@@ -90,6 +94,7 @@ export async function updateTopic(id: string, topic: { name: string }) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(topic),
     });
     if (!response.ok) {
@@ -111,6 +116,7 @@ export async function deleteTopic(id: string) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     });
     if (!response.ok) {
       throw new Error("Error al eliminar el tema");
@@ -129,6 +135,7 @@ export async function updateTopic_Subject(id: string, subject_id: string | numbe
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/topics/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ subject_id: Number(subject_id) }),
     })
     if (!response.ok) {

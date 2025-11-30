@@ -29,6 +29,7 @@ export async function getQuestions() {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/questions`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       cache: "no-store",
     })
     if (!response.ok) throw new Error("Error al obtener preguntas")
@@ -45,6 +46,7 @@ export async function createQuestion(data: Record<string, any>) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/questions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     })
     if (!response.ok) throw new Error("Error al crear pregunta")
@@ -61,6 +63,7 @@ export async function updateQuestion(id: string | number, data: Record<string, a
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/questions/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     })
     if (!response.ok) throw new Error("Error al actualizar pregunta")
@@ -77,6 +80,7 @@ export async function deleteQuestion(id: string | number) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/questions/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     })
     if (!response.ok) throw new Error("Error al eliminar pregunta")
     return await response.json()

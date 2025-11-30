@@ -24,9 +24,10 @@ async function handleResponse(response: Response) {
 
 export async function getUsers() {
   try {
-    const response = await fetch(`${BASE_URL}/app/user`, {
+    const response = await fetch(`${BASE_URL}/user`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       cache: "no-store",
     })
     return await handleResponse(response)
@@ -38,9 +39,10 @@ export async function getUsers() {
 
 export async function getUserById(id: string | number) {
   try {
-    const response = await fetch(`${BASE_URL}/app/user/${id}`, {
+    const response = await fetch(`${BASE_URL}/user/${id}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       cache: "no-store",
     })
     return await handleResponse(response)
@@ -59,9 +61,10 @@ export async function postUser(user: UserPayload) {
 
     console.log("📦 Enviando payload al backend:", payload)
 
-    const response = await fetch(`${BASE_URL}/app/user`, {
+    const response = await fetch(`${BASE_URL}/user`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(payload),
     })
 
@@ -80,9 +83,10 @@ export async function updateUser(id: string | number, user: Partial<UserPayload>
       ? { ...user, role: user.role.toUpperCase() as Role }
       : user
 
-    const response = await fetch(`${BASE_URL}/app/user/${id}`, {
+    const response = await fetch(`${BASE_URL}/user/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(payload),
     })
 
@@ -95,81 +99,14 @@ export async function updateUser(id: string | number, user: Partial<UserPayload>
 
 export async function deleteUser(id: string | number) {
   try {
-    const response = await fetch(`${BASE_URL}/app/user/${id}`, {
+    const response = await fetch(`${BASE_URL}/user/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     })
     return await handleResponse(response)
   } catch (error) {
     console.error("Error en deleteUser:", error)
     throw error
-  }
-}
-
-export async function getTeachers() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/teacher`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      throw new Error("Error al obtener los profesores");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error en getTeachers:", error);
-    throw error;
-  }
-}
-
-export async function getStudents() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      throw new Error("Error al obtener los estudiantes");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error en getStudents:", error);
-    throw error;
-  }
-}
-
-export async function updateTeacher(
-  id: number | string,
-  patch: Partial<{ isHeadTeacher: boolean }> = { isHeadTeacher: true }
-) {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/teacher/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      cache: "no-store",
-      body: JSON.stringify(patch),
-    });
-
-    if (!response.ok) {
-      throw new Error("Error al modificar profesor");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error en updateTeacher:", error);
-    throw error;
   }
 }

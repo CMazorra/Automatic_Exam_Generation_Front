@@ -5,6 +5,7 @@ export async function getSubjects() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
 
@@ -27,6 +28,7 @@ export async function getSubjectById(id: number) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
 
@@ -53,6 +55,7 @@ export async function postSubject(subject: {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(subject),
     });
 
@@ -75,6 +78,7 @@ export async function updateSubject(id: number, subject: { name?: string; progra
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(subject),
     });
 
@@ -97,6 +101,7 @@ export async function deleteSubject(id: number) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
 
@@ -108,6 +113,52 @@ export async function deleteSubject(id: number) {
     return data;
   } catch (error) {
     console.error("Error en deleteSubject:", error);
+    throw error;
+  }
+}
+
+export async function getSubjectsByTeacherID(id: string) {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/teacher/${id}/subjects`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(`Error ${response.status}: ${text}`)
+    }
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.error("Error en getSubjectsByTeacherID:", error);
+    throw error;
+  }
+}
+
+export async function getSubjectsByStudentID(id: string) {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/student/${id}/subjects`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(`Error ${response.status}: ${text}`)
+    }
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.error("Error en getSubjectsByStudentID:", error);
     throw error;
   }
 }
