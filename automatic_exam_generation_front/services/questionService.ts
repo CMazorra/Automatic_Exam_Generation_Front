@@ -1,87 +1,113 @@
-// questionService.ts
-// Este archivo contiene funciones para gestionar preguntas desde el frontend.
-// Cada función realiza una llamada a la API usando fetch y process.env.NEXT_PUBLIC_API_URL.
-// Se maneja el flujo de errores y se explica cada concepto con comentarios educativos.
-
-/**
- * ¿Qué es una API?
- * Una API (Interfaz de Programación de Aplicaciones) permite que dos sistemas se comuniquen.
- * En este caso, el frontend (React/Next.js) se comunica con el backend (servidor) usando HTTP.
- */
-
-/**
- * ¿Qué es un endpoint?
- * Un endpoint es una URL específica en la API que realiza una acción, como obtener o crear preguntas.
- */
-
-/**
- * ¿Qué es un método HTTP?
- * Los métodos HTTP definen la acción a realizar:
- * - GET: obtener datos
- * - POST: crear datos
- * - PUT: actualizar datos
- * - DELETE: eliminar datos
- */
-
 export async function getQuestions() {
-  // Obtiene la lista de preguntas desde la API (GET)
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/questions`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
       cache: "no-store",
-    })
-    if (!response.ok) throw new Error("Error al obtener preguntas")
-    return await response.json()
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al obtener las preguntas");
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error("Error en getQuestions:", error)
-    throw error
+    console.error("Error en getQuestions:", error);
+    throw error;
   }
 }
 
-export async function createQuestion(data: Record<string, any>) {
-  // Crea una nueva pregunta en la API (POST)
+export async function postQuestion(question: { question_text: string , difficulty: string, answer: string, type: string,
+  subject_id: string, sub_topic_id: string, topic_id: string, teacher_id: string
+}) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/questions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
-    if (!response.ok) throw new Error("Error al crear pregunta")
-    return await response.json()
-  } catch (error) {
-    console.error("Error en createQuestion:", error)
-    throw error
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(question),
+    });
+    if (!response.ok) {
+      throw new Error("Error al crear la pregunta");
+    }
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.error("Error en postQuestions:", error);
+    throw error;
   }
 }
 
-export async function updateQuestion(id: string | number, data: Record<string, any>) {
-  // Actualiza una pregunta existente en la API (PUT)
+export async function getQuestionById(id: string) {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/questions/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      throw new Error("Error al obtener la pregunta");
+    }
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.error("Error en getQuestionById:", error);
+    throw error;
+  }
+}
+
+export async function updateQuestion(id: string, question: { question_text: string , difficulty: string, answer: string, type: string,
+  subject_id: string, sub_topic_id: string, topic_id: string, teacher_id: string
+}) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/questions/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    })
-    if (!response.ok) throw new Error("Error al actualizar pregunta")
-    return await response.json()
-  } catch (error) {
-    console.error("Error en updateQuestion:", error)
-    throw error
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(question),
+    });
+    if (!response.ok) {
+      throw new Error("Error al actualizar la pregunta");
+    }
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.error("Error en updateQuestion:", error);
+    throw error;
   }
 }
 
-export async function deleteQuestion(id: string | number) {
-  // Elimina una pregunta de la API (DELETE)
+export async function deleteQuestion(id: string) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/questions/${id}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-    })
-    if (!response.ok) throw new Error("Error al eliminar pregunta")
-    return await response.json()
-  } catch (error) {
-    console.error("Error en deleteQuestion:", error)
-    throw error
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error("Error al eliminar la pregunta");
+    }
+    const data = await response.json();
+    return data;
+  }
+  catch (error) {
+    console.error("Error en deleteQuestion:", error);
+    throw error;
   }
 }

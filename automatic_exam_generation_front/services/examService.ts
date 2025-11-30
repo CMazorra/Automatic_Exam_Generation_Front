@@ -27,6 +27,7 @@ export async function getExams() {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       cache: "no-store",
     })
     if (!response.ok) throw new Error("Error al obtener exámenes")
@@ -43,6 +44,7 @@ export async function createExam(data: Record<string, any>) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     })
     if (!response.ok) throw new Error("Error al crear examen")
@@ -59,6 +61,7 @@ export async function updateExam(id: string | number, data: Record<string, any>)
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     })
     if (!response.ok) throw new Error("Error al actualizar examen")
@@ -75,6 +78,7 @@ export async function deleteExam(id: string | number) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams/${id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
     })
     if (!response.ok) throw new Error("Error al eliminar examen")
     return await response.json()
@@ -90,6 +94,7 @@ export async function assignExamToStudent(examId: string | number, studentId: st
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams/${examId}/assign`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({ studentId }),
     })
     if (!response.ok) throw new Error("Error al asignar examen")
@@ -106,6 +111,7 @@ export async function generateExamAutomatically(data: Record<string, any>) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(data),
     })
     if (!response.ok) throw new Error("Error al generar examen automáticamente")

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { getParams, deleteParams } from "@/services/paramsService"
+import { getParams } from "@/services/paramsService"
 import { ListViewWithAdd } from "@/components/list-view-with-add"
 import { Button } from "@/components/ui/button"
 
@@ -52,25 +52,7 @@ export default function ParamsPage() {
               {topics.length === 0 && <span className="text-xs text-muted-foreground">Sin temas</span>}
               <div className="ml-auto flex gap-2">
                 <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/params/${param.id}`)}>
-                  Ver
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/params/${param.id}/edit`)}>
-                  Editar
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={async () => {
-                    if (!confirm("Eliminar parametrización?")) return
-                    try {
-                      await deleteParams(param.id)
-                      setEntities(e => e.filter(x => x.id !== param.id))
-                    } catch (e:any) {
-                      alert(e.message || "Error")
-                    }
-                  }}
-                >
-                  Eliminar
+                Ver detalles
                 </Button>
               </div>
             </div>

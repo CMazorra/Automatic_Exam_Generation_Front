@@ -3,6 +3,7 @@ export async function getHeadTeacherByID(id: number | string) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/head-teacher/${id}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       cache: "no-store",
     });
 
@@ -23,6 +24,7 @@ export async function postHeadTeacher(id: number | string) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/head-teacher`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       cache: "no-store",
       body: JSON.stringify({id}),
     });
@@ -44,6 +46,7 @@ export async function deleteHeadTeacher(id: number | string) {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/head-teacher`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       cache: "no-store",
       body: JSON.stringify({id}),
     });

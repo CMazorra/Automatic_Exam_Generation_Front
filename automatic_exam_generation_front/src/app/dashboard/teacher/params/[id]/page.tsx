@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getParamsById, deleteParams } from "@/services/paramsService";
+import { getParamsById} from "@/services/paramsService";
 import { Button } from "@/components/ui/button";
 
 interface Param {
@@ -73,20 +73,6 @@ export default function ParamViewPage() {
           <div className="flex gap-3 flex-wrap">
             <Button variant="outline" onClick={() => router.push("/dashboard/teacher/params")}>Volver</Button>
             <Button onClick={() => router.push(`/dashboard/teacher/params/${data.id}/edit`)}>Editar</Button>
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                if (!confirm("Eliminar?")) return
-                try {
-                  await deleteParams(data.id)
-                  router.push("/dashboard/teacher/params")
-                } catch (e:any) {
-                  alert(e.message || "Error")
-                }
-              }}
-            >
-              Eliminar
-            </Button>
           </div>
         </div>
       </div>

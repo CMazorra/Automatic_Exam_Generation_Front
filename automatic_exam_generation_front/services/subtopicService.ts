@@ -5,6 +5,7 @@ export async function getSubtopics() {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
 
@@ -27,6 +28,7 @@ export async function postSubtopic(subtopic: { name: string }) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(subtopic),
     });
     if (!response.ok) {
@@ -48,6 +50,7 @@ export async function getSubtopicById(id: string , topic_id: string) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       cache: "no-store",
     });
     if (!response.ok) {
@@ -69,6 +72,7 @@ export async function updateSubtopic(id: string, topic_id: string, subtopic: { n
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
       body: JSON.stringify(subtopic),
     });
     if (!response.ok) {
@@ -90,6 +94,7 @@ export async function deleteSubtopic(id: string, topic_id: string) {
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: "include",
     });
     if (!response.ok) {
       throw new Error("Error al eliminar el subtema");

@@ -1,6 +1,6 @@
 export async function login(account: string, password: string) {
   try {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/user/login`
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/login`
     console.log("API URL:", url)
     const response = await fetch(url, {
       method: "POST",
@@ -25,7 +25,7 @@ export async function login(account: string, password: string) {
 }
 
 export async function logout() {
-  const url = `${process.env.NEXT_PUBLIC_API_URL}/user/logout`
+  const url = `${process.env.NEXT_PUBLIC_API_URL}/auth/logout`
   const res = await fetch(url, {
     method: "POST",
     credentials: "include",
@@ -40,4 +40,24 @@ export async function logout() {
   }
 
   return true
+}
+
+export async function getCurrentUser() {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      cache: "no-store",
+    })
+    if (!response.ok) {
+      const text = await response.text().catch(() => "")
+      throw new Error(text || `HTTP ${response.status}`)
+    }
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error("Error en getCurrentUser:", error)
+    throw error
+  }
 }

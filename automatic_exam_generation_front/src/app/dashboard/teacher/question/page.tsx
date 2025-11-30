@@ -33,21 +33,20 @@ export default function SubjectPage() {
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1 space-y-1">
               <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-card-foreground">{question.name}</h3>
+                <h3 className="font-semibold text-card-foreground">{question.question_text}</h3>
               </div>
               <div className="flex gap-4 text-sm text-muted-foreground">
-                <span>Tipo: ${question.type}</span>
-                <span>Dificultad: ${question.difficulty}</span>
-                <span>Fecha: {question.date}</span>
+                <span>Tipo: {question.type}</span>
+                <span>Dificultad: {question.difficulty}</span>
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/admin/question/${question.id}`)}>
+            <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/question/${question.id}`)}>
               Ver detalles
             </Button>
           </div>
         </div>
       )}
-      onAdd={() => router.push("/dashboard/admin/question/new")}
+      onAdd={() => router.push("/dashboard/teacher/question/new")}
     />
   )
 }

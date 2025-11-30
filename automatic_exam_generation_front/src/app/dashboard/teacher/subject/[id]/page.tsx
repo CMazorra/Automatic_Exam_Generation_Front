@@ -4,7 +4,7 @@ import React, { useEffect, useState, use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-import { getSubjectById, deleteSubject } from "@/services/subjectService"
+import { getSubjectById } from "@/services/subjectService"
 import { getTopicsBySubjectId } from "@/services/topicService"
 import { getHeadTeacherByID } from "@/services/headTeacerService"
 import { getTeachers } from "@/services/teacherService"
@@ -19,7 +19,6 @@ interface Subject {
 interface Topic {
   id: string | number
   name?: string
-  nombre?: string
 }
 
 export default function SubjectView({ params }: { params: Promise<{ id: string }> }) {
@@ -141,25 +140,9 @@ export default function SubjectView({ params }: { params: Promise<{ id: string }
           </div>
 
           <div className="flex gap-3 flex-wrap">
-            <Link href="/dashboard/admin/subject">
+            <Link href="/dashboard/teacher/subject">
               <Button variant="outline">Volver</Button>
             </Link>
-            <Link href={`/dashboard/admin/subject/${subject.id}/edit`}>
-              <Button>Editar</Button>
-            </Link>
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                try {
-                  await deleteSubject(Number(subject.id))
-                  router.push(`/dashboard/admin/subject`)
-                } catch (e) {
-                  console.error(e)
-                }
-              }}
-            >
-              Eliminar
-            </Button>
           </div>
         </div>
 
@@ -171,8 +154,8 @@ export default function SubjectView({ params }: { params: Promise<{ id: string }
               size="sm"
               onClick={() =>
                 router.push(
-                  `/dashboard/admin/topic/new?subjectId=${subject.id}&returnTo=${encodeURIComponent(
-                    `/dashboard/admin/subject/${subject.id}`
+                  `/dashboard/teacher/topic/new?subjectId=${subject.id}&returnTo=${encodeURIComponent(
+                    `/dashboard/teacher/subject/${subject.id}`
                   )}`
                 )
               }
@@ -198,19 +181,19 @@ export default function SubjectView({ params }: { params: Promise<{ id: string }
                   key={t.id}
                   className="rounded-md border bg-muted/30 hover:bg-muted transition-colors p-4 flex items-center justify-between"
                 >
-                  <div className="font-medium">{t.name || t.nombre || "(Sin nombre)"}</div>
+                  <div className="font-medium">{t.name || "(Sin nombre)"}</div>
                   <div className="flex gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => router.push(`/dashboard/admin/topic/${t.id}`)}
+                      onClick={() => router.push(`/dashboard/teacher/topic/${t.id}`)}
                     >
                       Ver
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => router.push(`/dashboard/admin/topic/${t.id}/edit`)}
+                      onClick={() => router.push(`/dashboard/teacher/topic/${t.id}/edit`)}
                     >
                       Editar
                     </Button>
