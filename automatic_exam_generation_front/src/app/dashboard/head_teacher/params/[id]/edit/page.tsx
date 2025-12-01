@@ -84,7 +84,7 @@ export default function ParamEditPage() {
         amount_quest: amount,
         quest_topics: topics.join(",")
       })
-      router.push(`/dashboard/teacher/params/${id}`)
+      router.push(`/dashboard/head_teacher/params/${id}`)
     } catch (e:any) {
       setError(e.message || "Error")
     } finally {
@@ -171,7 +171,7 @@ export default function ParamEditPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push(`/dashboard/teacher/params/${id}`)}
+              onClick={() => router.push(`/dashboard/head_teacher/params/${id}`)}
               disabled={saving}
             >
               Cancelar

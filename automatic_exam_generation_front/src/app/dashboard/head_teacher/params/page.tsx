@@ -53,7 +53,7 @@ export default function ParamsPage() {
               ))}
               {topics.length === 0 && <span className="text-xs text-muted-foreground">Sin temas</span>}
               <div className="ml-auto flex gap-2">
-                <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/params/${param.id}`)}>
+                <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/head_teacher/params/${param.id}`)}>
                 Ver detalles
                 </Button>
               </div>
@@ -61,7 +61,7 @@ export default function ParamsPage() {
           </div>
         )
       }}
-      onAdd={() => router.push("/dashboard/teacher/params/new")}
+      onAdd={() => router.push("/dashboard/head_teacher/params/new")}
     />
   )
 }

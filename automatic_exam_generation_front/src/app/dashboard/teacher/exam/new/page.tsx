@@ -5,6 +5,9 @@ import { useRouter } from "next/navigation"
 import { createExam } from "@/services/examService"
 import { getSubjects } from "@/services/subjectService"
 import { getParams } from "@/services/paramsService"
+import { getQuestions } from "@/services/questionService"
+import { getCurrentUser } from "@/services/authService"
+import { getHeadTeachers } from "@/services/headTeacerService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
@@ -21,6 +24,13 @@ interface ParamsOption {
   amount_quest?: string
 }
 
+interface HeadTeacherOption {
+  id: number | string
+  name?: string
+  user?: { name?: string }
+  teacher?: { user?: { name?: string } }
+}
+
 export default function ExamCreatePage() {
   const router = useRouter()
 
@@ -29,7 +39,9 @@ export default function ExamCreatePage() {
   const [difficulty, setDifficulty] = useState("")
   const [subjectId, setSubjectId] = useState<number | string | "">("")
   const [paramsId, setParamsId] = useState<number | string | "">("")
-  const [teacherId, setTeacherId] = useState<number | string>("") // temporal, manual
+  const [teacherId, setTeacherId] = useState<number | string>("") // obtenido automáticamente
+  const [headTeacherId, setHeadTeacherId] = useState<number | string | "">("")
+  const [isManual, setIsManual] = useState(false)
 
   // lists + search
   const [allSubjects, setAllSubjects] = useState<SubjectOption[]>([])
@@ -40,17 +52,66 @@ export default function ExamCreatePage() {
   const [paramsQuery, setParamsQuery] = useState("")
   const [loadingParams, setLoadingParams] = useState(false)
 
+  const [allHeadTeachers, setAllHeadTeachers] = useState<HeadTeacherOption[]>([])
+  const [headTeacherQuery, setHeadTeacherQuery] = useState("")
+  const [loadingHeadTeachers, setLoadingHeadTeachers] = useState(false)
+
+  // UI para preguntas manuales
+  const [manualQuestions, setManualQuestions] = useState<{ id: number; text: string }[]>([])
+  const [newQuestionText, setNewQuestionText] = useState("")
+  const [questionSearch, setQuestionSearch] = useState("")
+  const [allQuestions, setAllQuestions] = useState<any[]>([])
+  const [loadingQuestions, setLoadingQuestions] = useState(false)
+
   const filteredSubjects = allSubjects.filter((s) =>
     (s.name || "").toLowerCase().includes(subjectQuery.toLowerCase())
   )
 
   const filteredParams = allParams.filter((p) => {
-    const label = [p.proportion, p.quest_topics, p.amount_quest]
+    const label = [p.proportion, p.quest_topics, p.amount_quest].filter(Boolean).join(" ").toLowerCase()
+    return label.includes(paramsQuery.toLowerCase())
+  })
+
+  const filteredHeadTeachers = allHeadTeachers.filter((ht) => {
+    const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || ""
+    return htName.toLowerCase().includes(headTeacherQuery.toLowerCase())
+  })
+
+  // Filtrar preguntas (sugerencias) mientras escribe el usuario
+  const filteredQuestionSuggestions = allQuestions.filter((q) => {
+    const haystack = [
+      q.question_text,
+      q.subject_name,
+      q.topic_name,
+      q.sub_topic_name,
+      q.type,
+      q.difficulty,
+    ]
       .filter(Boolean)
       .join(" ")
       .toLowerCase()
-    return label.includes(paramsQuery.toLowerCase())
+    return haystack.includes(questionSearch.toLowerCase())
   })
+
+  // Obtener teacher_id del usuario actual
+  useEffect(() => {
+    async function loadCurrentUser() {
+      try {
+        const user = await getCurrentUser()
+        if (user?.id) {
+          setTeacherId(user.id)
+        } else {
+          const raw = typeof window !== "undefined" ? localStorage.getItem("userId") : null
+          if (raw) setTeacherId(Number(raw))
+        }
+      } catch (error) {
+        console.error("Error obteniendo usuario actual:", error)
+        const raw = typeof window !== "undefined" ? localStorage.getItem("userId") : null
+        if (raw) setTeacherId(Number(raw))
+      }
+    }
+    loadCurrentUser()
+  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -59,22 +120,26 @@ export default function ExamCreatePage() {
       try {
         setLoadingSubjects(true)
         setLoadingParams(true)
+        setLoadingHeadTeachers(true)
 
-        const [subjectsList, paramsList] = await Promise.all([
+        const [subjectsList, paramsList, headTeachersList] = await Promise.all([
           getSubjects().catch(() => []),
           getParams().catch(() => []),
+          getHeadTeachers().catch(() => []),
         ])
 
         if (!mounted) return
 
         setAllSubjects(Array.isArray(subjectsList) ? subjectsList : [])
         setAllParams(Array.isArray(paramsList) ? paramsList : [])
+        setAllHeadTeachers(Array.isArray(headTeachersList) ? headTeachersList : [])
       } catch (err) {
         console.error("Error cargando listas:", err)
       } finally {
         if (mounted) {
           setLoadingSubjects(false)
           setLoadingParams(false)
+          setLoadingHeadTeachers(false)
         }
       }
     }
@@ -84,6 +149,34 @@ export default function ExamCreatePage() {
       mounted = false
     }
   }, [])
+
+  // Cargar sugerencias del banco de preguntas para modo manual (una sola vez al activar manual)
+  useEffect(() => {
+    let mounted = true
+    async function loadQuestions() {
+      if (!isManual) return
+      try {
+        setLoadingQuestions(true)
+        const qs = await getQuestions().catch(() => [])
+        const list = Array.isArray(qs) ? qs : []
+        // Normalizar campos que ayudan a filtrar por nombres si existen
+        const normalized = list.map((q: any) => ({
+          ...q,
+          question_text: q.question_text ?? q.text ?? q.statement ?? "",
+        }))
+        if (mounted) setAllQuestions(normalized)
+      } catch (e) {
+        console.error("Error cargando preguntas:", e)
+        if (mounted) setAllQuestions([])
+      } finally {
+        if (mounted) setLoadingQuestions(false)
+      }
+    }
+    loadQuestions()
+    return () => {
+      mounted = false
+    }
+  }, [isManual])
 
   const onSelectSubject = (s: SubjectOption) => {
     setSubjectId(s.id)
@@ -96,23 +189,63 @@ export default function ExamCreatePage() {
     setParamsQuery(label)
   }
 
+  const onSelectHeadTeacher = (ht: HeadTeacherOption) => {
+    setHeadTeacherId(ht.id)
+    const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || ""
+    setHeadTeacherQuery(htName)
+  }
+
+  const addManualQuestion = () => {
+    const text = newQuestionText.trim()
+    if (!text) return
+    setManualQuestions((prev) => [...prev, { text }])
+    setNewQuestionText("")
+  }
+
+  const addSuggestionToManual = (q: any) => {
+    const text = (q.question_text || "").trim()
+    const id = q.id
+    if (!text || !id) return
+    // Evitar duplicados
+    if (manualQuestions.some(mq => mq.id === id)) return
+    setManualQuestions((prev) => [...prev, { id, text }])
+  }
+
+  const removeManualQuestion = (idx: number) => {
+    setManualQuestions((prev) => prev.filter((_, i) => i !== idx))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!teacherId) {
-      alert("Debes ingresar manualmente el teacher_id por ahora.")
+      alert("No se pudo obtener el ID del profesor.")
+      return
+    }
+
+    if (!headTeacherId) {
+      alert("Debes seleccionar un jefe de asignatura.")
       return
     }
 
     try {
-      const payload = {
+      const payload: any = {
         name: name.trim(),
         difficulty: difficulty || null,
         subject_id: subjectId || null,
-        parameters_id: paramsId || null,
         teacher_id: Number(teacherId),
-        head_teacher_id: null,
-        status: "borrador",
+        head_teacher_id: Number(headTeacherId),
+        status: "Pendiente",
+      }
+
+      if (isManual) {
+        // Modo manual: parameters_id con valor por defecto, questions con IDs
+        payload.parameters_id = 1
+        payload.questions = manualQuestions.map(q => q.id)
+      } else {
+        // Modo automático: parameters_id con datos, questions vacío
+        payload.parameters_id = paramsId || null
+        payload.questions = []
       }
 
       await createExam(payload)
@@ -126,32 +259,19 @@ export default function ExamCreatePage() {
   return (
     <main className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl">
-        <form
-          className="space-y-6 rounded-xl border bg-card p-6 shadow-sm"
-          onSubmit={handleSubmit}
-        >
+        <form className="space-y-6 rounded-xl border bg-card p-6 shadow-sm" onSubmit={handleSubmit}>
           <h2 className="font-semibold text-xl">Crear nuevo examen</h2>
 
           {/* NAME */}
           <div>
             <label className="text-sm text-muted-foreground">Nombre</label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Nombre del examen"
-              required
-            />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del examen" required />
           </div>
 
           {/* DIFFICULTY */}
           <div>
             <label className="text-sm text-muted-foreground">Dificultad</label>
-            <select
-              value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
-              className="w-full mt-1 p-2 border rounded"
-              required
-            >
+            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full mt-1 p-2 border rounded" required>
               <option value="">(Seleccione una dificultad)</option>
               <option value="facil">Fácil</option>
               <option value="medio">Medio</option>
@@ -176,9 +296,7 @@ export default function ExamCreatePage() {
                   {filteredSubjects.map((s) => (
                     <li
                       key={s.id}
-                      className={`p-2 cursor-pointer ${
-                        String(subjectId) === String(s.id) ? "bg-slate-100" : ""
-                      }`}
+                      className={`p-2 cursor-pointer ${String(subjectId) === String(s.id) ? "bg-slate-100" : ""}`}
                       onClick={() => onSelectSubject(s)}
                     >
                       {s.name}
@@ -187,61 +305,133 @@ export default function ExamCreatePage() {
                 </ul>
               )}
 
-              <div className="text-xs text-muted-foreground mt-1">
-                Asignatura seleccionada: {subjectId || "(ninguna)"}
-              </div>
+              <div className="text-xs text-muted-foreground mt-1">Asignatura seleccionada: {subjectId || "(ninguna)"}</div>
             </div>
           </div>
 
-          {/* PARAMS SEARCH */}
+          {/* HEAD TEACHER SEARCH */}
           <div>
-            <label className="text-sm text-muted-foreground">Parametrización (buscar)</label>
+            <label className="text-sm text-muted-foreground">Jefe de Asignatura (buscar)</label>
             <input
-              value={paramsQuery}
-              onChange={(e) => setParamsQuery(e.target.value)}
+              value={headTeacherQuery}
+              onChange={(e) => setHeadTeacherQuery(e.target.value)}
               className="w-full mt-1 p-2 border rounded"
-              placeholder="Escribe para buscar parametrizaciones..."
+              placeholder="Escribe para buscar jefe de asignatura..."
             />
             <div className="mt-2">
-              {loadingParams ? (
+              {loadingHeadTeachers ? (
                 <div className="text-sm text-muted-foreground">Cargando...</div>
               ) : (
                 <ul className="border rounded max-h-40 overflow-auto">
-                  {filteredParams.map((p) => (
-                    <li
-                      key={p.id}
-                      className={`p-2 cursor-pointer ${
-                        String(paramsId) === String(p.id) ? "bg-slate-100" : ""
-                      }`}
-                      onClick={() => onSelectParams(p)}
-                    >
-                      {[p.proportion, p.quest_topics, p.amount_quest]
-                        .filter(Boolean)
-                        .join(" — ")}
-                    </li>
-                  ))}
+                  {filteredHeadTeachers.map((ht) => {
+                    const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || `ID: ${ht.id}`
+                    return (
+                      <li
+                        key={ht.id}
+                        className={`p-2 cursor-pointer ${String(headTeacherId) === String(ht.id) ? "bg-slate-100" : ""}`}
+                        onClick={() => onSelectHeadTeacher(ht)}
+                      >
+                        {htName}
+                      </li>
+                    )
+                  })}
                 </ul>
               )}
 
-              <div className="text-xs text-muted-foreground mt-1">
-                Parametrización seleccionada: {paramsId || "(ninguna)"}
-              </div>
+              <div className="text-xs text-muted-foreground mt-1">Jefe seleccionado: {headTeacherId || "(ninguno)"}</div>
             </div>
           </div>
 
-          {/* TEACHER ID (manual por ahora) */}
-          <div>
-            <label className="text-sm text-muted-foreground">
-              Profesor (teacher_id) — temporal, manual
+          {/* MANUAL TOGGLE */}
+          <div className="flex items-center gap-2">
+            <input id="manualToggle" type="checkbox" checked={isManual} onChange={(e) => setIsManual(e.target.checked)} />
+            <label htmlFor="manualToggle" className="text-sm text-muted-foreground">
+              Manual
             </label>
-            <Input
-              type="number"
-              value={teacherId}
-              onChange={(e) => setTeacherId(e.target.value)}
-              placeholder="Ingresa tu ID de profesor"
-              required
-            />
           </div>
+
+          {/* PARAMS SEARCH (solo si NO es manual) */}
+          {!isManual && (
+            <div>
+              <label className="text-sm text-muted-foreground">Parametrización (buscar)</label>
+              <input
+                value={paramsQuery}
+                onChange={(e) => setParamsQuery(e.target.value)}
+                className="w-full mt-1 p-2 border rounded"
+                placeholder="Escribe para buscar parametrizaciones..."
+              />
+              <div className="mt-2">
+                {loadingParams ? (
+                  <div className="text-sm text-muted-foreground">Cargando...</div>
+                ) : (
+                  <ul className="border rounded max-h-40 overflow-auto">
+                    {filteredParams.map((p) => (
+                      <li
+                        key={p.id}
+                        className={`p-2 cursor-pointer ${String(paramsId) === String(p.id) ? "bg-slate-100" : ""}`}
+                        onClick={() => onSelectParams(p)}
+                      >
+                        {[p.proportion, p.quest_topics, p.amount_quest].filter(Boolean).join(" — ")}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="text-xs text-muted-foreground mt-1">Parametrización seleccionada: {paramsId || "(ninguna)"}</div>
+              </div>
+            </div>
+          )}
+
+          {/* MANUAL QUESTIONS UI (solo si es manual) */}
+          {isManual && (
+            <div className="space-y-4">
+              {/* Banco de preguntas con filtro en vivo */}
+              <div>
+                <label className="text-sm text-muted-foreground">Buscar en banco de preguntas</label>
+                <input
+                  value={questionSearch}
+                  onChange={(e) => setQuestionSearch(e.target.value)}
+                  className="w-full mt-1 p-2 border rounded"
+                  placeholder="Filtra por texto, asignatura, tema, subtema, tipo o dificultad..."
+                />
+                <div className="mt-2">
+                  {loadingQuestions ? (
+                    <div className="text-sm text-muted-foreground">Cargando preguntas...</div>
+                  ) : (
+                    <ul className="border rounded max-h-48 overflow-auto">
+                      {filteredQuestionSuggestions.map((q) => (
+                        <li key={q.id} className="p-2 hover:bg-slate-100 cursor-pointer" onClick={() => addSuggestionToManual(q)}>
+                          <div className="text-sm font-medium">{q.question_text}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {[q.subject_name, q.topic_name, q.sub_topic_name].filter(Boolean).join(" • ")}{" "}
+                            {q.type ? ` • ${q.type}` : ""} {q.difficulty ? ` • ${q.difficulty}` : ""}
+                          </div>
+                        </li>
+                      ))}
+                      {filteredQuestionSuggestions.length === 0 && (
+                        <li className="p-2 text-sm text-muted-foreground">No hay preguntas que coincidan.</li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              {/* Lista de preguntas añadidas */}
+              <ul className="border rounded p-2 space-y-2">
+                {manualQuestions.length === 0 && (
+                  <li className="text-sm text-muted-foreground">No hay preguntas añadidas.</li>
+                )}
+                {manualQuestions.map((q, idx) => (
+                  <li key={idx} className="flex justify-between items-center">
+                    <span className="text-sm">{q.text}</span>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeManualQuestion(idx)}>
+                      Quitar
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* READONLY */}
           <div>

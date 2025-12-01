@@ -1,6 +1,3 @@
-// src/services/examService.ts
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-
 async function handleResponse(res: Response) {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
@@ -10,7 +7,7 @@ async function handleResponse(res: Response) {
 }
 
 export async function getExams() {
-  const res = await fetch(`${BASE_URL}/app/exam`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
     cache: "no-store",
@@ -19,7 +16,7 @@ export async function getExams() {
 }
 
 export async function getExamById(id: string | number) {
-  const res = await fetch(`${BASE_URL}/app/exam/${id}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/${id}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
     cache: "no-store",
@@ -28,7 +25,7 @@ export async function getExamById(id: string | number) {
 }
 
 export async function createExam(payload: Record<string, any>) {
-  const res = await fetch(`${BASE_URL}/app/exam`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -37,7 +34,7 @@ export async function createExam(payload: Record<string, any>) {
 }
 
 export async function updateExam(id: string | number, payload: Record<string, any>) {
-  const res = await fetch(`${BASE_URL}/app/exam/${id}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -46,7 +43,7 @@ export async function updateExam(id: string | number, payload: Record<string, an
 }
 
 export async function deleteExam(id: string | number) {
-  const res = await fetch(`${BASE_URL}/app/exam/${id}`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/${id}`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
   });

@@ -69,7 +69,7 @@ export default function ParamsNewPage() {
         amount_quest: amount,
         quest_topics: topics.join(",")
       })
-      router.push("/dashboard/teacher/params")
+      router.push("/dashboard/head_teacher/params")
     } catch (e:any) {
       setError(e.message || "Error")
     } finally {
@@ -186,7 +186,7 @@ export default function ParamsNewPage() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/dashboard/teacher/params")}
+              onClick={() => router.push("/dashboard/head_teacher/params")}
               disabled={saving}
             >
               Cancelar
