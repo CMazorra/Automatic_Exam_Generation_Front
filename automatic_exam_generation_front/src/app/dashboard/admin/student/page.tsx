@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { ListViewWithAdd } from "@/components/list-view-with-add"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
-import { getStudents } from "@/services/userService"
+import { getStudents } from "@/services/studentService"
 
 export default function SubjectPage() {
     const router = useRouter()
