@@ -7,6 +7,8 @@ import { getSubjectById } from "@/services/subjectService"
 import { getTeacherByID } from "@/services/teacherService"
 import { getParamsById } from "@/services/paramsService"
 import { getHeadTeacherByID } from "@/services/headTeacerService"
+import { getUserById } from "@/services/userService"
+import { getQuestionById } from "@/services/questionService"
 import { Button } from "@/components/ui/button";
 
 export default function ExamDetailsPage({ params }: { params: { id: string } }) {
@@ -19,6 +21,7 @@ export default function ExamDetailsPage({ params }: { params: { id: string } }) 
   const [teacherName, setTeacherName] = useState<string | null>(null)
   const [paramsLabel, setParamsLabel] = useState<string | null>(null)
   const [headName, setHeadName] = useState<string | null>(null)
+  const [questions, setQuestions] = useState<any[]>([])
 
   // Cargar examen
   useEffect(() => {
@@ -26,6 +29,7 @@ export default function ExamDetailsPage({ params }: { params: { id: string } }) 
       try {
         const data = await getExamById(id);
         setExam(data);
+        
         // fetch related names
         if (data?.subject_id) {
           try {
@@ -54,9 +58,39 @@ export default function ExamDetailsPage({ params }: { params: { id: string } }) 
         if (data?.head_teacher_id) {
           try {
             const h = await getHeadTeacherByID(Number(data.head_teacher_id))
-            setHeadName(h?.user?.name ?? h?.name ?? null)
+            const fromHeadServiceName =
+              h?.teacher?.user?.name ??
+              h?.user?.name ??
+              h?.name ??
+              null
+
+            if (fromHeadServiceName) {
+              setHeadName(fromHeadServiceName)
+            } else {
+              const u = await getUserById(Number(data.head_teacher_id))
+              setHeadName(u?.name ?? null)
+            }
           } catch (e) {
             console.error('Error fetching head teacher', e)
+            setHeadName(null)
+          }
+        }
+
+        // Cargar preguntas desde exam_questions
+        if (data?.exam_questions && Array.isArray(data.exam_questions)) {
+          try {
+            const questionPromises = data.exam_questions.map((eq: any) => {
+              const questionId = eq.question_id || eq.id
+              return getQuestionById(questionId).catch(err => {
+                console.error(`Error fetching question ${questionId}:`, err)
+                return null
+              })
+            })
+            const questionsData = await Promise.all(questionPromises)
+            setQuestions(questionsData.filter(q => q !== null))
+          } catch (e) {
+            console.error('Error fetching questions', e)
+            setQuestions([])
           }
         }
       } catch (error) {
@@ -98,6 +132,22 @@ export default function ExamDetailsPage({ params }: { params: { id: string } }) 
           <p><strong>Parametrización:</strong> {paramsLabel ?? exam.parameters_id}</p>
           <p><strong>Jefe de Asignatura:</strong> {headName ?? exam.head_teacher_id}</p>
         </div>
+
+        {/* Sección de preguntas */}
+        {questions.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="text-lg font-semibold">Preguntas ({questions.length})</h3>
+            <ul className="space-y-2 border rounded-lg p-4 bg-muted/30">
+              {questions.map((q: any, idx: number) => (
+                <li key={q.id || idx} className="text-sm border-b border-border pb-2 last:border-b-0">
+                  <p className="font-medium">{idx + 1}. {q.question_text || q.text || q.statement || "Sin texto"}</p>
+                  {q.type && <span className="text-xs text-muted-foreground">Tipo: {q.type}</span>}
+                  {q.difficulty && <span className="text-xs text-muted-foreground ml-2">Dificultad: {q.difficulty}</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="flex justify-between pt-4">
           <Button variant="outline" onClick={() => router.push("/dashboard/teacher/exam")}>

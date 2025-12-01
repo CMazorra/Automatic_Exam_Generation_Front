@@ -71,8 +71,8 @@ export default function ParamViewPage() {
             </div>
           </div>
           <div className="flex gap-3 flex-wrap">
-            <Button variant="outline" onClick={() => router.push("/dashboard/teacher/params")}>Volver</Button>
-            <Button onClick={() => router.push(`/dashboard/teacher/params/${data.id}/edit`)}>Editar</Button>
+            <Button variant="outline" onClick={() => router.push("/dashboard/head_teacher/params")}>Volver</Button>
+            <Button onClick={() => router.push(`/dashboard/head_teacher/params/${data.id}/edit`)}>Editar</Button>
           </div>
         </div>
       </div>

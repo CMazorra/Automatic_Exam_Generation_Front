@@ -1,3 +1,24 @@
+export async function getHeadTeachers() {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/head-teacher`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al obtener los jefes de asignatura");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error en getHeadTeachers:", error);
+    throw error;
+  }
+}
+
 export async function getHeadTeacherByID(id: number | string) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/head-teacher/${id}`, {

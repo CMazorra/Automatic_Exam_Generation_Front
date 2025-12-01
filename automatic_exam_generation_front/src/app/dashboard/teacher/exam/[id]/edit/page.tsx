@@ -4,9 +4,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getExamById, updateExam } from "@/services/examService"
 import { getSubjects } from "@/services/subjectService"
-import { getParams, getParamsById } from "@/services/paramsService"
-import { getTeacherByID } from "@/services/teacherService"
-import { getHeadTeacherByID } from "@/services/headTeacerService"
+import { getParams } from "@/services/paramsService"
+import { getQuestions, getQuestionById } from "@/services/questionService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
@@ -41,10 +40,6 @@ export default function ExamEditPage({ params }: { params: { id: string } }) {
   const [subjectId, setSubjectId] = useState<number | string | "">("")
   const [paramsId, setParamsId] = useState<number | string | "">("")
 
-  // readonly labels
-  const [teacherLabel, setTeacherLabel] = useState<string | null>(null)
-  const [headLabel, setHeadLabel] = useState<string | null>(null)
-
   // lists + queries for searchable selects
   const [allSubjects, setAllSubjects] = useState<SubjectOption[]>([])
   const [subjectQuery, setSubjectQuery] = useState("")
@@ -53,6 +48,12 @@ export default function ExamEditPage({ params }: { params: { id: string } }) {
   const [allParams, setAllParams] = useState<ParamsOption[]>([])
   const [paramsQuery, setParamsQuery] = useState("")
   const [loadingParams, setLoadingParams] = useState(false)
+
+  // preguntas
+  const [selectedQuestions, setSelectedQuestions] = useState<{ id: number; text: string }[]>([])
+  const [allQuestions, setAllQuestions] = useState<any[]>([])
+  const [questionSearch, setQuestionSearch] = useState("")
+  const [loadingQuestions, setLoadingQuestions] = useState(false)
 
   // filtered (client-side)
   const filteredSubjects = allSubjects.filter((s) =>
@@ -64,6 +65,21 @@ export default function ExamEditPage({ params }: { params: { id: string } }) {
     return label.toLowerCase().includes(paramsQuery.trim().toLowerCase())
   })
 
+  const filteredQuestionSuggestions = allQuestions.filter((q) => {
+    const haystack = [
+      q.question_text,
+      q.subject_name,
+      q.topic_name,
+      q.sub_topic_name,
+      q.type,
+      q.difficulty,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+    return haystack.includes(questionSearch.toLowerCase())
+  })
+
   useEffect(() => {
     let mounted = true
 
@@ -72,18 +88,28 @@ export default function ExamEditPage({ params }: { params: { id: string } }) {
         setLoading(true)
         setLoadingSubjects(true)
         setLoadingParams(true)
+        setLoadingQuestions(true)
 
         // load lists in parallel
-        const [subjectsList, paramsList, examData] = await Promise.all([
+        const [subjectsList, paramsList, examData, questionsList] = await Promise.all([
           getSubjects().catch(() => []),
           getParams().catch(() => []),
           getExamById(id).catch(() => null),
+          getQuestions().catch(() => []),
         ])
 
         if (!mounted) return
 
         setAllSubjects(Array.isArray(subjectsList) ? subjectsList : [])
         setAllParams(Array.isArray(paramsList) ? paramsList : [])
+        
+        const normalizedQuestions = Array.isArray(questionsList) 
+          ? questionsList.map((q: any) => ({
+              ...q,
+              question_text: q.question_text ?? q.text ?? q.statement ?? "",
+            }))
+          : []
+        setAllQuestions(normalizedQuestions)
 
         if (!examData) {
           setError("No se encontró el examen.")
@@ -110,29 +136,27 @@ export default function ExamEditPage({ params }: { params: { id: string } }) {
           setParamsQuery(label)
         }
 
-        // fetch teacher and head teacher labels (best effort)
-        if (examData.teacher_id) {
+        // Cargar preguntas desde exam_questions
+        if (examData?.exam_questions && Array.isArray(examData.exam_questions)) {
           try {
-            const t = await getTeacherByID(Number(examData.teacher_id))
-            const tlabel = t?.user?.name ?? t?.name ?? String(examData.teacher_id)
-            if (mounted) setTeacherLabel(tlabel)
+            const questionPromises = examData.exam_questions.map((eq: any) => {
+              const questionId = eq.question_id || eq.id
+              return getQuestionById(questionId).catch(err => {
+                console.error(`Error fetching question ${questionId}:`, err)
+                return null
+              })
+            })
+            const questionsData = await Promise.all(questionPromises)
+            const validQuestions = questionsData
+              .filter(q => q !== null)
+              .map(q => ({
+                id: q.id,
+                text: q.question_text || q.text || q.statement || "Sin texto"
+              }))
+            if (mounted) setSelectedQuestions(validQuestions)
           } catch (e) {
-            if (mounted) setTeacherLabel(String(examData.teacher_id))
+            console.error('Error fetching questions', e)
           }
-        } else {
-          setTeacherLabel(null)
-        }
-
-        if (examData.head_teacher_id) {
-          try {
-            const h = await getHeadTeacherByID(Number(examData.head_teacher_id))
-            const hlabel = h?.user?.name ?? h?.name ?? String(examData.head_teacher_id)
-            if (mounted) setHeadLabel(hlabel)
-          } catch (e) {
-            if (mounted) setHeadLabel(String(examData.head_teacher_id))
-          }
-        } else {
-          setHeadLabel(null)
         }
       } catch (e: any) {
         console.error("Error cargando editor de examen:", e)
@@ -142,6 +166,7 @@ export default function ExamEditPage({ params }: { params: { id: string } }) {
           setLoading(false)
           setLoadingSubjects(false)
           setLoadingParams(false)
+          setLoadingQuestions(false)
         }
       }
     }
@@ -163,6 +188,19 @@ export default function ExamEditPage({ params }: { params: { id: string } }) {
     setParamsQuery(label)
   }
 
+  const addQuestionToExam = (q: any) => {
+    const text = (q.question_text || "").trim()
+    const qId = q.id
+    if (!text || !qId) return
+    // Evitar duplicados
+    if (selectedQuestions.some(sq => sq.id === qId)) return
+    setSelectedQuestions(prev => [...prev, { id: qId, text }])
+  }
+
+  const removeQuestion = (idx: number) => {
+    setSelectedQuestions(prev => prev.filter((_, i) => i !== idx))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
@@ -173,6 +211,7 @@ export default function ExamEditPage({ params }: { params: { id: string } }) {
         difficulty: difficulty || null,
         subject_id: subjectId || null,
         parameters_id: paramsId || null,
+        questions: selectedQuestions.map(q => q.id),
       }
 
       await updateExam(id, payload)
@@ -287,20 +326,62 @@ export default function ExamEditPage({ params }: { params: { id: string } }) {
             </div>
           </div>
 
-          {/* Read-only fields */}
-          <div>
-            <label className="text-sm text-muted-foreground">Estado (solo lectura)</label>
-            <div className="mt-1">{exam?.status ?? "(sin estado)"}</div>
-          </div>
+          {/* Sección de preguntas */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Preguntas del examen</h3>
 
-          <div>
-            <label className="text-sm text-muted-foreground">Profesor (creador)</label>
-            <div className="mt-1">{teacherLabel ?? String(exam?.teacher_id ?? "(desconocido)")}</div>
-          </div>
+            {/* Banco de preguntas con filtro en vivo */}
+            <div>
+              <label className="text-sm text-muted-foreground">Buscar en banco de preguntas</label>
+              <input
+                value={questionSearch}
+                onChange={(e) => setQuestionSearch(e.target.value)}
+                className="w-full mt-1 p-2 border rounded"
+                placeholder="Filtra por texto, asignatura, tema, subtema, tipo o dificultad..."
+              />
+              <div className="mt-2">
+                {loadingQuestions ? (
+                  <div className="text-sm text-muted-foreground">Cargando preguntas...</div>
+                ) : (
+                  <ul className="border rounded max-h-48 overflow-auto">
+                    {filteredQuestionSuggestions.map((q) => (
+                      <li 
+                        key={q.id} 
+                        className="p-2 hover:bg-slate-100 cursor-pointer" 
+                        onClick={() => addQuestionToExam(q)}
+                      >
+                        <div className="text-sm font-medium">{q.question_text}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {[q.subject_name, q.topic_name, q.sub_topic_name].filter(Boolean).join(" • ")}{" "}
+                          {q.type ? ` • ${q.type}` : ""} {q.difficulty ? ` • ${q.difficulty}` : ""}
+                        </div>
+                      </li>
+                    ))}
+                    {filteredQuestionSuggestions.length === 0 && (
+                      <li className="p-2 text-sm text-muted-foreground">No hay preguntas que coincidan.</li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            </div>
 
-          <div>
-            <label className="text-sm text-muted-foreground">Jefe de Asignatura (validador)</label>
-            <div className="mt-1">{headLabel ?? String(exam?.head_teacher_id ?? "(ninguno)")}</div>
+            {/* Lista de preguntas seleccionadas */}
+            <div>
+              <label className="text-sm text-muted-foreground">Preguntas añadidas ({selectedQuestions.length})</label>
+              <ul className="border rounded p-2 space-y-2 mt-2">
+                {selectedQuestions.length === 0 && (
+                  <li className="text-sm text-muted-foreground">No hay preguntas añadidas.</li>
+                )}
+                {selectedQuestions.map((q, idx) => (
+                  <li key={q.id} className="flex justify-between items-center border-b pb-2 last:border-b-0">
+                    <span className="text-sm">{idx + 1}. {q.text}</span>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeQuestion(idx)}>
+                      Quitar
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
           {/* Actions */}
