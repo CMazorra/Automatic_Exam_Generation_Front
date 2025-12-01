@@ -173,7 +173,7 @@ export default function EditExamPage({ params }: { params: { id: string } }) {
 
           {/* head teacher (searchable) */}
           <div>
-            <label className="block mb-1 font-medium">Jefe de cátedra</label>
+            <label className="block mb-1 font-medium">Jefe de Asignatura</label>
             <Input value={headQuery} onChange={(e) => setHeadQuery(e.target.value)} placeholder="Buscar jefe..." />
             <div className="mt-2">
               <ul className="border rounded max-h-40 overflow-auto">

@@ -96,7 +96,7 @@ export default function ExamDetailsPage({ params }: { params: { id: string } }) 
           <p><strong>Asignatura:</strong> {subjectName ?? exam.subject_id}</p>
           <p><strong>Profesor:</strong> {teacherName ?? exam.teacher_id}</p>
           <p><strong>Parametrización:</strong> {paramsLabel ?? exam.parameters_id}</p>
-          <p><strong>Jefe de cátedra:</strong> {headName ?? exam.head_teacher_id}</p>
+          <p><strong>Jefe de Asignatura:</strong> {headName ?? exam.head_teacher_id}</p>
         </div>
 
         <div className="flex justify-between pt-4">

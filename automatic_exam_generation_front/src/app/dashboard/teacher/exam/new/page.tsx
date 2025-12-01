@@ -102,20 +102,11 @@ export default function NewExamPage() {
         {/* Status */}
         <div className="space-y-2">
           <Label>Estado</Label>
-          <Select
-            value={form.status}
-            onValueChange={(v: string) => handleChange("status", v)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="DRAFT">Borrador</SelectItem>
-              <SelectItem value="PUBLISHED">Publicado</SelectItem>
-              <SelectItem value="CLOSED">Cerrado</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="p-2 border rounded bg-gray-100 text-muted-foreground">
+            Borrador
+          </div>
         </div>
+
 
         {/* Difficulty */}
         <div className="space-y-2">
@@ -207,7 +198,7 @@ export default function NewExamPage() {
 
         {/* Head teacher searchable */}
         <div className="space-y-2">
-          <Label>Jefe de cátedra</Label>
+          <Label>Jefe de Asignatura</Label>
           <Input placeholder="Buscar jefe..." value={headQuery} onChange={e => setHeadQuery(e.target.value)} />
           <div className="mt-2">
             <ul className="border rounded max-h-40 overflow-auto">
