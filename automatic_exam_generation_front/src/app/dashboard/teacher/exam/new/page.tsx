@@ -3,227 +3,263 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createExam } from "@/services/examService"
+import { getSubjects } from "@/services/subjectService"
+import { getParams } from "@/services/paramsService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select"
-import { getSubjects } from "@/services/subjectService"
-import { getTeachers } from "@/services/teacherService"
-import { getParams } from "@/services/paramsService"
+import Link from "next/link"
 
-export default function NewExamPage() {
+interface SubjectOption {
+  id: number | string
+  name?: string
+}
+
+interface ParamsOption {
+  id: number | string
+  proportion?: string
+  quest_topics?: string
+  amount_quest?: string
+}
+
+export default function ExamCreatePage() {
   const router = useRouter()
 
-  const [form, setForm] = useState({
-    name: "",
-    status: "DRAFT",
-    difficulty: "MEDIUM",
-    subject_id: "",
-    teacher_id: "",
-    parameters_id: "",
-    head_teacher_id: "",
+  // form fields
+  const [name, setName] = useState("")
+  const [difficulty, setDifficulty] = useState("")
+  const [subjectId, setSubjectId] = useState<number | string | "">("")
+  const [paramsId, setParamsId] = useState<number | string | "">("")
+  const [teacherId, setTeacherId] = useState<number | string>("") // temporal, manual
+
+  // lists + search
+  const [allSubjects, setAllSubjects] = useState<SubjectOption[]>([])
+  const [subjectQuery, setSubjectQuery] = useState("")
+  const [loadingSubjects, setLoadingSubjects] = useState(false)
+
+  const [allParams, setAllParams] = useState<ParamsOption[]>([])
+  const [paramsQuery, setParamsQuery] = useState("")
+  const [loadingParams, setLoadingParams] = useState(false)
+
+  const filteredSubjects = allSubjects.filter((s) =>
+    (s.name || "").toLowerCase().includes(subjectQuery.toLowerCase())
+  )
+
+  const filteredParams = allParams.filter((p) => {
+    const label = [p.proportion, p.quest_topics, p.amount_quest]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+    return label.includes(paramsQuery.toLowerCase())
   })
 
-  // data lists for searchable selects
-  const [subjects, setSubjects] = useState<any[]>([])
-  const [subjectQuery, setSubjectQuery] = useState("")
-  const [teachers, setTeachers] = useState<any[]>([])
-  const [teacherQuery, setTeacherQuery] = useState("")
-  const [paramsList, setParamsList] = useState<any[]>([])
-  const [paramsQuery, setParamsQuery] = useState("")
-  const [headTeachers, setHeadTeachers] = useState<any[]>([])
-  const [headQuery, setHeadQuery] = useState("")
-
-  const handleChange = (key: string, value: string) => {
-    setForm(prev => ({ ...prev, [key]: value }))
-  }
-
-  // load lists for selects
   useEffect(() => {
     let mounted = true
+
     const load = async () => {
       try {
-        const [s, t, p] = await Promise.all([getSubjects(), getTeachers(), getParams()])
+        setLoadingSubjects(true)
+        setLoadingParams(true)
+
+        const [subjectsList, paramsList] = await Promise.all([
+          getSubjects().catch(() => []),
+          getParams().catch(() => []),
+        ])
+
         if (!mounted) return
-        setSubjects(Array.isArray(s) ? s : [])
-        setTeachers(Array.isArray(t) ? t : [])
-        setParamsList(Array.isArray(p) ? p : [])
-        // head teachers: those with isHeadTeacher true, fallback to teachers same list
-        const heads = (Array.isArray(t) ? t.filter((x: any) => x.isHeadTeacher) : [])
-        setHeadTeachers(heads.length ? heads : (Array.isArray(t) ? t : []))
+
+        setAllSubjects(Array.isArray(subjectsList) ? subjectsList : [])
+        setAllParams(Array.isArray(paramsList) ? paramsList : [])
       } catch (err) {
-        console.error("Error loading lists for exam form:", err)
+        console.error("Error cargando listas:", err)
+      } finally {
+        if (mounted) {
+          setLoadingSubjects(false)
+          setLoadingParams(false)
+        }
       }
     }
+
     load()
     return () => {
       mounted = false
     }
   }, [])
 
-  const submit = async () => {
-    if (!form.name || !form.subject_id) {
-      alert("Nombre y subject_id son obligatorios")
+  const onSelectSubject = (s: SubjectOption) => {
+    setSubjectId(s.id)
+    setSubjectQuery(s.name || "")
+  }
+
+  const onSelectParams = (p: ParamsOption) => {
+    setParamsId(p.id)
+    const label = [p.proportion, p.quest_topics, p.amount_quest].filter(Boolean).join(" / ")
+    setParamsQuery(label)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!teacherId) {
+      alert("Debes ingresar manualmente el teacher_id por ahora.")
       return
     }
 
     try {
-      await createExam({
-        name: form.name,
-        status: form.status,
-        difficulty: form.difficulty,
-        subject_id: Number(form.subject_id),
-        teacher_id: form.teacher_id ? Number(form.teacher_id) : undefined,
-        parameters_id: form.parameters_id ? Number(form.parameters_id) : undefined,
-        head_teacher_id: form.head_teacher_id ? Number(form.head_teacher_id) : undefined,
-      })
+      const payload = {
+        name: name.trim(),
+        difficulty: difficulty || null,
+        subject_id: subjectId || null,
+        parameters_id: paramsId || null,
+        teacher_id: Number(teacherId),
+        head_teacher_id: null,
+        status: "borrador",
+      }
 
+      await createExam(payload)
       router.push("/dashboard/teacher/exam")
     } catch (err: any) {
-      alert(err.message || "Error al crear examen")
+      console.error("Error creando examen:", err)
+      alert(err?.message || "Error al crear examen.")
     }
   }
 
   return (
-    <main className="min-h-screen bg-background p-8">
-      <div className="max-w-lg mx-auto space-y-6 p-6 border rounded-xl bg-card shadow-sm">
-        <h2 className="text-xl font-semibold">Crear Examen</h2>
+    <main className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-3xl">
+        <form
+          className="space-y-6 rounded-xl border bg-card p-6 shadow-sm"
+          onSubmit={handleSubmit}
+        >
+          <h2 className="font-semibold text-xl">Crear nuevo examen</h2>
 
-        {/* Nombre */}
-        <div className="space-y-2">
-          <Label>Nombre del examen</Label>
-          <Input
-            placeholder="Examen Parcial 1"
-            value={form.name}
-            onChange={e => handleChange("name", e.target.value)}
-          />
-        </div>
-
-        {/* Status */}
-        <div className="space-y-2">
-          <Label>Estado</Label>
-          <div className="p-2 border rounded bg-gray-100 text-muted-foreground">
-            Borrador
+          {/* NAME */}
+          <div>
+            <label className="text-sm text-muted-foreground">Nombre</label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Nombre del examen"
+              required
+            />
           </div>
-        </div>
 
-
-        {/* Difficulty */}
-        <div className="space-y-2">
-          <Label>Dificultad</Label>
-          <Select
-            value={form.difficulty}
-            onValueChange={(v: string) => handleChange("difficulty", v)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar dificultad" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="EASY">Fácil</SelectItem>
-              <SelectItem value="MEDIUM">Media</SelectItem>
-              <SelectItem value="HARD">Difícil</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Subject searchable */}
-        <div className="space-y-2">
-          <Label>Asignatura</Label>
-          <Input
-            placeholder="Buscar asignatura..."
-            value={subjectQuery}
-            onChange={e => setSubjectQuery(e.target.value)}
-          />
-          <div className="mt-2">
-            <ul className="border rounded max-h-40 overflow-auto">
-              {subjects
-                .filter(s => (s.name || "").toLowerCase().includes(subjectQuery.trim().toLowerCase()))
-                .map(s => (
-                  <li
-                    key={s.id}
-                    className={`p-2 cursor-pointer ${String(form.subject_id) === String(s.id) ? "bg-slate-100" : ""}`}
-                    onClick={() => { handleChange("subject_id", String(s.id)); setSubjectQuery(s.name) }}
-                  >
-                    {s.name}
-                  </li>
-                ))}
-            </ul>
-            <div className="text-xs text-muted-foreground mt-1">Seleccionada: {subjects.find(s => String(s.id) === String(form.subject_id))?.name || "(ninguna)"}</div>
+          {/* DIFFICULTY */}
+          <div>
+            <label className="text-sm text-muted-foreground">Dificultad</label>
+            <select
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value)}
+              className="w-full mt-1 p-2 border rounded"
+              required
+            >
+              <option value="">(Seleccione una dificultad)</option>
+              <option value="facil">Fácil</option>
+              <option value="medio">Medio</option>
+              <option value="dificil">Difícil</option>
+            </select>
           </div>
-        </div>
 
-        {/* Teacher searchable */}
-        <div className="space-y-2">
-          <Label>Profesor</Label>
-          <Input placeholder="Buscar profesor..." value={teacherQuery} onChange={e => setTeacherQuery(e.target.value)} />
-          <div className="mt-2">
-            <ul className="border rounded max-h-40 overflow-auto">
-              {teachers
-                .filter(t => ((t.user?.name ?? t.name ?? t.account) || "").toLowerCase().includes(teacherQuery.trim().toLowerCase()))
-                .map(t => (
-                  <li
-                    key={t.id}
-                    className={`p-2 cursor-pointer ${String(form.teacher_id) === String(t.id) ? "bg-slate-100" : ""}`}
-                    onClick={() => { handleChange("teacher_id", String(t.id)); setTeacherQuery((t.user?.name ?? t.name ?? t.account) || String(t.id)) }}
-                  >
-                    {t.user?.name ?? t.name ?? t.account}
-                  </li>
-                ))}
-            </ul>
-            <div className="text-xs text-muted-foreground mt-1">Seleccionado: {teachers.find(t => String(t.id) === String(form.teacher_id))?.user?.name ?? teachers.find(t => String(t.id) === String(form.teacher_id))?.name ?? "(ninguno)"}</div>
+          {/* SUBJECT SEARCH */}
+          <div>
+            <label className="text-sm text-muted-foreground">Asignatura (buscar)</label>
+            <input
+              value={subjectQuery}
+              onChange={(e) => setSubjectQuery(e.target.value)}
+              className="w-full mt-1 p-2 border rounded"
+              placeholder="Escribe para buscar asignaturas..."
+            />
+            <div className="mt-2">
+              {loadingSubjects ? (
+                <div className="text-sm text-muted-foreground">Cargando...</div>
+              ) : (
+                <ul className="border rounded max-h-40 overflow-auto">
+                  {filteredSubjects.map((s) => (
+                    <li
+                      key={s.id}
+                      className={`p-2 cursor-pointer ${
+                        String(subjectId) === String(s.id) ? "bg-slate-100" : ""
+                      }`}
+                      onClick={() => onSelectSubject(s)}
+                    >
+                      {s.name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="text-xs text-muted-foreground mt-1">
+                Asignatura seleccionada: {subjectId || "(ninguna)"}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Parameters searchable */}
-        <div className="space-y-2">
-          <Label>Parametrización</Label>
-          <Input placeholder="Buscar parametrización..." value={paramsQuery} onChange={e => setParamsQuery(e.target.value)} />
-          <div className="mt-2">
-            <ul className="border rounded max-h-40 overflow-auto">
-              {paramsList
-                .filter(p => ((p.proportion ?? "") + " " + (p.quest_topics ?? "")).toLowerCase().includes(paramsQuery.trim().toLowerCase()))
-                .map(p => (
-                  <li
-                    key={p.id}
-                    className={`p-2 cursor-pointer ${String(form.parameters_id) === String(p.id) ? "bg-slate-100" : ""}`}
-                    onClick={() => { handleChange("parameters_id", String(p.id)); setParamsQuery(`${p.proportion} / ${p.quest_topics}`) }}
-                  >
-                    {p.proportion} — {p.quest_topics}
-                  </li>
-                ))}
-            </ul>
-            <div className="text-xs text-muted-foreground mt-1">Seleccionado: {paramsList.find(p => String(p.id) === String(form.parameters_id)) ? `${paramsList.find(p => String(p.id) === String(form.parameters_id))?.proportion} / ${paramsList.find(p => String(p.id) === String(form.parameters_id))?.quest_topics}` : "(ninguno)"}</div>
+          {/* PARAMS SEARCH */}
+          <div>
+            <label className="text-sm text-muted-foreground">Parametrización (buscar)</label>
+            <input
+              value={paramsQuery}
+              onChange={(e) => setParamsQuery(e.target.value)}
+              className="w-full mt-1 p-2 border rounded"
+              placeholder="Escribe para buscar parametrizaciones..."
+            />
+            <div className="mt-2">
+              {loadingParams ? (
+                <div className="text-sm text-muted-foreground">Cargando...</div>
+              ) : (
+                <ul className="border rounded max-h-40 overflow-auto">
+                  {filteredParams.map((p) => (
+                    <li
+                      key={p.id}
+                      className={`p-2 cursor-pointer ${
+                        String(paramsId) === String(p.id) ? "bg-slate-100" : ""
+                      }`}
+                      onClick={() => onSelectParams(p)}
+                    >
+                      {[p.proportion, p.quest_topics, p.amount_quest]
+                        .filter(Boolean)
+                        .join(" — ")}
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="text-xs text-muted-foreground mt-1">
+                Parametrización seleccionada: {paramsId || "(ninguna)"}
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* Head teacher searchable */}
-        <div className="space-y-2">
-          <Label>Jefe de Asignatura</Label>
-          <Input placeholder="Buscar jefe..." value={headQuery} onChange={e => setHeadQuery(e.target.value)} />
-          <div className="mt-2">
-            <ul className="border rounded max-h-40 overflow-auto">
-              {headTeachers
-                .filter(h => ((h.user?.name ?? h.name ?? h.account) || "").toLowerCase().includes(headQuery.trim().toLowerCase()))
-                .map(h => (
-                  <li
-                    key={h.id}
-                    className={`p-2 cursor-pointer ${String(form.head_teacher_id) === String(h.id) ? "bg-slate-100" : ""}`}
-                    onClick={() => { handleChange("head_teacher_id", String(h.id)); setHeadQuery((h.user?.name ?? h.name ?? h.account) || String(h.id)) }}
-                  >
-                    {h.user?.name ?? h.name ?? h.account}
-                  </li>
-                ))}
-            </ul>
-            <div className="text-xs text-muted-foreground mt-1">Seleccionado: {headTeachers.find(h => String(h.id) === String(form.head_teacher_id))?.user?.name ?? headTeachers.find(h => String(h.id) === String(form.head_teacher_id))?.name ?? "(ninguno)"}</div>
+          {/* TEACHER ID (manual por ahora) */}
+          <div>
+            <label className="text-sm text-muted-foreground">
+              Profesor (teacher_id) — temporal, manual
+            </label>
+            <Input
+              type="number"
+              value={teacherId}
+              onChange={(e) => setTeacherId(e.target.value)}
+              placeholder="Ingresa tu ID de profesor"
+              required
+            />
           </div>
-        </div>
 
-        <div className="flex justify-end gap-3 pt-4">
-          <Button variant="outline" onClick={() => router.push("/dashboard/teacher/exam")}>
-            Cancelar
-          </Button>
-          <Button onClick={submit}>Crear</Button>
-        </div>
+          {/* READONLY */}
+          <div>
+            <label className="text-sm text-muted-foreground">Estado</label>
+            <div className="mt-1">borrador</div>
+          </div>
+
+          {/* ACTIONS */}
+          <div className="flex gap-3">
+            <Link href="/dashboard/teacher/exam">
+              <Button type="button" variant="outline">
+                Cancelar
+              </Button>
+            </Link>
+
+            <Button type="submit">Crear examen</Button>
+          </div>
+        </form>
       </div>
     </main>
   )
