@@ -1,123 +1,59 @@
-// examService.ts
-// Este archivo contiene funciones para gestionar exámenes desde el frontend.
-// Cada función realiza una llamada a la API usando fetch y process.env.NEXT_PUBLIC_API_URL.
-// Se explica cada concepto con comentarios educativos.
+// src/services/examService.ts
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-/**
- * ¿Qué es una API?
- * Una API permite que el frontend y el backend se comuniquen usando HTTP.
- */
-
-/**
- * ¿Qué es un endpoint?
- * Un endpoint es una URL específica en la API para una acción (ej: /exams).
- */
-
-/**
- * ¿Qué es un método HTTP?
- * - GET: obtener datos
- * - POST: crear datos
- * - PUT: actualizar datos
- * - DELETE: eliminar datos
- */
+async function handleResponse(res: Response) {
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  return res.json();
+}
 
 export async function getExams() {
-  // Obtiene la lista de exámenes desde la API (GET)
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      cache: "no-store",
-    })
-    if (!response.ok) throw new Error("Error al obtener exámenes")
-    return await response.json()
-  } catch (error) {
-    console.error("Error en getExams:", error)
-    throw error
-  }
+  const res = await fetch(`${BASE_URL}/app/exam`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+  });
+  return handleResponse(res);
 }
 
-export async function createExam(data: Record<string, any>) {
-  // Crea un nuevo examen en la API (POST)
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(data),
-    })
-    if (!response.ok) throw new Error("Error al crear examen")
-    return await response.json()
-  } catch (error) {
-    console.error("Error en createExam:", error)
-    throw error
-  }
+export async function getExamById(id: string | number) {
+  const res = await fetch(`${BASE_URL}/app/exam/${id}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+  });
+  return handleResponse(res);
 }
 
-export async function updateExam(id: string | number, data: Record<string, any>) {
-  // Actualiza un examen existente en la API (PUT)
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams/${id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(data),
-    })
-    if (!response.ok) throw new Error("Error al actualizar examen")
-    return await response.json()
-  } catch (error) {
-    console.error("Error en updateExam:", error)
-    throw error
-  }
+export async function createExam(payload: Record<string, any>) {
+  const res = await fetch(`${BASE_URL}/app/exam`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
+}
+
+export async function updateExam(id: string | number, payload: Record<string, any>) {
+  const res = await fetch(`${BASE_URL}/app/exam/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse(res);
 }
 
 export async function deleteExam(id: string | number) {
-  // Elimina un examen de la API (DELETE)
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams/${id}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-    })
-    if (!response.ok) throw new Error("Error al eliminar examen")
-    return await response.json()
-  } catch (error) {
-    console.error("Error en deleteExam:", error)
-    throw error
-  }
+  const res = await fetch(`${BASE_URL}/app/exam/${id}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+  return handleResponse(res);
 }
 
-export async function assignExamToStudent(examId: string | number, studentId: string | number) {
-  // Asigna un examen a un estudiante (POST)
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams/${examId}/assign`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ studentId }),
-    })
-    if (!response.ok) throw new Error("Error al asignar examen")
-    return await response.json()
-  } catch (error) {
-    console.error("Error en assignExamToStudent:", error)
-    throw error
-  }
-}
-
-export async function generateExamAutomatically(data: Record<string, any>) {
-  // Genera un examen automáticamente (POST)
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exams/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(data),
-    })
-    if (!response.ok) throw new Error("Error al generar examen automáticamente")
-    return await response.json()
-  } catch (error) {
-    console.error("Error en generateExamAutomatically:", error)
-    throw error
-  }
+// ❗ Importante: el backend NO tiene este endpoint aún
+export async function generateExamAutomatically(_payload: Record<string, any>) {
+  throw new Error("Endpoint de generación automática no implementado en backend.");
 }
