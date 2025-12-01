@@ -3,6 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getExamById, deleteExam } from "@/services/examService";
+import { getSubjectById } from "@/services/subjectService"
+import { getTeacherByID } from "@/services/teacherService"
+import { getParamsById } from "@/services/paramsService"
+import { getHeadTeacherByID } from "@/services/headTeacerService"
 import { Button } from "@/components/ui/button";
 
 export default function ExamDetailsPage({ params }: { params: { id: string } }) {
@@ -11,6 +15,10 @@ export default function ExamDetailsPage({ params }: { params: { id: string } }) 
 
   const [exam, setExam] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [subjectName, setSubjectName] = useState<string | null>(null)
+  const [teacherName, setTeacherName] = useState<string | null>(null)
+  const [paramsLabel, setParamsLabel] = useState<string | null>(null)
+  const [headName, setHeadName] = useState<string | null>(null)
 
   // Cargar examen
   useEffect(() => {
@@ -18,6 +26,39 @@ export default function ExamDetailsPage({ params }: { params: { id: string } }) 
       try {
         const data = await getExamById(id);
         setExam(data);
+        // fetch related names
+        if (data?.subject_id) {
+          try {
+            const s = await getSubjectById(Number(data.subject_id))
+            setSubjectName(s?.name ?? null)
+          } catch (e) {
+            console.error('Error fetching subject name', e)
+          }
+        }
+        if (data?.teacher_id) {
+          try {
+            const t = await getTeacherByID(Number(data.teacher_id))
+            setTeacherName(t?.user?.name ?? t?.name ?? null)
+          } catch (e) {
+            console.error('Error fetching teacher name', e)
+          }
+        }
+        if (data?.parameters_id) {
+          try {
+            const p = await getParamsById(String(data.parameters_id))
+            setParamsLabel(p ? `${p.proportion} / ${p.quest_topics}` : null)
+          } catch (e) {
+            console.error('Error fetching params', e)
+          }
+        }
+        if (data?.head_teacher_id) {
+          try {
+            const h = await getHeadTeacherByID(Number(data.head_teacher_id))
+            setHeadName(h?.user?.name ?? h?.name ?? null)
+          } catch (e) {
+            console.error('Error fetching head teacher', e)
+          }
+        }
       } catch (error) {
         console.error(error);
         alert("Error al cargar el examen.");
@@ -52,10 +93,10 @@ export default function ExamDetailsPage({ params }: { params: { id: string } }) 
           <p><strong>Estado:</strong> {exam.status}</p>
           <p><strong>Dificultad:</strong> {exam.difficulty}</p>
 
-          <p><strong>subject_id:</strong> {exam.subject_id}</p>
-          <p><strong>teacher_id:</strong> {exam.teacher_id}</p>
-          <p><strong>parameters_id:</strong> {exam.parameters_id}</p>
-          <p><strong>head_teacher_id:</strong> {exam.head_teacher_id}</p>
+          <p><strong>Asignatura:</strong> {subjectName ?? exam.subject_id}</p>
+          <p><strong>Profesor:</strong> {teacherName ?? exam.teacher_id}</p>
+          <p><strong>Parametrización:</strong> {paramsLabel ?? exam.parameters_id}</p>
+          <p><strong>Jefe de cátedra:</strong> {headName ?? exam.head_teacher_id}</p>
         </div>
 
         <div className="flex justify-between pt-4">
