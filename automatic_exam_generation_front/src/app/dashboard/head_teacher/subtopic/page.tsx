@@ -87,13 +87,13 @@ export default function SubtopicPage() {
                   )}
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/subtopic/${subtopic.id}/${subtopic.topic_id}`)}>
+              <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/head_teacher/subtopic/${subtopic.id}/${subtopic.topic_id}`)}>
                 Ver detalles
               </Button>
             </div>
           </div>
         )}
-        onAdd={() => router.push("/dashboard/teacher/subtopic/new")}
+        onAdd={() => router.push("/dashboard/head_teacher/subtopic/new")}
       />
     )
 }

@@ -141,40 +141,30 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
             </div>
           </div>
 
+          <div className="grid gap-4">
+            <div>
+              <div className="text-sm text-muted-foreground">Asignaturas que imparte</div>
+              <div className="mt-1">
+                {isLoadingSubjects ? (
+                  <p className="text-sm text-muted-foreground">Comprobando asignaturas...</p>
+                ) : headSubjects.length === 0 ? (
+                  <p className="mt-1 whitespace-pre-wrap">No imparte asignaturas</p>
+                ) : (
+                  <ul className="mt-1 list-disc pl-5">
+                    {subjects.map((s) => (
+                      <li key={s.id}>{s.name || "(Sin nombre)"}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-3 flex-wrap">
             <Link href="/dashboard/teacher/teachers">
               <Button variant="outline">Volver</Button>
             </Link>
           </div>
-        </div>
-
-        <div className="rounded-xl border bg-card p-6 shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium">Asignaturas que imparte</h3>
-          </div>
-
-          {isLoadingSubjects && (
-            <div className="text-sm text-muted-foreground">Cargando asignaturas...</div>
-          )}
-
-          {!isLoadingSubjects && subjects.length === 0 && (
-            <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
-              No hay asignaturas para este profesor.
-            </div>
-          )}
-
-          {!isLoadingSubjects && subjects.length > 0 && (
-            <div className="space-y-3">
-              {subjects.map((s) => (
-                <div
-                  key={s.id}
-                  className="rounded-md border bg-muted/30 hover:bg-muted transition-colors p-4 flex items-center justify-between"
-                >
-                  <div className="font-medium">{s.name || "(Sin nombre)"}</div>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </main>

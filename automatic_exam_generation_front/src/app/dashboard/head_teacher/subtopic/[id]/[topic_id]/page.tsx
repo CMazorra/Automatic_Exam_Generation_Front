@@ -64,7 +64,7 @@ export default function SubtopicView({
           </div>
 
           <div className="flex gap-3">
-            <Link href="/dashboard/teacher/subtopic">
+            <Link href="/dashboard/head_teacher/subtopic">
               <Button variant="outline">Volver</Button>
             </Link>
             <Link
@@ -77,7 +77,7 @@ export default function SubtopicView({
               onClick={async () => {
                 try {
                   await (deleteSubtopic as any)(subtopic.id, subtopic.topic_id)
-                  router.push(`/dashboard/teacher/subtopic`)
+                  router.push(`/dashboard/head_teacher/subtopic`)
                 } catch (e) {
                   console.error(e)
                 }
