@@ -1,8 +1,11 @@
+// app/dashboard/teacher/exam/page.tsx
 "use client"
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getExams, deleteExam } from "@/services/examService"
+import { getCurrentUser } from "@/services/authService"
+import { getTeacherByID } from "@/services/teacherService"
 import { ListViewWithAdd } from "@/components/list-view-with-add"
 import { Button } from "@/components/ui/button"
 
@@ -11,7 +14,7 @@ interface Exam {
   name: string
   status: string
   difficulty: string
-  subject_id: number
+  subject_id: number // Usaremos este campo para filtrar
   teacher_id: number
   parameters_id: number
   head_teacher_id: number
@@ -20,13 +23,69 @@ interface Exam {
 export default function TeacherExamListPage() {
   const router = useRouter()
   const [exams, setExams] = useState<Exam[]>([])
+  const [loading, setLoading] = useState(true) // NUEVO: Estado de carga
 
   useEffect(() => {
-    // Más adelante filtramos por teacher_id
-    getExams()
-      .then(data => setExams(Array.isArray(data) ? data : []))
-      .catch(console.error)
+    async function loadExams() {
+      try {
+        // 1. Obtener el ID del usuario actual (profesor)
+        let finalUserId: number | null = null;
+        try {
+          const user = await getCurrentUser();
+          finalUserId = user?.id ?? null;
+        } catch (e) {
+          // Fallback: Intenta obtener el ID del usuario de localStorage
+          const rawUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+          finalUserId = rawUserId ? Number(rawUserId) : null;
+        }
+
+        if (!finalUserId) {
+          console.error("No se pudo obtener el ID del usuario actual.");
+          setExams([]);
+          return
+        }
+
+        // 2. Obtener los detalles del profesor para saber qué asignatura(s) imparte
+        // Asumimos que el ID de usuario es el mismo que el ID de profesor para getTeacherByID
+        const teacherData = await getTeacherByID(finalUserId)
+        
+        // Obtener la lista de IDs de asignaturas del profesor (Adaptar a tu estructura de datos)
+        let teacherSubjectIds: number[] = [];
+        if (teacherData?.subjects && Array.isArray(teacherData.subjects)) {
+          // Si el backend devuelve un array 'subjects' en el objeto teacher
+          teacherSubjectIds = teacherData.subjects.map((s: any) => s.id).filter(Boolean);
+        } else if (teacherData?.subject_id) {
+          // Si el backend solo devuelve un 'subject_id' directo
+          teacherSubjectIds = [teacherData.subject_id]; 
+        }
+
+        if (teacherSubjectIds.length === 0) {
+          console.log("El profesor no tiene asignaturas asignadas.");
+          setExams([]);
+          return;
+        }
+
+        // 3. Obtener todos los exámenes
+        const allExams: Exam[] = await getExams()
+        
+        // 4. Filtrar los exámenes (Requisito 3: todos los exámenes de la asignatura(s) del profesor)
+        const filteredExams = allExams.filter(exam => 
+          teacherSubjectIds.includes(exam.subject_id)
+        );
+
+        setExams(Array.isArray(filteredExams) ? filteredExams : [])
+      } catch (e) {
+        console.error("Error al cargar o filtrar exámenes", e)
+        // alert("Error al cargar los exámenes.") // Opcional
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    loadExams()
   }, [])
+
+  if (loading) return <p className="p-8">Cargando exámenes...</p>
 
   return (
     <ListViewWithAdd

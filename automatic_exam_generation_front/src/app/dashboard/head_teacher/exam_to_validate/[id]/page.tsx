@@ -9,6 +9,7 @@ import { getParamsById } from "@/services/paramsService";
 import { getHeadTeacherByID } from "@/services/headTeacerService";
 import { getUserById } from "@/services/userService";
 import { postApprovedExam } from "@/services/approvedExamService";
+import { getQuestionById } from "@/services/questionService";
 import { getCurrentUser } from "@/services/authService";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,8 +28,10 @@ export default function ExamToValidateDetailsPage({ params }: { params: { id: st
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [comments, setComments] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [fullQuestions, setFullQuestions] = useState<any[]>([]);
 
   // Cargar usuario actual
   useEffect(() => {
@@ -95,6 +98,31 @@ export default function ExamToValidateDetailsPage({ params }: { params: { id: st
             setHeadName(null);
           }
         }
+
+
+        if (data?.exam_questions && Array.isArray(data.exam_questions) && data.exam_questions.length > 0) {
+          try {
+            // Extraer solo los IDs de las preguntas
+            const questionIds = data.exam_questions
+              .map((eq: any) => eq.question_id)
+              .filter(Boolean);
+
+            // Fetch de todos los detalles de las preguntas en paralelo
+            const questionPromises = questionIds.map((qId: number | string) =>
+              getQuestionById(String(qId)).catch((e) => {
+                console.error(`Error fetching question ${qId}:`, e);
+                return null; // Manejar errores por pregunta
+              })
+            );
+
+            const resolvedQuestions = await Promise.all(questionPromises);
+            setFullQuestions(resolvedQuestions.filter(q => q !== null)); // Guardar solo las que se cargaron correctamente
+          } catch (e) {
+            console.error("Error cargando detalles de preguntas:", e);
+            setFullQuestions([]);
+          }
+        }
+
       } catch (error) {
         console.error(error);
         alert("Error al cargar el examen.");
@@ -167,10 +195,72 @@ export default function ExamToValidateDetailsPage({ params }: { params: { id: st
           <p><strong>Asignatura:</strong> {subjectName ?? exam.subject_id}</p>
           <p><strong>Profesor:</strong> {teacherName ?? exam.teacher_id}</p>
           <p><strong>Parametrización:</strong> {paramsLabel ?? exam.parameters_id}</p>
-          <p><strong>Jefe de Asignatura:</strong> {headName ?? exam.head_teacher_id}</p>
-        </div>
 
-        <div className="flex justify-between pt-4">
+          <p><strong>Jefe de Asignatura:</strong> {headName ?? exam.head_teacher_id}</p>
+        </div>
+
+
+        {fullQuestions.length > 0 && (
+          <div className="pt-6 border-t border-border mt-6 space-y-4">
+            <h3 className="text-xl font-semibold">Preguntas del Examen ({fullQuestions.length})</h3>
+            
+            <ul className="space-y-6">
+              {fullQuestions.map((q: any, index: number) => (
+                <li key={q.id || index} className="border-l-4 border-primary p-3 bg-gray-50 rounded-md">
+                  {/* Título de la pregunta, usando question_text o text */}
+                  <p className="font-medium">
+                    {index + 1}. {q.question_text || q.text || "Pregunta sin texto"}
+                  </p>
+                  
+                  {/* Visualización de Respuestas */}
+                  
+                  {/* Lógica 1: Mostrar Opciones (si el array 'answers' existe) */}
+                  {q.answers && Array.isArray(q.answers) && q.answers.length > 0 ? (
+                    <ul className="mt-2 ml-4 space-y-1 text-sm">
+                      {q.answers.map((a: any, aIndex: number) => (
+                        <li 
+                          key={a.id || aIndex}
+                          // Resalta la respuesta correcta
+                          className={`flex gap-2 items-start ${a.is_correct ? 'text-green-700 font-semibold' : 'text-foreground/80'}`}
+                        >
+                          <span className='pt-0.5'>{a.is_correct ? '✅' : '•'}</span>
+                          <span className={`${a.is_correct ? 'italic' : ''} flex-1`}>
+                            {a.answer_text || a.text || "Respuesta sin texto"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    // Lógica 2: Mostrar Respuesta Única (si el campo 'answer' existe)
+                    q.answer && (
+                      <div className="mt-3 ml-4 p-3 border-l-4 border-green-500 bg-green-50 rounded-r-md text-sm text-green-800">
+                        <p className="font-semibold mb-1 flex items-center gap-2">
+                            <span className="text-base">✅</span> Respuesta Correcta (Teórica/Ensayo):
+                        </p>
+                        <p className="ml-5 mt-1">{q.answer}</p>
+                      </div>
+                    )
+                  )}
+                  
+                  {/* Metadata de la pregunta (dificultad, tipo, temas) */}
+                  <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-gray-200">
+                    <span className="font-semibold">Info:</span>
+                    {q.type && <span> {q.type}</span>}
+                    {(q.type && q.difficulty) && <span className="mx-1">•</span>}
+                    {q.difficulty && <span>{q.difficulty}</span>}
+                    {q.topic?.name && <span className="mx-1">•</span>}
+                    {q.topic?.name && <span>Tema: {q.topic.name}</span>}
+                    {q.sub_topic?.name && <span className="mx-1">•</span>}
+                    {q.sub_topic?.name && <span>Subtema: {q.sub_topic.name}</span>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {/* ----------------------------------------------------------------- */}
+
+        <div className="flex justify-between pt-4">
           <Button variant="outline" onClick={() => router.push("/dashboard/head_teacher/exam_to_validate")}>
             Volver
           </Button>
