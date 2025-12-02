@@ -148,11 +148,16 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
                 {isLoadingSubjects ? (
                   <p className="text-sm text-muted-foreground">Comprobando asignaturas...</p>
                 ) : headSubjects.length === 0 ? (
-                  <p className="mt-1 whitespace-pre-wrap">No imparte asignaturas</p>
+                  <p className="mt-1 whitespace-pre-wrap">No es jefe de asignatura</p>
                 ) : (
                   <ul className="mt-1 list-disc pl-5">
                     {subjects.map((s) => (
-                      <li key={s.id}>{s.name || "(Sin nombre)"}</li>
+                      <div
+                        key={s.id}
+                        className="rounded-md border bg-muted/30 hover:bg-muted transition-colors p-4 flex items-center justify-between"
+                      >
+                        <div className="font-medium">{s.name || "(Sin nombre)"}</div>
+                      </div>
                     ))}
                   </ul>
                 )}
@@ -161,7 +166,7 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
           </div>
 
           <div className="flex gap-3 flex-wrap">
-            <Link href="/dashboard/teacher/teachers">
+            <Link href="/dashboard/student/teachers">
               <Button variant="outline">Volver</Button>
             </Link>
           </div>

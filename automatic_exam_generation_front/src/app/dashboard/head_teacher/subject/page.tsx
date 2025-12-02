@@ -114,7 +114,7 @@ export default function SubjectPage() {
                 )}
               </div>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/subject/${subject.id ?? subject._id ?? subject.subject_id}`)}>
+            <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/head_teacher/subject/${subject.id ?? subject._id ?? subject.subject_id}`)}>
               Ver detalles
             </Button>
           </div>

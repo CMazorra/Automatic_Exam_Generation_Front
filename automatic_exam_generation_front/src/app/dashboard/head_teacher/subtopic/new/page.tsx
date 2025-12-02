@@ -73,7 +73,7 @@ export default function Home() {
       await postSubtopic(
         ({ name: nombre.trim(), ...(selectedTopic ? { topic_id: selectedTopic.id } : {}) } as any)
       )
-      router.push(`/dashboard/teacher/subtopic`)
+      router.push(`/dashboard/head_teacher/subtopic`)
       setNombre("")
       setSelectedTopic(null)
       setTopicQuery("")
@@ -182,7 +182,7 @@ export default function Home() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/dashboard/teacher/subtopic")}
+              onClick={() => router.push("/dashboard/head_teacher/subtopic")}
             >
               Cancelar
             </Button>

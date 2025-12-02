@@ -47,7 +47,7 @@ export default function SubtopicEdit({
     setIsSaving(true)
     try {
       await (updateSubtopic as any)(id, topic_id, { name: nombre.trim() })
-      router.push(`/dashboard/teacher/subtopic/${id}/${topic_id}`)
+      router.push(`/dashboard/head_teacher/subtopic/${id}/${topic_id}`)
     } catch (error) {
       console.error("Error updating subtopic:", error)
     } finally {
