@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createExam } from "@/services/examService"
-import { getSubjects } from "@/services/subjectService"
+import { getSubjects, getSubjectsByTeacherID } from "@/services/subjectService"
 import { getParams } from "@/services/paramsService"
 import { getQuestions } from "@/services/questionService"
 import { getCurrentUser } from "@/services/authService"
@@ -15,6 +15,7 @@ import Link from "next/link"
 interface SubjectOption {
   id: number | string
   name?: string
+  head_teacher_id: number | string
 }
 
 interface ParamsOption {
@@ -113,31 +114,60 @@ export default function ExamCreatePage() {
     loadCurrentUser()
   }, [])
 
+
+  useEffect(() => {
+    let mounted = true
+    if (!teacherId) return // Espera a tener el ID del profesor
+
+    async function loadSubjects() {
+      try {
+        setLoadingSubjects(true)
+        // Usa la función para obtener solo las asignaturas del profesor
+        const subjectsList = await getSubjectsByTeacherID(String(teacherId)).catch(() => [])
+        if (mounted) {
+          setAllSubjects(Array.isArray(subjectsList) ? subjectsList : [])
+        }
+      } catch (err) {
+        console.error("Error cargando asignaturas del profesor:", err)
+      } finally {
+        if (mounted) {
+          setLoadingSubjects(false)
+        }
+      }
+    }
+
+    loadSubjects()
+
+    return () => {
+      mounted = false
+    }
+  }, [teacherId]) // Se ejecuta cuando teacherId cambia o está disponible
+
+
   useEffect(() => {
     let mounted = true
 
     const load = async () => {
       try {
-        setLoadingSubjects(true)
+        // Quitamos la carga de Subjects de este bloque
         setLoadingParams(true)
         setLoadingHeadTeachers(true)
 
-        const [subjectsList, paramsList, headTeachersList] = await Promise.all([
-          getSubjects().catch(() => []),
+        const [paramsList, headTeachersList] = await Promise.all([
           getParams().catch(() => []),
           getHeadTeachers().catch(() => []),
         ])
 
         if (!mounted) return
 
-        setAllSubjects(Array.isArray(subjectsList) ? subjectsList : [])
+        // Quitamos setAllSubjects
         setAllParams(Array.isArray(paramsList) ? paramsList : [])
         setAllHeadTeachers(Array.isArray(headTeachersList) ? headTeachersList : [])
       } catch (err) {
         console.error("Error cargando listas:", err)
       } finally {
         if (mounted) {
-          setLoadingSubjects(false)
+          // Quitamos setLoadingSubjects(false)
           setLoadingParams(false)
           setLoadingHeadTeachers(false)
         }
@@ -178,9 +208,29 @@ export default function ExamCreatePage() {
     }
   }, [isManual])
 
+
   const onSelectSubject = (s: SubjectOption) => {
     setSubjectId(s.id)
     setSubjectQuery(s.name || "")
+
+    // Lógica para auto-seleccionar el Jefe de Asignatura (Requisito 5)
+    if (s.head_teacher_id) {
+      setHeadTeacherId(s.head_teacher_id)
+      // Busca el nombre del jefe en la lista ya cargada (allHeadTeachers)
+      const autoHT = allHeadTeachers.find(ht => String(ht.id) === String(s.head_teacher_id))
+      if (autoHT) {
+        // Resuelve el nombre del Jefe de Asignatura desde el objeto
+        const htName = autoHT.name || autoHT.user?.name || autoHT.teacher?.user?.name || ""
+        setHeadTeacherQuery(htName)
+      } else {
+        // Si no se encuentra, limpia la consulta del nombre para no mostrar un nombre incorrecto
+        setHeadTeacherQuery("")
+      }
+    } else {
+      // Si la asignatura no tiene jefe, limpiamos la selección anterior
+      setHeadTeacherId("")
+      setHeadTeacherQuery("")
+    }
   }
 
   const onSelectParams = (p: ParamsOption) => {
@@ -279,66 +329,106 @@ export default function ExamCreatePage() {
             </select>
           </div>
 
+
           {/* SUBJECT SEARCH */}
           <div>
             <label className="text-sm text-muted-foreground">Asignatura (buscar)</label>
             <input
               value={subjectQuery}
-              onChange={(e) => setSubjectQuery(e.target.value)}
+              onChange={(e) => {
+                setSubjectQuery(e.target.value)
+                // OPCIONAL: Si el usuario borra la búsqueda, quita la selección
+                if (e.target.value === "") setSubjectId("") 
+              }}
               className="w-full mt-1 p-2 border rounded"
               placeholder="Escribe para buscar asignaturas..."
             />
-            <div className="mt-2">
-              {loadingSubjects ? (
-                <div className="text-sm text-muted-foreground">Cargando...</div>
-              ) : (
-                <ul className="border rounded max-h-40 overflow-auto">
-                  {filteredSubjects.map((s) => (
-                    <li
-                      key={s.id}
-                      className={`p-2 cursor-pointer ${String(subjectId) === String(s.id) ? "bg-slate-100" : ""}`}
-                      onClick={() => onSelectSubject(s)}
-                    >
-                      {s.name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              <div className="text-xs text-muted-foreground mt-1">Asignatura seleccionada: {subjectId || "(ninguna)"}</div>
+            
+            {/* Condición para mostrar la lista de sugerencias: */}
+            {/* 1. La búsqueda no está vacía, O */}
+            {/* 2. Hay una selección, pero la búsqueda no coincide exactamente con el nombre (para poder re-seleccionar) */}
+            {(subjectQuery.length > 0 && 
+              (String(subjectId) === "" || subjectQuery !== allSubjects.find(s => String(s.id) === String(subjectId))?.name)
+            ) && (
+              <div className="mt-2">
+                {loadingSubjects ? (
+                  <div className="text-sm text-muted-foreground">Cargando...</div>
+                ) : (
+                  <ul className="border rounded max-h-40 overflow-auto">
+                    {filteredSubjects.map((s) => (
+                      <li
+                        key={s.id}
+                        className={`p-2 cursor-pointer ${String(subjectId) === String(s.id) ? "bg-slate-100 font-medium" : "hover:bg-gray-50"}`}
+                        onClick={() => onSelectSubject(s)}
+                      >
+                        {s.name}
+                        {/* Etiqueta de selección solo si está en la lista visible */}
+                        {String(subjectId) === String(s.id) && <span className="text-xs ml-2 text-green-600">(Seleccionada)</span>}
+                      </li>
+                    ))}
+                    {filteredSubjects.length === 0 && <li className="p-2 text-sm text-muted-foreground">No hay asignaturas que coincidan.</li>}
+                  </ul>
+                )}
+              </div>
+            )}
+            {/* MENSAJE DE CONFIRMACIÓN - Lo mantienes como estaba, pero con el nombre resuelto */}
+            <div className="text-xs text-muted-foreground mt-1">
+              Asignatura seleccionada: {
+                  allSubjects.find(s => String(s.id) === String(subjectId))?.name || "(ninguna)"
+              }
             </div>
           </div>
 
           {/* HEAD TEACHER SEARCH */}
           <div>
             <label className="text-sm text-muted-foreground">Jefe de Asignatura (buscar)</label>
+
+
             <input
               value={headTeacherQuery}
-              onChange={(e) => setHeadTeacherQuery(e.target.value)}
+              onChange={(e) => {
+                setHeadTeacherQuery(e.target.value)
+                // OPCIONAL: Si el usuario borra la búsqueda, quita la selección
+                if (e.target.value === "") setHeadTeacherId("")
+              }}
               className="w-full mt-1 p-2 border rounded"
+              // NUEVO: Deshabilitar si ya se ha seleccionado una asignatura (subjectId) y el jefe de asignatura (headTeacherId)
+              disabled={!!subjectId && !!headTeacherId}
               placeholder="Escribe para buscar jefe de asignatura..."
             />
-            <div className="mt-2">
-              {loadingHeadTeachers ? (
-                <div className="text-sm text-muted-foreground">Cargando...</div>
-              ) : (
-                <ul className="border rounded max-h-40 overflow-auto">
-                  {filteredHeadTeachers.map((ht) => {
-                    const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || `ID: ${ht.id}`
-                    return (
-                      <li
-                        key={ht.id}
-                        className={`p-2 cursor-pointer ${String(headTeacherId) === String(ht.id) ? "bg-slate-100" : ""}`}
-                        onClick={() => onSelectHeadTeacher(ht)}
-                      >
-                        {htName}
-                      </li>
-                    )
-                  })}
-                </ul>
-              )}
-
-              <div className="text-xs text-muted-foreground mt-1">Jefe seleccionado: {headTeacherId || "(ninguno)"}</div>
+            {/* Condición para mostrar sugerencias de Jefes: si la consulta no está vacía Y el ID aún no está seleccionado */}
+            {(headTeacherQuery.length > 0 && String(headTeacherId) === "") && (
+              <div className="mt-2">
+                {loadingHeadTeachers ? (
+                  <div className="text-sm text-muted-foreground">Cargando...</div>
+                ) : (
+                  <ul className="border rounded max-h-40 overflow-auto">
+                    {filteredHeadTeachers.map((ht) => {
+                      const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || `ID: ${ht.id}`
+                      return (
+                        <li
+                          key={ht.id}
+                          className={`p-2 cursor-pointer ${String(headTeacherId) === String(ht.id) ? "bg-slate-100 font-medium" : "hover:bg-gray-50"}`}
+                          onClick={() => onSelectHeadTeacher(ht)}
+                        >
+                          {htName}
+                          {String(headTeacherId) === String(ht.id) && <span className="text-xs ml-2 text-green-600">(Seleccionado)</span>}
+                        </li>
+                      )
+                    })}
+                    {filteredHeadTeachers.length === 0 && <li className="p-2 text-sm text-muted-foreground">No hay jefes de asignatura que coincidan.</li>}
+                  </ul>
+                )}
+              </div>
+            )}
+            {/* MENSAJE DE CONFIRMACIÓN */}
+            <div className="text-xs text-muted-foreground mt-1">
+              Jefe seleccionado: {
+                  allHeadTeachers.find(ht => String(ht.id) === String(headTeacherId))?.name || 
+                  allHeadTeachers.find(ht => String(ht.id) === String(headTeacherId))?.user?.name || 
+                  allHeadTeachers.find(ht => String(ht.id) === String(headTeacherId))?.teacher?.user?.name || 
+                  "(ninguno)"
+              }
             </div>
           </div>
 
