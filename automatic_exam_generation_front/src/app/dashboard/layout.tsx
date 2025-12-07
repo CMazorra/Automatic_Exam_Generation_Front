@@ -1,13 +1,28 @@
 "use client"
 
-import React from "react"
+import React, { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { getCurrentUser } from "@/services/authService"
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const [userRole, setUserRole] = useState<string>("Usuario")
+
+  useEffect(() => {
+    const loadUserRole = async () => {
+      try {
+        const user = await getCurrentUser()
+        setUserRole(user.role || "Usuario")
+      } catch (error) {
+        console.error("Error al cargar el rol del usuario:", error)
+        setUserRole("Usuario")
+      }
+    }
+    loadUserRole()
+  }, [])
 
   const openNotifications = () => {
     alert("Notificaciones (panel pendiente)")
@@ -15,7 +30,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = async () => {
     try {
-      // Ajusta la URL si usas una variable de entorno distinta
       const url = `${process.env.NEXT_PUBLIC_API_URL ?? ""}/auth/logout`
       const res = await fetch(url, {
         method: "POST",
@@ -27,12 +41,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     } catch (err) {
       console.error("Error logout:", err)
     } finally {
-      // Borrar cookies accesibles desde client-side
       if (typeof document !== "undefined") {
         document.cookie = "aeg_role=; Path=/; Max-Age=0; SameSite=Lax"
         document.cookie = "aeg_head=; Path=/; Max-Age=0; SameSite=Lax"
       }
-      // Redirigir al login (middleware debería reenviar correctamente)
       router.push("/auth/login")
     }
   }
@@ -63,7 +75,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </svg>
             </button>
 
-            {/* Botón de logout añadido */}
             <Button onClick={handleLogout} className="px-3 py-2 rounded-md">
               Cerrar sesión
             </Button>
@@ -71,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="relative">
               <button className="flex items-center gap-2 rounded-full px-3 py-1 bg-muted text-muted-foreground hover:bg-muted/80" aria-label="profile menu">
                 <span className="w-8 h-8 rounded-full bg-primary inline-block" />
-                <span className="text-sm">Admin</span>
+                <span className="text-sm">{userRole}</span>
               </button>
             </div>
           </div>
