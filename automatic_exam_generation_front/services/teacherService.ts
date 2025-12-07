@@ -1,3 +1,10 @@
+
+// src/services/teacherService.ts
+
+interface Teacher {
+    id: number;
+    name: string;
+}
 export async function getTeachers() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/teacher`, {
@@ -91,4 +98,17 @@ export async function getTeachersBySubjectID(id: string) {
     console.error("Error en getTeachersBySubjectID:", error);
     throw error;
   }
+}
+
+
+
+// SIMULACIÓN: En un sistema real, esto llamaría a un endpoint /teachers
+export async function getReviewTeachers(): Promise<Teacher[]> {
+    // En el futuro, podrías filtrar profesores por asignatura o nivel.
+    // Por ahora, simulamos una lista fija:
+    return [
+        { id: 101, name: "Prof. Ana García (Matemáticas)" },
+        { id: 102, name: "Prof. Luis Pérez (Ingeniería)" },
+        { id: 103, name: "Prof. Elena Soto (Ciencias)" },
+    ];
 }
