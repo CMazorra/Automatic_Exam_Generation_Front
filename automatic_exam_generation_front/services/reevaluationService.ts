@@ -68,7 +68,7 @@ export async function getReevaluationById(exam_id: number , student_id: number, 
 export async function updateReevaluation(exam_id: number, student_id: number, teacher_id: number, reevaluation: { score: number }) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation/${exam_id}/${student_id}/${teacher_id}`, {
-      method: "PUT",
+      method: "PATCH",
       headers: {
         "Content-Type": "application/json",
       },

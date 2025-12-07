@@ -208,8 +208,8 @@ export default function TeacherExamToReviewPage() {
               onClick={() =>
                 router.push(
                   examStudent.isReevaluation
-                    ? `/dashboard/teacher/exam_to_review/${examStudent.exam_id}/${examStudent.student_id}/${examStudent.teacher_id}`
-                    : `/dashboard/teacher/exam_to_review/${examStudent.exam_id}/${examStudent.student_id}`
+                    ? `/dashboard/head_teacher/exam_to_review/${examStudent.exam_id}/${examStudent.student_id}/${examStudent.teacher_id}`
+                    : `/dashboard/head_teacher/exam_to_review/${examStudent.exam_id}/${examStudent.student_id}`
                 )
               }
             >
