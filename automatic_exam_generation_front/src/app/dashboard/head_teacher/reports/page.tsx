@@ -28,7 +28,7 @@ const reports: Report[] = [
     title: 'Exámenes Generados Automáticamente',
     description: 'Listado de exámenes generados automáticamente para una asignatura específica, con nombre del creador, fecha de creación y parámetros utilizados.',
     icon: <BarChart3 className="w-8 h-8" />,
-    path: '/dashboard/teacher/reports/generatedExamsBySubject',
+    path: '/dashboard/head_teacher/reports/generatedExamsBySubject',
     color: 'bg-blue-50 border-blue-200',
   },
   {
@@ -36,7 +36,7 @@ const reports: Report[] = [
     title: 'Preguntas Más Utilizadas',
     description: 'Preguntas más utilizadas en los exámenes finales de una asignatura, clasificadas por nivel de dificultad y tema.',
     icon: <TrendingUp className="w-8 h-8" />,
-    path: '/dashboard/teacher/reports/mostUsedQuestions',
+    path: '/dashboard/head_teacher/reports/mostUsedQuestions',
     color: 'bg-green-50 border-green-200',
   },
   {
@@ -44,7 +44,7 @@ const reports: Report[] = [
     title: 'Exámenes Validados',
     description: 'Exámenes que fueron validados por un revisor determinado, indicando la fecha de validación y observaciones del proceso.',
     icon: <CheckCircle className="w-8 h-8" />,
-    path: '/dashboard/teacher/reports/approvedByHeadTeacher',
+    path: '/dashboard/head_teacher/reports/approvedByHeadTeacher',
     color: 'bg-emerald-50 border-emerald-200',
   },
   {
@@ -52,7 +52,7 @@ const reports: Report[] = [
     title: 'Desempeño del Examen',
     description: 'Reporte sobre el desempeño de los estudiantes en un examen, clasificando preguntas por dificultad y comparando tasas de acierto.',
     icon: <Users className="w-8 h-8" />,
-    path: '/dashboard/teacher/reports/examPerformance',
+    path: '/dashboard/head_teacher/reports/examPerformance',
     color: 'bg-purple-50 border-purple-200',
   },
   {
@@ -60,7 +60,7 @@ const reports: Report[] = [
     title: 'Análisis de Dificultad y Rendimiento',
     description: 'Correlación entre el nivel de dificultad de preguntas y rendimiento de estudiantes. Identifica las 10 preguntas con mayor tasa de reprobación, autor y asignatura.',
     icon: <AlertCircle className="w-8 h-8" />,
-    path: '/dashboard/teacher/reports/questionStudentCorrelation',
+    path: '/dashboard/head_teacher/reports/questionStudentCorrelation',
     color: 'bg-red-50 border-red-200',
   },
   {
@@ -68,7 +68,7 @@ const reports: Report[] = [
     title: 'Comparativa de Exámenes',
     description: 'Comparar exámenes generados para diferentes asignaturas, verificando distribución de preguntas por tema, dificultad y criterios de equilibrio.',
     icon: <GitCompare className="w-8 h-8" />,
-    path: '/dashboard/teacher/reports/compareExams',
+    path: '/dashboard/head_teacher/reports/compareExams',
     color: 'bg-orange-50 border-orange-200',
   },
   {
@@ -76,7 +76,7 @@ const reports: Report[] = [
     title: 'Registro de Revisores',
     description: 'Profesores que han revisado exámenes en los últimos dos semestres, especificando asignatura y número de exámenes revisados.',
     icon: <Clock className="w-8 h-8" />,
-    path: '/dashboard/teacher/reports/teachersReview',
+    path: '/dashboard/head_teacher/reports/teachersReview',
     color: 'bg-indigo-50 border-indigo-200',
   },
 ];

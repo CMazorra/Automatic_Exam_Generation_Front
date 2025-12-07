@@ -45,11 +45,11 @@ export default function ParamsPage() {
           <div className="rounded-lg border border-border bg-card p-4 transition-colors hover:bg-accent/5">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-semibold text-card-foreground text-sm">Cantidad: {param.amount_quest}</h3>
-              {prop.map(p => (
-                <span key={p.type} className="text-xs px-2 py-1 rounded bg-muted">{p.pct}% {p.type}</span>
+              {prop.map((p, index) => (
+                <span key={`${p.type}-${index}`} className="text-xs px-2 py-1 rounded bg-muted">{p.pct}% {p.type}</span>
               ))}
-              {topics.map(t => (
-                <span key={t} className="text-xs px-2 py-1 rounded bg-secondary/40">{t}</span>
+              {topics.map((t, index) => (
+                <span key={`topic-${index}`} className="text-xs px-2 py-1 rounded bg-secondary/40">{t}</span>
               ))}
               {topics.length === 0 && <span className="text-xs text-muted-foreground">Sin temas</span>}
               <div className="ml-auto flex gap-2">

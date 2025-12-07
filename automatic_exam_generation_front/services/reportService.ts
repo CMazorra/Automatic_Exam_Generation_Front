@@ -159,6 +159,29 @@ export async function getReevaluationComparison() {
   }
 }
 
+export async function getCompareExams() {
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports/compare-exams`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al obtener la comparación de exámenes");
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error en getCompareExams:", error);
+    throw error;
+  }
+}
+
 export async function getTeachersReview() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports/teachers-review-report`, {

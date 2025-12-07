@@ -1,4 +1,3 @@
-import { getTeacherById } from '@/services/userService';
 export async function getTeachers() {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/teacher`, {
