@@ -51,7 +51,7 @@ export default function ExamsDonePage() {
                     );
 
                     // Condición: Aparece en exam_students Y score != 0
-                    if (studentRecord && studentRecord.score !== 0) {
+                    if (studentRecord && studentRecord.score >= 0) {
                         (exam as any).studentScore = studentRecord.score;
                         realizados.push(exam);
                     }
@@ -104,7 +104,7 @@ export default function ExamsDonePage() {
 
                         <CardContent className="flex justify-between items-center pt-0">
                             <p className="text-xl font-bold">
-                                {(exam as any).studentScore === -1 ? (
+                                {(exam as any).studentScore === 0 ? (
                                     <span className="text-orange-500">Pendiente de Revisión</span>
                                 ) : (
                                     <>
@@ -123,7 +123,7 @@ export default function ExamsDonePage() {
                                         router.push(`/dashboard/student/exam_done/${exam.id}/review`)
                                     }
                                 >
-                                    { (exam as any).studentScore === -1
+                                    { (exam as any).studentScore > 0
                                         ? "Ver Estado"
                                         : "Ver Revisión"
                                     }

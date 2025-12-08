@@ -19,7 +19,7 @@ interface Question {
     id: number;
     question_text: string;
     // TIPOS CORREGIDOS: 'Argumentación' para el texto libre y 'Selección Múltiple'
-    type: 'Argumentación' | 'Verdadero/Falso' | 'Selección Múltiple'; 
+    type: 'Argumentación' | 'VoF' | 'Selección Múltiple'; 
     difficulty: string;
     // Asegúrate que tu servicio getQuestionById trae las opciones en el campo 'answers' si es 'Selección Múltiple'
     answers?: { id: number; answer_text: string; is_correct: boolean }[]; 
@@ -96,6 +96,7 @@ export default function AnswerExamPage() {
         switch (q.type) {
             // Utilizamos Textarea para Argumentación
             case 'Argumentación': 
+            // case 'VoF':
             // AÑADIMOS 'Selección Múltiple' para que use el mismo input de texto
             case 'Selección Múltiple':
                 return (
@@ -107,7 +108,7 @@ export default function AnswerExamPage() {
                     />
                 );
                 
-            case 'Verdadero/Falso':
+            case 'VoF':
                 // Este caso se mantiene con los radio buttons, ya que es un formato cerrado
                 return (
                     <div className="flex space-x-8">
@@ -157,7 +158,7 @@ export default function AnswerExamPage() {
             await postStudentAnswers(answersPayload);
             
             // 2. Marcar el examen como ENVIADO/PENDIENTE DE CALIFICACIÓN (score: -1)
-            const scorePayload = { score: -1 }; 
+            const scorePayload = { score: 0 }; 
             await updateExamStudent(exam.id, studentId, scorePayload);
             
             alert("Examen enviado con éxito. Pendiente de Calificación.");

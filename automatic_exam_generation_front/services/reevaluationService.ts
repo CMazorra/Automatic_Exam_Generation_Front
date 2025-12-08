@@ -37,11 +37,17 @@ export async function getReevaluations() {
 // CREATE: Solicitar una recalificación (Usado por el estudiante)
 // ----------------------------------------------------
 // Nota: La función postRecalificationRequest solo necesita los IDs, y establece score: 0 por defecto.
+
+/**
+ * Crea una solicitud de recalificación. Establece el score a 0
+ * para indicar que está pendiente de revisión por el profesor.
+ */
 export async function postRecalificationRequest(data: Omit<ReevaluationRequest, 'score'>) {
     try {
+        // 🎯 AÑADIR score: 0 al payload antes de enviar
         const payload: ReevaluationRequest = {
             ...data,
-            score: 0, // Inicializamos en 0 para indicar "pendiente de calificación"
+            score: 0, 
         };
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation`, {
@@ -50,7 +56,7 @@ export async function postRecalificationRequest(data: Omit<ReevaluationRequest, 
                 "Content-Type": "application/json",
             },
             credentials: "include",
-            body: JSON.stringify(payload),
+            body: JSON.stringify(payload), // 🎯 Usar el payload con score: 0
         });
 
         if (!response.ok) {
@@ -65,7 +71,6 @@ export async function postRecalificationRequest(data: Omit<ReevaluationRequest, 
         throw error;
     }
 }
-
 // ----------------------------------------------------
 // READ: Obtener una reevaluación específica por claves
 // ----------------------------------------------------

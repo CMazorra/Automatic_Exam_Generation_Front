@@ -32,8 +32,11 @@ export async function getStudentByID(id: number) {
       cache: "no-store",
     });
 
-    if (!response.ok) {
-      throw new Error("Error al obtener el estudiante");
+    if (!response.ok) {
+        // AÑADIDO: Capturamos el estado HTTP y el mensaje del servidor
+        const status = response.status;
+        const errorDetail = await response.text().catch(() => "Mensaje no disponible");
+        throw new Error(`Error al obtener los estudiantes (Estado: ${status}, Detalle: ${errorDetail})`);
     }
 
     const data = await response.json();
