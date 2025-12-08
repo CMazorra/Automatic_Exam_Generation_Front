@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useParams, useRouter } from 'next/navigation';
 import { Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { checkIfRecalificationExists } from '@/services/reevaluationService';
 
 // ------------------------------------------------------------
 
@@ -86,6 +87,7 @@ export default function ExamReviewPage() {
 
     const [loading, setLoading] = useState(true);
     const [reviewQuestions, setReviewQuestions] = useState<ReviewQuestion[]>([]);
+    const [hasRecalification, setHasRecalification] = useState(false);
     const [examName, setExamName] = useState('Revisión de Examen');
     const [globalScore, setGlobalScore] = useState<number | null>(null);
     const [maxTotalScore, setMaxTotalScore] = useState(0);
@@ -108,6 +110,10 @@ export default function ExamReviewPage() {
                 const studentId = user?.id ?? null;
 
                 if (!studentId) return;
+
+                // 🔑 PASO CLAVE: Verificar la existencia de recalificación
+                const existingRecalification = await checkIfRecalificationExists(examId, studentId);
+                setHasRecalification(existingRecalification);
 
                 const examStudent: ExamStudentResult = await getExamStudentById(examId, studentId);
                 setGlobalScore(examStudent.score);
@@ -201,14 +207,18 @@ export default function ExamReviewPage() {
                         </p>
                     )}
 
-                    {isCalificado && (
+                    {isCalificado && !hasRecalification ? ( // 🔑 Condición Agregada
                         <Button
                             className="mt-4"
                             onClick={handleRecalificacionClick}
                         >
                             Solicitar Recalificación
                         </Button>
-                    )}
+                    ) : isCalificado && hasRecalification ? ( // 🔑 Mostrar mensaje si ya hay una
+                        <p className="mt-4 text-sm text-amber-600 font-medium">
+                            Ya existe una solicitud de recalificación para este examen.
+                        </p>
+                    ) : null}
                 </CardContent>
             </Card>
 

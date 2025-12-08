@@ -141,3 +141,40 @@ export async function deleteReevaluation(exam_id: number, student_id: number, te
         throw error;
     }
 }
+
+/**
+ * Verifica si ya existe una solicitud de reevaluación para un examen y estudiante.
+ * Retorna true si existe, false si no.
+ */
+export async function checkIfRecalificationExists(exam_id: number, student_id: number): Promise<boolean> {
+    try {
+        // Asumo que el endpoint '/reevaluation/exam/{exam_id}/student/{student_id}' 
+        // devuelve una lista de reevaluaciones o un error 404/lista vacía si no existe.
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation/exam/${exam_id}/student/${student_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            cache: "no-store",
+        });
+
+        if (!response.ok) {
+            // Si el backend devuelve 404, asumimos que no hay reevaluaciones.
+            if (response.status === 404) {
+                return false;
+            }
+            throw new Error(`Error al verificar reevaluación (Estado: ${response.status})`);
+        }
+
+        const data = await response.json();
+        
+        // Retorna true si la lista de resultados no está vacía
+        return Array.isArray(data) && data.length > 0;
+        
+    } catch (error) {
+        console.error("Error en checkIfRecalificationExists:", error);
+        // En caso de error de red o similar, mejor permitir la solicitud para no bloquear al usuario
+        return false; 
+    }
+}

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { getCurrentUser } from '@/services/authService';
 import { getExams } from '@/services/examService';
 import { Button } from '@/components/ui/button';
+import { getAnswers } from '@/services/answerService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 
@@ -24,6 +25,12 @@ interface Exam {
     exam_students: ExamStudent[];
 }
 
+// Interfaz para las respuestas para facilitar el tipado en el filtro
+interface Answer {
+    exam_id: number;
+    student_id: number;
+}
+
 export default function ExamsToDoPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
@@ -38,16 +45,36 @@ export default function ExamsToDoPage() {
 
                 if (!currentStudentId) return;
 
-                const allExams: Exam[] = await getExams();
+                const [allExamsData, allAnswersData] = await Promise.all([
+                    getExams(),
+                    getAnswers(), // 🔑 Obtener todas las respuestas
+                ]);
+                
+                const allExams: Exam[] = Array.isArray(allExamsData) ? allExamsData : [];
+                const allAnswers: Answer[] = Array.isArray(allAnswersData) ? allAnswersData : [];
+
                 const pendientes: Exam[] = [];
 
                 allExams.forEach(exam => {
                     const studentRecord = exam.exam_students.find(es => es.student_id === currentStudentId);
                     
-                    // ✔️ Correcto: TO-DO si score === 0 Y el examen está asignado
-                    if (studentRecord && studentRecord.score === 0 && exam.status === "Asignado") {
+                    // 🔑 NUEVA LÓGICA DE FILTRADO: Verificar si el estudiante ya tiene respuestas enviadas
+                    const hasAnswered = allAnswers.some(
+                        (answer: Answer) => 
+                            answer.exam_id === exam.id && 
+                            answer.student_id === currentStudentId
+                    );
+
+                    // Un examen está "TO DO" (Pendiente de hacer) si:
+                    // 1. Está asignado al estudiante (existe studentRecord)
+                    // 2. El status es "Asignado" (para evitar exámenes cancelados/finalizados)
+                    // 3. El estudiante AÚN NO ha respondido (¡hasAnswered es false!)
+                    if (studentRecord && exam.status === "Asignado" && !hasAnswered) {
                         pendientes.push(exam);
                     }
+                    
+                    // Nota: Ya no necesitamos studentRecord.score === 0 aquí, 
+                    // ya que la falta de respuestas es el indicador principal de 'TO DO'.
                 });
                 
                 setExamsPendientes(pendientes);
