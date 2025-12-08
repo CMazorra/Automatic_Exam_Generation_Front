@@ -16,7 +16,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { useRouter } from 'next/navigation';
 import { getSubjects } from '@/services/subjectService';
 
 interface Subject {
