@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { getExamStudents } from "@/services/examStudentService"
 import { getAnswers } from "@/services/answerService"
 import { getExamById } from "@/services/examService"
-import { getUserById } from "@/services/userService"
+import { getStudentByID } from "@/services/studentService"
 import { getCurrentUser } from "@/services/authService"
 import { getSubjectsByTeacherID } from "@/services/subjectService"
 import { getReevaluations } from "@/services/reevaluationService"
@@ -79,7 +79,7 @@ export default function TeacherExamToReviewPage() {
                 const exam = await getExamById(es.exam_id)
                 if (!subjectIds.has(exam?.subject_id)) return null
 
-                const student = await getUserById(es.student_id)
+                const student = await getStudentByID(es.student_id)
                 const answerCount = answers.filter(
                   (answer: any) =>
                     answer.exam_id === es.exam_id &&
@@ -93,7 +93,7 @@ export default function TeacherExamToReviewPage() {
                   teacher_id: es.teacher_id,
                   score: es.score,
                   examName: exam?.name || `Examen ${es.exam_id}`,
-                  studentName: student?.name || `Estudiante ${es.student_id}`,
+                  studentName: student?.user?.name || `Estudiante ${es.student_id}`,
                   answerCount,
                   isReevaluation: false,
                 } as ExamStudentWithDetails
@@ -121,7 +121,7 @@ export default function TeacherExamToReviewPage() {
                 const exam = await getExamById(rv.exam_id)
                 if (!subjectIds.has(exam?.subject_id)) return null
 
-                const student = await getUserById(rv.student_id)
+                const student = await getStudentByID(rv.student_id)
                 const answerCount = answers.filter(
                   (answer: any) =>
                     answer.exam_id === rv.exam_id &&
