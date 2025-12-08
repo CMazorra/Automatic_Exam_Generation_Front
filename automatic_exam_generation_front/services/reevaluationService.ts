@@ -7,6 +7,14 @@ export interface ReevaluationRequest {
     score: number;
 }
 
+export interface ReevaluationResponse { // Definir la interfaz de respuesta para filtrar
+    exam_id: number;
+    student_id: number;
+    teacher_id: number;
+    score: number;
+    // (Puede haber más campos como 'exam_student', pero estos son suficientes para el filtro)
+}
+
 // ----------------------------------------------------
 // READ: Obtener todas las reevaluaciones
 // ----------------------------------------------------
@@ -21,10 +29,12 @@ export async function getReevaluations() {
             cache: "no-store",
         });
 
-        if (!response.ok) {
-            throw new Error("Error al obtener las reevaluaciones");
-        }
-
+    if (!response.ok) {
+        // AÑADIDO: Capturamos el estado HTTP y el mensaje del servidor
+        const status = response.status;
+        const errorDetail = await response.text().catch(() => "Mensaje no disponible");
+        throw new Error(`Error al obtener las reevaluaciones: ${status}, Detalle: ${errorDetail})`);
+    }
         const data = await response.json();
         return data;
     } catch (error) {
@@ -143,38 +153,26 @@ export async function deleteReevaluation(exam_id: number, student_id: number, te
 }
 
 /**
- * Verifica si ya existe una solicitud de reevaluación para un examen y estudiante.
+ * Verifica si ya existe una solicitud de reevaluación para un examen y estudiante, 
+ * filtrando la lista completa obtenida del backend.
  * Retorna true si existe, false si no.
  */
 export async function checkIfRecalificationExists(exam_id: number, student_id: number): Promise<boolean> {
     try {
-        // Asumo que el endpoint '/reevaluation/exam/{exam_id}/student/{student_id}' 
-        // devuelve una lista de reevaluaciones o un error 404/lista vacía si no existe.
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation/exam/${exam_id}/student/${student_id}`, {
-            method: "GET",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            credentials: "include",
-            cache: "no-store",
-        });
+        // 1. Obtener TODAS las reevaluaciones (usando el endpoint que sí existe)
+        const allReevaluations: ReevaluationResponse[] = await getReevaluations();
 
-        if (!response.ok) {
-            // Si el backend devuelve 404, asumimos que no hay reevaluaciones.
-            if (response.status === 404) {
-                return false;
-            }
-            throw new Error(`Error al verificar reevaluación (Estado: ${response.status})`);
-        }
+        // 2. Filtrar los datos en el frontend por exam_id y student_id
+        const existingRecalification = allReevaluations.find(reval =>
+            reval.exam_id === exam_id && reval.student_id === student_id
+        );
 
-        const data = await response.json();
-        
-        // Retorna true si la lista de resultados no está vacía
-        return Array.isArray(data) && data.length > 0;
+        // 3. Si se encuentra alguna, retorna true
+        return !!existingRecalification;
         
     } catch (error) {
-        console.error("Error en checkIfRecalificationExists:", error);
-        // En caso de error de red o similar, mejor permitir la solicitud para no bloquear al usuario
+        // Si hay un error al obtener la lista completa, asumimos que no hay solicitud para evitar bloquear al usuario
+        console.error("Error al verificar reevaluación (Filtro manual):", error);
         return false; 
     }
 }
