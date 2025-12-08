@@ -1,24 +1,31 @@
-// app/dashboard/student/recalification/[id]/page.tsx
+// src/app/dashboard/student/recalification/[id]/page.tsx
 
-"use client"
+"use client";
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getCurrentUser } from '@/services/authService';
-import { getReviewTeachers } from '@/services/teacherService';
-import { postRecalificationRequest } from '@/services/answerService'; 
+// Importamos la nueva función combinada
+import { getTeachersWithSubjects } from '@/services/teacherService'; 
+import { postRecalificationRequest } from '@/services/reevaluationService'; 
 import { getExamStudentById } from '@/services/examStudentService'; 
 import { getExamById } from '@/services/examService';
 
-// Componentes de UI
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react'; 
 
+interface Subject {
+    id: number;
+    name: string;
+}
+
 interface Teacher {
     id: number;
     name: string;
+    // La función combinada nos da el array de subjects
+    subjects?: Subject[]; 
 }
 
 export default function ReevaluationRequestPage() {
@@ -28,11 +35,15 @@ export default function ReevaluationRequestPage() {
 
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    
+    // El tipo debe reflejar la nueva interfaz Teacher (que incluye subjects)
     const [availableTeachers, setAvailableTeachers] = useState<Teacher[]>([]);
     const [selectedTeacherId, setSelectedTeacherId] = useState<number | null>(null);
+    
     const [studentId, setStudentId] = useState<number | null>(null);
     const [globalScore, setGlobalScore] = useState<number | null>(null);
     const [examName, setExamName] = useState('Examen');
+    const [subjectId, setSubjectId] = useState<number | null>(null);
 
     useEffect(() => {
         if (!examId) return;
@@ -50,21 +61,33 @@ export default function ReevaluationRequestPage() {
                     return;
                 }
 
-                // Obtener nombre del examen
-                const examDetail: any = await getExamById(examId);
+                // 1. Obtener datos del examen (incluye subject_id)
+                const examDetail = await getExamById(examId);
                 setExamName(examDetail.name);
-                
-                // Obtener registro examen-estudiante
-                const examStudent: any = await getExamStudentById(examId, currentStudentId);
+                const currentSubjectId = Number(examDetail.subject_id);
+                setSubjectId(currentSubjectId);
+
+                // 2. Obtener nota actual
+                const examStudent = await getExamStudentById(examId, currentStudentId);
                 setGlobalScore(examStudent.score);
 
-                // Obtener profesores revisores
-                const teachers = await getReviewTeachers();
-                setAvailableTeachers(teachers);
+                // 3. Obtener TODOS los profesores con sus asignaturas
+                if (currentSubjectId) {
+                    const allTeachersWithSubjects: Teacher[] = await getTeachersWithSubjects();
+
+                    // 4. FILTRAR en el Frontend por subject_id
+                    const teachersForSubject = allTeachersWithSubjects.filter(t => 
+                        t.subjects && t.subjects.some(s => s.id === currentSubjectId)
+                    );
+                    
+                    setAvailableTeachers(teachersForSubject);
+                } else {
+                    console.warn("El examen no tiene un subject_id asociado.");
+                }
 
             } catch (e) {
                 console.error("Error al cargar datos:", e);
-                alert("Error al cargar la información necesaria para la recalificación.");
+                alert("Error al cargar la información necesaria.");
                 router.back(); 
             } finally {
                 setLoading(false);
@@ -75,19 +98,14 @@ export default function ReevaluationRequestPage() {
     }, [examId, router]);
 
 
-    /** --------------------------------------------------------
-     *  ENVÍO DE SOLICITUD DE RE-CALIFICACIÓN
-     *  - NO SE ENVÍA score (backend lo maneja en 0)
-     * --------------------------------------------------------*/
     const handleReevaluationSubmit = async () => {
         if (!studentId || !examId || selectedTeacherId === null || globalScore === null) {
-            alert("Datos incompletos. Asegúrate de seleccionar un profesor.");
+            alert("Datos incompletos. Selecciona un profesor.");
             return;
         }
 
-        // Validación de que el examen está calificado
-        if (globalScore === -1 || globalScore === 0) {
-            alert("Solo puedes solicitar recalificación si el examen ya fue calificado.");
+        if (globalScore <= 0) {
+            alert("Solo puedes solicitar recalificación si el examen ya tiene una nota válida.");
             return;
         }
 
@@ -102,48 +120,42 @@ export default function ReevaluationRequestPage() {
 
         setSubmitting(true);
         try {
-            // ⚠️ NO ENVIAR score — el backend define score=0 cuando entra en reevaluación
-            await postRecalificationRequest(examId, studentId, selectedTeacherId); 
+            await postRecalificationRequest({
+                exam_id: examId,
+                student_id: studentId,
+                teacher_id: selectedTeacherId
+            });
             
-            alert("✅ Solicitud de recalificación enviada con éxito. Serás notificado cuando se revise.");
-
+            alert("✅ Solicitud enviada con éxito.");
             router.push(`/dashboard/student/exam_done/${examId}/review`);
         } catch (error) {
-            console.error("Error al enviar solicitud de recalificación:", error);
-            alert("❌ Error al enviar la solicitud. Verifica el servicio de backend.");
+            console.error("Error al enviar solicitud:", error);
+            alert("❌ Error al enviar la solicitud.");
         } finally {
             setSubmitting(false);
         }
     };
 
-    // PAGINAS DE ESTADO
     if (loading) {
-        return <p className="p-8 flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando opciones de recalificación...</p>;
+        return <p className="p-8 flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando...</p>;
     }
 
-    const isCalificado = globalScore !== -1 && globalScore !== 0 && globalScore !== null;
-
-    if (!isCalificado) {
-        return (
-            <div className="p-8 text-center">
-                <h2 className="text-2xl font-semibold text-red-500">Acceso Denegado</h2>
-                <p className="mt-4 text-muted-foreground">Solo puedes solicitar recalificación para exámenes que ya han sido calificados.</p>
-                <Button onClick={() => router.back()} className="mt-6">Volver</Button>
-            </div>
-        );
+    if (!subjectId) {
+         return <div className="p-8 text-center text-red-500">Error: No se pudo identificar la asignatura del examen.</div>;
     }
 
     if (availableTeachers.length === 0) {
         return (
             <div className="p-8 text-center">
-                <h2 className="text-2xl font-semibold">No Hay Revisores Disponibles</h2>
-                <p className="mt-4 text-muted-foreground">En este momento no hay profesores disponibles para revisar tu examen.</p>
+                <h2 className="text-2xl font-semibold">No hay revisores disponibles</h2>
+                <p className="mt-4 text-muted-foreground">
+                    No encontramos profesores asignados a la asignatura de este examen.
+                </p>
                 <Button onClick={() => router.back()} className="mt-6">Volver</Button>
             </div>
         );
     }
 
-    // VISTA PRINCIPAL
     return (
         <div className="p-6 max-w-2xl mx-auto">
             <h1 className="text-3xl font-extrabold mb-6">📝 Solicitar Recalificación</h1>
@@ -151,15 +163,15 @@ export default function ReevaluationRequestPage() {
                 <CardHeader>
                     <CardTitle>Examen: {examName}</CardTitle>
                     <CardDescription>
-                        Tu nota actual es: <span className="font-bold text-primary">{globalScore}</span>.
-                        Selecciona el profesor que revisará tu examen.
+                        Nota actual: <span className="font-bold text-primary">{globalScore}</span>.
+                        Selecciona un profesor de la asignatura correspondiente.
                     </CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-6">
                     <div>
                         <label className="text-sm font-medium mb-2 block">
-                            Seleccionar Profesor Revisor
+                            Profesor Revisor
                         </label>
 
                         <Select
@@ -188,7 +200,7 @@ export default function ReevaluationRequestPage() {
                         {submitting ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                            "Confirmar Solicitud de Recalificación"
+                            "Confirmar Solicitud"
                         )}
                     </Button>
                 </CardContent>

@@ -141,32 +141,7 @@ export async function postStudentAnswers(answers: AnswerSubmission[]) {
 // ... (Otras funciones) ...
 
 // **NUEVA ESTRUCTURA**
-export async function postRecalificationRequest(examId: number, studentId: number, teacherId: number) {
-    
-    // CORRECCIÓN CLAVE: La URL debe apuntar directamente a /reevaluation,
-    // NO a una ruta anidada bajo /exams.
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/reevaluation`; 
 
-    const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ 
-            // Campos requeridos por CreateReevaluationDto:
-            exam_id: examId,
-            student_id: studentId, 
-            teacher_id: teacherId, 
-            score: 0 // Enviamos 0 como marcador de posición para "pendiente de revisión"
-        }),
-    });
-    
-    if (!res.ok) {
-        const errorText = await res.text().catch(() => "Error desconocido");
-        // La línea 164 es donde se lanza el error con el mensaje de backend
-        throw new Error(`Error al solicitar recalificación: ${errorText}`);
-    }
-    return res.json();
-}
 
 
 

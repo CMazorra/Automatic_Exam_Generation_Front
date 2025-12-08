@@ -45,7 +45,7 @@ export default function ExamsToDoPage() {
                     const studentRecord = exam.exam_students.find(es => es.student_id === currentStudentId);
                     
                     // ✔️ Correcto: TO-DO si score === 0 Y el examen está asignado
-                    if (studentRecord && studentRecord.score === 0 && exam.status === "asignado") {
+                    if (studentRecord && studentRecord.score === 0 && exam.status === "Asignado") {
                         pendientes.push(exam);
                     }
                 });

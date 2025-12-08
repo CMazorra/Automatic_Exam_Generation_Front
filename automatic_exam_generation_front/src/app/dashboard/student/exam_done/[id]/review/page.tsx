@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { getCurrentUser } from '@/services/authService';
 import { getExamById } from '@/services/examService';
-import { getQuestionById } from '@/services/questionService'; 
-import { getAnswerById } from '@/services/answerService'; 
+import { getQuestionById } from '@/services/questionService';
+import { getAnswerById } from '@/services/answerService';
 import { getExamStudentById } from '@/services/examStudentService';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button'; 
-import { useParams, useRouter } from 'next/navigation';   // <-- AÑADIDO
+import { Button } from '@/components/ui/button';
+import { useParams, useRouter } from 'next/navigation';
 import { Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -19,30 +19,37 @@ interface ExamStudentResult {
     score: number;
 }
 
+// CORRECCIÓN 1: La respuesta del estudiante desde el backend incluye la puntuación obtenida.
 interface StudentAnswerResult {
     answer_text: string;
+    score: number; // <-- AGREGADO: Puntuación obtenida por el estudiante para esta pregunta
 }
 
 interface QuestionDetail {
     id: number;
     question_text: string;
-    type: 'Teórico' | 'Verdadero/Falso' | 'Opción Múltiple';
-    correct_answer?: string;
-    max_score: number;
+    // Tipos de backend: 'Argumentación' para texto libre, 'Selección Múltiple', 'Verdadero/Falso'
+    type: 'Argumentación' | 'Verdadero/Falso' | 'Selección Múltiple';
+    answer: string; // <-- La respuesta correcta en el backend se llama 'answer'
+    score: number; // <-- Puntuación máxima de la pregunta se llama 'score'
 }
 
-interface ReviewQuestion extends QuestionDetail {
+interface ReviewQuestion extends Omit<QuestionDetail, 'answer' | 'score'> {
+    // Usamos nombres más claros para el frontend
+    correct_answer: string;
+    max_score: number;
     student_answer: string;
+    student_score: number; // <-- AGREGADO: Puntuación obtenida por el estudiante para esta pregunta
     is_correct_calculated: boolean | null;
 }
 
 // ------------------------------------------------------------
 
-const AnswerDisplay = ({ label, answer, isCorrect, showIcon = true }: { 
-    label: string, 
-    answer: string, 
-    isCorrect?: boolean | null, 
-    showIcon?: boolean 
+const AnswerDisplay = ({ label, answer, isCorrect, showIcon = true }: {
+    label: string,
+    answer: string,
+    isCorrect?: boolean | null,
+    showIcon?: boolean
 }) => {
 
     let colorClass = "";
@@ -75,7 +82,7 @@ const AnswerDisplay = ({ label, answer, isCorrect, showIcon = true }: {
 export default function ExamReviewPage() {
     const params = useParams();
     const examId = Number(params.id);
-    const router = useRouter();   // <-- AÑADIDO
+    const router = useRouter();
 
     const [loading, setLoading] = useState(true);
     const [reviewQuestions, setReviewQuestions] = useState<ReviewQuestion[]>([]);
@@ -86,7 +93,7 @@ export default function ExamReviewPage() {
     // ------------------------------------------------------------
 
     const handleRecalificacionClick = () => {
-        router.push(`/dashboard/student/recalification/${examId}`);   // <-- NUEVA FUNCIÓN
+        router.push(`/dashboard/student/recalification/${examId}`);
     };
 
     // ------------------------------------------------------------
@@ -114,26 +121,38 @@ export default function ExamReviewPage() {
                     const qId = link.question_id;
 
                     const question: QuestionDetail = await getQuestionById(String(qId));
-                    calculatedMaxScore += question.max_score;
+                    
+                    // CORRECCIÓN 2a (Resuelve NaN): Usar 'score' del QuestionDetail para la suma.
+                    calculatedMaxScore += question.score; 
 
+                    // Obtiene la respuesta del estudiante, incluyendo el score obtenido
                     const studentAnswerResult: StudentAnswerResult = await getAnswerById(examId, qId, studentId);
 
+                    // CORRECCIÓN 2b (Resuelve la Comparación): Usar 'Argumentación' y 'question.answer'.
                     const isCorrect = (
-                        question.type !== 'Teórico'
-                            ? (studentAnswerResult.answer_text === question.correct_answer)
+                        // Solo intenta corregir automáticamente si NO es Argumentación (texto libre)
+                        question.type !== 'Argumentación' 
+                            // Compara la respuesta del estudiante con el campo 'answer' de la pregunta
+                            ? (studentAnswerResult.answer_text === question.answer) 
                             : null
                     );
 
                     return {
-                        ...question,
+                        id: question.id,
+                        question_text: question.question_text,
+                        type: question.type,
+                        // Mapeo de campos del backend al frontend
+                        correct_answer: question.answer, // Mapeado de 'answer'
+                        max_score: question.score,      // Mapeado de 'score'
                         student_answer: studentAnswerResult.answer_text,
+                        student_score: studentAnswerResult.score, // Mapeado del score obtenido
                         is_correct_calculated: isCorrect,
                     } as ReviewQuestion;
                 });
 
                 const fullReview = await Promise.all(reviewPromises);
                 setReviewQuestions(fullReview);
-                setMaxTotalScore(calculatedMaxScore);
+                setMaxTotalScore(calculatedMaxScore); // Ahora es un número válido
 
             } catch (e) {
                 console.error("Error al cargar la revisión del examen:", e);
@@ -153,7 +172,7 @@ export default function ExamReviewPage() {
     }
 
     const isPending = globalScore === -1;
-    const isCalificado = globalScore !== -1 && globalScore !== 0;
+    const isCalificado = globalScore !== -1; // Cambiado para incluir score 0 como calificado
 
     // ------------------------------------------------------------
 
@@ -165,8 +184,8 @@ export default function ExamReviewPage() {
                 <CardHeader>
                     <CardTitle>Resultado Final</CardTitle>
                     <CardDescription>
-                        {isPending 
-                            ? "Este examen está pendiente de calificación manual." 
+                        {isPending
+                            ? "Este examen está pendiente de calificación manual."
                             : "Revisión de respuestas y calificación obtenida."}
                     </CardDescription>
                 </CardHeader>
@@ -183,9 +202,9 @@ export default function ExamReviewPage() {
                     )}
 
                     {isCalificado && (
-                        <Button 
+                        <Button
                             className="mt-4"
-                            onClick={handleRecalificacionClick}   // <-- NUEVO
+                            onClick={handleRecalificacionClick}
                         >
                             Solicitar Recalificación
                         </Button>
@@ -202,8 +221,9 @@ export default function ExamReviewPage() {
                             <CardTitle className="text-xl">
                                 {index + 1}. {q.question_text}
                             </CardTitle>
+                            {/* CORRECCIÓN 3: Muestra la puntuación obtenida / máxima */}
                             <Badge variant="secondary" className="text-md py-1">
-                                Valor Máximo: {q.max_score} puntos
+                                Puntuación: {q.student_score} / {q.max_score} puntos
                             </Badge>
                         </CardHeader>
 
@@ -212,10 +232,12 @@ export default function ExamReviewPage() {
                                 label="Tu Respuesta"
                                 answer={q.student_answer}
                                 isCorrect={q.is_correct_calculated}
-                                showIcon={q.type !== 'Teórico' && !isPending}
+                                // Ocultar icono si es Argumentación (ya que no hay autocorrección) o está pendiente
+                                showIcon={q.type !== 'Argumentación' && !isPending} // <-- CORREGIDO
                             />
 
-                            {!isPending && q.type !== 'Teórico' && q.correct_answer && (
+                            {/* Mostrar Respuesta Correcta si NO está pendiente, NO es Argumentación y SÍ tiene una respuesta definida */}
+                            {!isPending && q.type !== 'Argumentación' && q.correct_answer && ( // <-- CORREGIDO
                                 <AnswerDisplay
                                     label="Respuesta Correcta"
                                     answer={q.correct_answer}
@@ -224,7 +246,8 @@ export default function ExamReviewPage() {
                                 />
                             )}
 
-                            {q.type === 'Teórico' && (
+                            {/* Mostrar mensaje para Argumentación */}
+                            {q.type === 'Argumentación' && ( // <-- CORREGIDO: Usar 'Argumentación'
                                 <p className="text-sm text-muted-foreground">
                                     Pregunta de desarrollo. Calificación manual.
                                 </p>

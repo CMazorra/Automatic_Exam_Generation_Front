@@ -15,12 +15,13 @@ import { useParams, useRouter } from 'next/navigation';
 import { ChangeEvent } from 'react'; // Importamos ChangeEvent
 import { updateExamStudent } from '@/services/examStudentService';
 
-// Interfaces (basadas en tu estructura)
 interface Question {
     id: number;
     question_text: string;
-    type: 'Teórico' | 'Verdadero/Falso' | 'Opción Múltiple';
+    // TIPOS CORREGIDOS: 'Argumentación' para el texto libre y 'Selección Múltiple'
+    type: 'Argumentación' | 'Verdadero/Falso' | 'Selección Múltiple'; 
     difficulty: string;
+    // Asegúrate que tu servicio getQuestionById trae las opciones en el campo 'answers' si es 'Selección Múltiple'
     answers?: { id: number; answer_text: string; is_correct: boolean }[]; 
 }
 
@@ -83,70 +84,53 @@ export default function AnswerExamPage() {
         }));
     };
 
+
     const renderAnswerInput = (q: Question) => {
-        const currentAnswer = answers[q.id] || '';
-        const inputName = `question-${q.id}`;
+        const currentAnswer = answers[q.id] || '';
+        const inputName = `question-${q.id}`;
 
-        const handleRadioChange = (e: ChangeEvent<HTMLInputElement>) => {
-             // e.target.value SIEMPRE es un string, resolviendo el error de TS
-            handleAnswerChange(q.id, e.target.value);
-        };
+        const handleRadioChange = (e: ChangeEvent<HTMLInputElement>) => {
+            handleAnswerChange(q.id, e.target.value);
+        };
 
-        switch (q.type) {
-            case 'Teórico':
-                return (
-                    <Textarea
-                        placeholder="Escribe tu respuesta aquí..."
-                        value={currentAnswer}
-                        // Aquí ya estaba correcto
-                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                        rows={6}
-                    />
-                );
-            case 'Verdadero/Falso':
-                return (
-                    <div className="flex space-x-8">
-                        {['Verdadero', 'Falso'].map(option => (
-                            <div key={option} className="flex items-center space-x-2">
-                                <input
-                                    type="radio"
-                                    id={`${inputName}-${option}`}
-                                    name={inputName}
-                                    value={option}
-                                    checked={currentAnswer === option}
-                                    // CAMBIO CLAVE AQUÍ: Usamos el evento estándar
-                                    onChange={handleRadioChange}
-                                    className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                                />
-                                <Label htmlFor={`${inputName}-${option}`}>{option}</Label>
-                            </div>
-                        ))}
-                    </div>
-                );
-            case 'Opción Múltiple':
-                return (
-                    <div className="space-y-3">
-                        {q.answers?.map(a => (
-                            <div key={a.id} className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    id={`op-${a.id}`}
-                                    name={inputName}
-                                    // Guardamos el ID de la opción como string en el valor
-                                    value={String(a.id)} 
-                                    checked={currentAnswer === String(a.id)}
-                                    // CAMBIO CLAVE AQUÍ: Usamos el evento estándar
-                                    onChange={handleRadioChange}
-                                    className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                                />
-                                <Label htmlFor={`op-${a.id}`}>{a.answer_text}</Label>
-                            </div>
-                        ))}
-                    </div>
-                );
-            default:
-                return <p className="text-red-500">Tipo de pregunta no soportado.</p>;
-        }
+        switch (q.type) {
+            // Utilizamos Textarea para Argumentación
+            case 'Argumentación': 
+            // AÑADIMOS 'Selección Múltiple' para que use el mismo input de texto
+            case 'Selección Múltiple':
+                return (
+                    <Textarea
+                        placeholder="Escribe tu respuesta aquí (por ejemplo, la letra de la opción correcta)..."
+                        value={currentAnswer}
+                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                        rows={3} // Reducido a 3 filas, ya que es para una letra/texto corto
+                    />
+                );
+                
+            case 'Verdadero/Falso':
+                // Este caso se mantiene con los radio buttons, ya que es un formato cerrado
+                return (
+                    <div className="flex space-x-8">
+                        {['Verdadero', 'Falso'].map(option => (
+                            <div key={option} className="flex items-center space-x-2">
+                                <input
+                                    type="radio"
+                                    id={`${inputName}-${option}`}
+                                    name={inputName}
+                                    value={option}
+                                    checked={currentAnswer === option}
+                                    onChange={handleRadioChange}
+                                    className="h-4 w-4 text-primary border-gray-300 focus:ring-primary"
+                                />
+                                <Label htmlFor={`${inputName}-${option}`}>{option}</Label>
+                            </div>
+                        ))}
+                    </div>
+                );
+
+            default:
+                return <p className="text-red-500">Tipo de pregunta no soportado: {q.type}</p>;
+        }
     };
 
     // ... (El handleSubmit se mantiene igual, ya que usa postStudentAnswers) ...

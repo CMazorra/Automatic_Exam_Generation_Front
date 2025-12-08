@@ -1,3 +1,4 @@
+// src/app/dashboard/head_teacher/exam_to_validate/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
