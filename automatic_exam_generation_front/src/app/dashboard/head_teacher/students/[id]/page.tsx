@@ -1,11 +1,14 @@
+// src/app/dashboard/head_teacher/students/[id]/page.tsx
+
 "use client"
 
-import React, { useEffect, useState , use } from "react"
+import React, { useEffect, useState, use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getStudentByID } from "@/services/studentService"
-import { getCurrentUser } from "@/services/authService"
-import { getSubjectsByTeacherID,getSubjectsByStudentID } from "@/services/subjectService"
+// Asumimos que getSubjectsByStudentID es la función correcta para obtener todas las asignaturas del alumno.
+import { getSubjectsByStudentID } from "@/services/subjectService" 
+import { Loader2 } from "lucide-react"
 
 interface Student {
   id: number | string
@@ -21,26 +24,30 @@ interface Subject {
   name?: string
 }
 
-export default function StudentView({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params)
+export default function StudentViewHeadTeacher({ params }: { params: Promise<{ id: string }> }) {
+  // Uso de 'use' para desempacar la promesa de params
+  const { id } = use(params) 
+  
   const [student, setStudent] = useState<Student | null>(null)
-  const [subjects, setSubjects] = useState<Subject[]>([])
-  const [teacherSubjects, setTeacherSubjects] = useState<Subject[]>([])
+  const [allSubjects, setAllSubjects] = useState<Subject[]>([])
+  
   const [isLoadingStudent, setIsLoadingStudent] = useState(true)
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true)
-  const [isLoadingTeacherSubjects, setIsLoadingTeacherSubjects] = useState(true)
 
+  // Función utilitaria para extraer el array de asignaturas de la respuesta del servicio
   const extractSubjects = (v: any): Subject[] => {
     if (v == null) return []
     if (Array.isArray(v)) return v
     if (typeof v === "object") {
+      // Si el backend devuelve { subjects: [...] }
       if (Array.isArray(v.subjects)) return v.subjects
     }
     return []
   }
-  
+    
+  // Carga del estudiante
   useEffect(() => {
-    const load = async () => {
+    const loadStudent = async () => {
       try {
         const data = await getStudentByID(Number(id))
         setStudent(data)
@@ -50,17 +57,18 @@ export default function StudentView({ params }: { params: Promise<{ id: string }
         setIsLoadingStudent(false)
       }
     }
-    load()
+    loadStudent()
   }, [id])
 
+  // Carga de TODAS las asignaturas del estudiante
   useEffect(() => {
     const loadSubjectsByStudent = async () => {
       try {
-        const all = await getSubjectsByStudentID(String(id))
-        console.log("getSubjectsByStudentID raw:", all)
-        setSubjects(extractSubjects(all))
+        const result = await getSubjectsByStudentID(String(id))
+        setAllSubjects(extractSubjects(result))
       } catch (e) {
-        console.error("Error fetching subjects by student:", e)
+        console.error("Error fetching all student subjects:", e)
+        setAllSubjects([])
       } finally {
         setIsLoadingSubjects(false)
       }
@@ -68,37 +76,14 @@ export default function StudentView({ params }: { params: Promise<{ id: string }
     loadSubjectsByStudent()
   }, [id])
 
-  useEffect(() => {
-    const loadTeacherSubjects = async () => {
-      try {
-        const current = await getCurrentUser()
-        const teacherId =
-          current?.id ??
-          current?.id_us ??
-          current?.teacherId ??
-          current?.teacher_id ??
-          current?.teacher?.id ??
-          current?.user?.id
-        if (teacherId) {
-          const ts = await getSubjectsByTeacherID(String(teacherId))
-          setTeacherSubjects(ts || [])
-        } else {
-          setTeacherSubjects([])
-        }
-      } catch (e) {
-        console.error("Error fetching current user / teacher subjects:", e)
-        setTeacherSubjects([])
-      } finally {
-        setIsLoadingTeacherSubjects(false)
-      }
-    }
-    loadTeacherSubjects()
-  }, [])
+  const isLoading = isLoadingStudent || isLoadingSubjects
 
-  if (isLoadingStudent) {
+  if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center">Cargando estudiante...</div>
+        <div className="text-center flex items-center">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando datos del estudiante...
+        </div>
       </main>
     )
   }
@@ -106,30 +91,31 @@ export default function StudentView({ params }: { params: Promise<{ id: string }
   if (!student) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center text-destructive">Estudiante no encontrado</div>
+        <div className="text-center text-destructive">Estudiante con ID {id} no encontrado.</div>
       </main>
     )
   }
 
   const displayName = student.user?.name || "(Sin nombre)"
+  const hasSubjects = allSubjects.length > 0;
 
-  const taughtSubjects: Subject[] = []
-  
-  for (const subject of subjects) {
-    for (const tSubject of teacherSubjects) {
-      if (subject.id === tSubject.id) {
-        taughtSubjects.push(subject)
-      }
-    }
-  }
+  // El Jefe de Estudios puede asignar un examen de CUALQUIER asignatura que el estudiante curse.
+  // El link debe pasar todas las IDs de las asignaturas del alumno.
+  const linkToAssignExam = hasSubjects
+    ? `/dashboard/head_teacher/students/${id}/assign_exam?studentId=${id}&subjects=${allSubjects.map(s => s.id).join(',')}`
+    : null;
+
 
   return (
     <main className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
+        <h1 className="text-3xl font-bold">Detalle de Estudiante</h1>
+        
         <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
-          <h2 className="font-semibold leading-none text-xl">{displayName}</h2>
+          <h2 className="font-extrabold leading-none text-2xl text-primary">{displayName}</h2>
 
-          <div className="grid gap-4">
+          {/* Sección de Cuenta */}
+          <div className="grid gap-4 border-t pt-4">
             <div>
               <div className="text-sm text-muted-foreground">Cuenta</div>
               <p className="mt-1 whitespace-pre-wrap">
@@ -138,29 +124,36 @@ export default function StudentView({ params }: { params: Promise<{ id: string }
             </div>
           </div>
 
-          <div className="grid gap-4">
+          {/* Sección de Asignaturas */}
+          <div className="grid gap-4 border-t pt-4">
             <div>
-              <div className="text-sm text-muted-foreground">Asignaturas que le impartes</div>
+              <div className="text-sm text-muted-foreground">Asignaturas Cursadas</div>
               <div className="mt-1">
-                {isLoadingSubjects || isLoadingTeacherSubjects ? (
-                  <p className="text-sm text-muted-foreground">Comprobando asignaturas...</p>
-                ) : taughtSubjects.length === 0 ? (
-                  <p className="mt-1 whitespace-pre-wrap">El profesor logeado no imparte ninguna de las asignaturas de este estudiante.</p>
-                ) : (
+                {hasSubjects ? (
                   <ul className="mt-1 list-disc pl-5">
-                    {taughtSubjects.map((s) => (
-                      <li key={s.id}>{s.name || "(Sin nombre)"}</li>
+                    {allSubjects.map((s) => (
+                      <li key={s.id} className="font-medium">{s.name || "(Sin nombre)"}</li>
                     ))}
                   </ul>
+                ) : (
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
+                    Este estudiante no tiene asignaturas asignadas en el sistema.
+                  </p>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="flex gap-3 flex-wrap">
-            <Link href="/dashboard/teacher/teachers">
-              <Button variant="outline">Volver</Button>
+          {/* Botones de Acción */}
+          <div className="flex gap-3 flex-wrap border-t pt-4">
+            <Link href="/dashboard/head_teacher/students">
+              <Button variant="outline">Volver a la Lista</Button>
             </Link>
+            {hasSubjects && (
+              <Link href={linkToAssignExam!}>
+                <Button variant="default">Asignar Examen</Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
