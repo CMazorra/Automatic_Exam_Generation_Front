@@ -10,6 +10,7 @@ export async function getExams() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     cache: "no-store",
   });
   return handleResponse(res);
@@ -19,6 +20,7 @@ export async function getExamById(id: string | number) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/${id}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     cache: "no-store",
   });
   return handleResponse(res);
@@ -28,6 +30,7 @@ export async function createExam(payload: Record<string, any>) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(payload),
   });
   return handleResponse(res);
@@ -37,6 +40,7 @@ export async function updateExam(id: string | number, payload: Record<string, an
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(payload),
   });
   return handleResponse(res);
@@ -69,6 +73,7 @@ export async function deleteExam(id: string | number) {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/${id}`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
   });
   return handleResponse(res);
 }
