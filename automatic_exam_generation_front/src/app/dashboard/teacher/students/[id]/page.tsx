@@ -123,6 +123,12 @@ export default function StudentView({ params }: { params: Promise<{ id: string }
     }
   }
 
+  const hasTaughtSubjects = taughtSubjects.length > 0;
+
+  const linkToAssignExam = hasTaughtSubjects
+    ? `/dashboard/teacher/students/${id}/assign_exam?studentId=${id}&subjects=${taughtSubjects.map(s => s.id).join(',')}`
+    : null;
+
   return (
     <main className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl space-y-6">
@@ -161,6 +167,11 @@ export default function StudentView({ params }: { params: Promise<{ id: string }
             <Link href="/dashboard/teacher/teachers">
               <Button variant="outline">Volver</Button>
             </Link>
+            {hasTaughtSubjects && (
+              <Link href={linkToAssignExam!}>
+                <Button variant="default">Asignar Examen</Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>

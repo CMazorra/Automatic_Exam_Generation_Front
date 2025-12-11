@@ -1,109 +1,178 @@
+// src/services/reevaluationService.ts
+
+export interface ReevaluationRequest {
+    exam_id: number;
+    student_id: number;
+    teacher_id: number; // El profesor que calificó el examen
+    score: number;
+}
+
+export interface ReevaluationResponse { // Definir la interfaz de respuesta para filtrar
+    exam_id: number;
+    student_id: number;
+    teacher_id: number;
+    score: number;
+    // (Puede haber más campos como 'exam_student', pero estos son suficientes para el filtro)
+}
+
+// ----------------------------------------------------
+// READ: Obtener todas las reevaluaciones
+// ----------------------------------------------------
 export async function getReevaluations() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      cache: "no-store",
-    });
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            cache: "no-store",
+        });
 
-    if (!response.ok) {
-      throw new Error("Error al obtener las reevaluaciones");
+    if (!response.ok) {
+        // AÑADIDO: Capturamos el estado HTTP y el mensaje del servidor
+        const status = response.status;
+        const errorDetail = await response.text().catch(() => "Mensaje no disponible");
+        throw new Error(`Error al obtener las reevaluaciones: ${status}, Detalle: ${errorDetail})`);
+    }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error en getReevaluations:", error);
+        throw error;
     }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error en getReevaluations:", error);
-    throw error;
-  }
 }
 
-export async function postReevaluation(reevaluation: { exam_id: number , student_id: number, teacher_id: number, score: number}) {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(reevaluation),
-    });
-    if (!response.ok) {
-      throw new Error("Error al crear la reevaluación");
+// ----------------------------------------------------
+// CREATE: Solicitar una recalificación (Usado por el estudiante)
+// ----------------------------------------------------
+// Nota: La función postRecalificationRequest solo necesita los IDs, y establece score: 0 por defecto.
+
+/**
+ * Crea una solicitud de recalificación. Establece el score a 0
+ * para indicar que está pendiente de revisión por el profesor.
+ */
+export async function postRecalificationRequest(data: Omit<ReevaluationRequest, 'score'>) {
+    try {
+        // 🎯 AÑADIR score: 0 al payload antes de enviar
+        const payload: ReevaluationRequest = {
+            ...data,
+            score: 0, 
+        };
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(payload), // 🎯 Usar el payload con score: 0
+        });
+
+        if (!response.ok) {
+            const status = response.status;
+            const errorDetail = await response.text().catch(() => "Mensaje no disponible");
+            throw new Error(`Error al solicitar la recalificación (Estado: ${status}, Detalle: ${errorDetail})`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error en postRecalificationRequest:", error);
+        throw error;
     }
-    const data = await response.json();
-    return data;
-  }
-  catch (error) {
-    console.error("Error en postReevaluation:", error);
-    throw error;
-  }
+}
+// ----------------------------------------------------
+// READ: Obtener una reevaluación específica por claves
+// ----------------------------------------------------
+export async function getReevaluationById(exam_id: number, student_id: number, teacher_id: number) {
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation/${exam_id}/${student_id}/${teacher_id}`, {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            cache: "no-store",
+        });
+        if (!response.ok) {
+            throw new Error("Error al obtener la reevaluación");
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error en getReevaluationById:", error);
+        throw error;
+    }
 }
 
-export async function getReevaluationById(exam_id: number , student_id: number, teacher_id: number) {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation/${exam_id}/${student_id}/${teacher_id}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      cache: "no-store",
-    });
-    if (!response.ok) {
-      throw new Error("Error al obtener la reevaluación");
-    }
-    const data = await response.json();
-    return data;
-  }
-  catch (error) {
-    console.error("Error en getReevaluationById:", error);
-    throw error;
-  }
-}
-
+// ----------------------------------------------------
+// UPDATE: Actualizar la nota (Usado por el profesor)
+// ----------------------------------------------------
 export async function updateReevaluation(exam_id: number, student_id: number, teacher_id: number, reevaluation: { score: number }) {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation/${exam_id}/${student_id}/${teacher_id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(reevaluation),
-    });
-    if (!response.ok) {
-      throw new Error("Error al actualizar la reevaluación");
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation/${exam_id}/${student_id}/${teacher_id}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(reevaluation),
+        });
+        if (!response.ok) {
+            throw new Error("Error al actualizar la reevaluación");
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error en updateReevaluation:", error);
+        throw error;
     }
-    const data = await response.json();
-    return data;
-  }
-  catch (error) {
-    console.error("Error en updateReevaluation:", error);
-    throw error;
-  }
 }
 
+// ----------------------------------------------------
+// DELETE: Eliminar una reevaluación
+// ----------------------------------------------------
 export async function deleteReevaluation(exam_id: number, student_id: number, teacher_id: number) {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation/${exam_id}/${student_id}/${teacher_id}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
-    if (!response.ok) {
-      throw new Error("Error al eliminar la parametrización");
+    try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reevaluation/${exam_id}/${student_id}/${teacher_id}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            credentials: "include",
+        });
+        if (!response.ok) {
+            throw new Error("Error al eliminar la reevaluación");
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error("Error en deleteReevaluation:", error);
+        throw error;
     }
-    const data = await response.json();
-    return data;
-  }
-  catch (error) {
-    console.error("Error en deleteParams:", error);
-    throw error;
-  }
+}
+
+/**
+ * Verifica si ya existe una solicitud de reevaluación para un examen y estudiante, 
+ * filtrando la lista completa obtenida del backend.
+ * Retorna true si existe, false si no.
+ */
+export async function checkIfRecalificationExists(exam_id: number, student_id: number): Promise<boolean> {
+    try {
+        // 1. Obtener TODAS las reevaluaciones (usando el endpoint que sí existe)
+        const allReevaluations: ReevaluationResponse[] = await getReevaluations();
+
+        // 2. Filtrar los datos en el frontend por exam_id y student_id
+        const existingRecalification = allReevaluations.find(reval =>
+            reval.exam_id === exam_id && reval.student_id === student_id
+        );
+
+        // 3. Si se encuentra alguna, retorna true
+        return !!existingRecalification;
+        
+    } catch (error) {
+        // Si hay un error al obtener la lista completa, asumimos que no hay solicitud para evitar bloquear al usuario
+        console.error("Error al verificar reevaluación (Filtro manual):", error);
+        return false; 
+    }
 }

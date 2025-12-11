@@ -149,27 +149,18 @@ export default function ExamCreatePage() {
 
     const load = async () => {
       try {
-        // Quitamos la carga de Subjects de este bloque
         setLoadingParams(true)
-        setLoadingHeadTeachers(true)
 
-        const [paramsList, headTeachersList] = await Promise.all([
-          getParams().catch(() => []),
-          getHeadTeachers().catch(() => []),
-        ])
+        const paramsList = await getParams().catch(() => [])
 
         if (!mounted) return
 
-        // Quitamos setAllSubjects
         setAllParams(Array.isArray(paramsList) ? paramsList : [])
-        setAllHeadTeachers(Array.isArray(headTeachersList) ? headTeachersList : [])
       } catch (err) {
-        console.error("Error cargando listas:", err)
+        console.error("Error cargando listas de parámetros:", err)
       } finally {
         if (mounted) {
-          // Quitamos setLoadingSubjects(false)
           setLoadingParams(false)
-          setLoadingHeadTeachers(false)
         }
       }
     }
@@ -209,29 +200,23 @@ export default function ExamCreatePage() {
   }, [isManual])
 
 
-  const onSelectSubject = (s: SubjectOption) => {
-    setSubjectId(s.id)
-    setSubjectQuery(s.name || "")
+// REEMPLAZAR FUNCIÓN COMPLETA (aprox. Líneas 207-230)
+  const onSelectSubject = (s: SubjectOption) => {
+    setSubjectId(s.id)
+    setSubjectQuery(s.name || "")
 
-    // Lógica para auto-seleccionar el Jefe de Asignatura (Requisito 5)
-    if (s.head_teacher_id) {
-      setHeadTeacherId(s.head_teacher_id)
-      // Busca el nombre del jefe en la lista ya cargada (allHeadTeachers)
-      const autoHT = allHeadTeachers.find(ht => String(ht.id) === String(s.head_teacher_id))
-      if (autoHT) {
-        // Resuelve el nombre del Jefe de Asignatura desde el objeto
-        const htName = autoHT.name || autoHT.user?.name || autoHT.teacher?.user?.name || ""
-        setHeadTeacherQuery(htName)
-      } else {
-        // Si no se encuentra, limpia la consulta del nombre para no mostrar un nombre incorrecto
-        setHeadTeacherQuery("")
-      }
-    } else {
-      // Si la asignatura no tiene jefe, limpiamos la selección anterior
-      setHeadTeacherId("")
-      setHeadTeacherQuery("")
-    }
-  }
+    // Lógica para auto-seleccionar el Jefe de Asignatura
+    if (s.head_teacher_id) {
+      setHeadTeacherId(s.head_teacher_id)
+      // Dado que ya no cargamos la lista de Jefes, usamos el nombre de la asignatura como confirmación temporal
+      // y limpiamos el query del jefe de asignatura para evitar confusión si se re-escribe.
+      setHeadTeacherQuery("Auto-seleccionado") 
+    } else {
+      // Si la asignatura no tiene jefe, limpiamos la selección anterior
+      setHeadTeacherId("")
+      setHeadTeacherQuery("")
+    }
+  }
 
   const onSelectParams = (p: ParamsOption) => {
     setParamsId(p.id)
@@ -245,12 +230,14 @@ export default function ExamCreatePage() {
     setHeadTeacherQuery(htName)
   }
 
-  const addManualQuestion = () => {
-    const text = newQuestionText.trim()
-    if (!text) return
-    setManualQuestions((prev) => [...prev, { text }])
-    setNewQuestionText("")
-  }
+// LÍNEA A REEMPLAZAR (aprox. 205)
+  const addManualQuestion = () => {
+    const text = newQuestionText.trim()
+    if (!text) return
+    // CORRECCIÓN: Usar -Date.now() para generar un ID temporal único y negativo
+    setManualQuestions((prev) => [...prev, { id: -Date.now(), text }])
+    setNewQuestionText("")
+  }
 
   const addSuggestionToManual = (q: any) => {
     const text = (q.question_text || "").trim()
@@ -512,7 +499,7 @@ export default function ExamCreatePage() {
                   <li className="text-sm text-muted-foreground">No hay preguntas añadidas.</li>
                 )}
                 {manualQuestions.map((q, idx) => (
-                  <li key={idx} className="flex justify-between items-center">
+                  <li key={q.id} className="flex justify-between items-center">
                     <span className="text-sm">{q.text}</span>
                     <Button type="button" variant="ghost" size="sm" onClick={() => removeManualQuestion(idx)}>
                       Quitar

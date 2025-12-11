@@ -65,7 +65,7 @@ export async function getAnswerById(exam_id: number, question_id: number, studen
   }
 }
 
-export async function updateAnswer(exam_id: number, question_id: number, student_id: number, answer: { answer_text?: string; score?: number }) {
+export async function updateAnswer(exam_id: number, question_id: number, student_id: number, answer: { answer_text: string }) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/answer/${exam_id}/${question_id}/${student_id}`, {
       method: "PATCH",
@@ -107,3 +107,41 @@ export async function deleteAnswer(exam_id: number, question_id: number, student
     throw error;
   }
 }
+
+// src/services/answerService.ts (Añade esta función al final de tu archivo)
+
+interface AnswerSubmission {
+    exam_id: number;
+    question_id: number;
+    student_id: number;
+    answer_text: string;
+}
+
+// -----------------------------------------------------
+// Nueva función de utilidad para enviar todas las respuestas
+// -----------------------------------------------------
+
+/**
+ * [UTILITY - Issue 1] Envía todas las respuestas llamando a postAnswer para cada una.
+ */
+export async function postStudentAnswers(answers: AnswerSubmission[]) {
+    // Usamos Promise.all para enviar todas las respuestas en paralelo
+    const submissionPromises = answers.map(answer => postAnswer(answer));
+    
+    // Esperamos a que todas las promesas se resuelvan. Si alguna falla, se lanza un error.
+    return Promise.all(submissionPromises);
+}
+
+// -----------------------------------------------------
+// [PLACEHOLDER - Issue 3] Servicio para solicitar recalificación
+// -----------------------------------------------------
+
+// src/services/answerService.ts (Actualización de la función)
+
+// ... (Otras funciones) ...
+
+// **NUEVA ESTRUCTURA**
+
+
+
+

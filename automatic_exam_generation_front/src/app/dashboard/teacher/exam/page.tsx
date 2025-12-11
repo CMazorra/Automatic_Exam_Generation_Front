@@ -3,10 +3,14 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+
 import { getExams, deleteExam } from "@/services/examService"
 import { getCurrentUser } from "@/services/authService"
+
+// Mantener SOLO este import correcto
 import { getTeacherByID } from "@/services/teacherService"
 import { getSubjectsByTeacherID } from "@/services/subjectService"
+
 import { ListViewWithAdd } from "@/components/list-view-with-add"
 import { Button } from "@/components/ui/button"
 
@@ -15,7 +19,7 @@ interface Exam {
   name: string
   status: string
   difficulty: string
-  subject_id: number // Usaremos este campo para filtrar
+  subject_id: number
   teacher_id: number
   parameters_id: number
   head_teacher_id: number
@@ -24,39 +28,46 @@ interface Exam {
 export default function TeacherExamListPage() {
   const router = useRouter()
   const [exams, setExams] = useState<Exam[]>([])
-  const [loading, setLoading] = useState(true) // NUEVO: Estado de carga
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadExams() {
       try {
-        // 1. Obtener el ID del usuario actual (profesor)
+        // 1. Obtener el ID del profesor (usuario actual)
         let finalUserId: number | null = null;
+
         try {
           const user = await getCurrentUser();
           finalUserId = user.id ?? null;
         } catch (e) {
           const rawUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
           finalUserId = rawUserId ? Number(rawUserId) : null;
-          console.error("[teacher/exam] getCurrentUser falló, usando localStorage", { rawUserId, finalUserId, error: e });
+
+          console.error("[teacher/exam] getCurrentUser falló, usando localStorage", {
+            rawUserId,
+            finalUserId,
+            error: e,
+          });
         }
 
         if (!finalUserId) {
           setExams([]);
-          return
+          return;
         }
 
-        // 2. Obtener las asignaturas del profesor usando getSubjectsByTeacherID
+        // 2. Obtener asignaturas del profesor (subjectService)
         let teacherSubjects: any[] = [];
+
         try {
           const subjectsData = await getSubjectsByTeacherID(String(finalUserId));
-          
+
           if (Array.isArray(subjectsData)) {
             teacherSubjects = subjectsData;
           } else if (subjectsData?.data && Array.isArray(subjectsData.data)) {
             teacherSubjects = subjectsData.data;
           }
         } catch (err) {
-          console.error("[teacher/exam] Error al obtener asignaturas del profesor", err);
+          console.error("[teacher/exam] Error al obtener asignaturas", err);
         }
 
         const teacherSubjectIds = teacherSubjects.map((s: any) => s.id).filter(Boolean);
@@ -67,29 +78,25 @@ export default function TeacherExamListPage() {
         }
 
         // 3. Obtener todos los exámenes
-        const allExams: Exam[] = await getExams()
-        if (!allExams || !Array.isArray(allExams) || allExams.length === 0) {
-          console.error("[teacher/exam] allExams vacío o no es array", { allExams });
-        }
-        
-        // 4. Filtrar los exámenes (Requisito 3: todos los exámenes de la asignatura(s) del profesor)
-        const filteredExams = allExams.filter(exam => 
+        const allExams: Exam[] = await getExams();
+
+        // 4. Filtrar por asignaturas del profesor
+        const filteredExams = allExams.filter(exam =>
           teacherSubjectIds.includes(exam.subject_id)
         );
 
-        setExams(Array.isArray(filteredExams) ? filteredExams : [])
+        setExams(filteredExams);
       } catch (e) {
-        console.error("Error al cargar o filtrar exámenes", e)
-        // alert("Error al cargar los exámenes.") // Opcional
+        console.error("Error al cargar o filtrar exámenes", e);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
-    
-    loadExams()
-  }, [])
 
-  if (loading) return <p className="p-8">Cargando exámenes...</p>
+    loadExams();
+  }, []);
+
+  if (loading) return <p className="p-8">Cargando exámenes...</p>;
 
   return (
     <ListViewWithAdd
@@ -97,19 +104,15 @@ export default function TeacherExamListPage() {
       entities={exams}
       sortFields={[
         { value: "name", label: "Nombre" },
-        { value: "difficulty", label: "Dificultad" }
+        { value: "difficulty", label: "Dificultad" },
       ]}
-      filterFields={[
-        { value: "status", label: "Estado" }
-      ]}
+      filterFields={[{ value: "status", label: "Estado" }]}
       renderEntity={(exam) => (
         <div className="rounded-lg border border-border bg-card p-4 hover:bg-accent/5">
           <h3 className="font-semibold text-sm text-card-foreground">{exam.name}</h3>
 
           <div className="flex gap-2 text-xs mt-1">
-            <span className="px-2 py-0.5 rounded bg-muted">
-              {exam.difficulty}
-            </span>
+            <span className="px-2 py-0.5 rounded bg-muted">{exam.difficulty}</span>
             <span
               className={`px-2 py-0.5 rounded ${
                 exam.status === "PUBLISHED"
@@ -144,12 +147,12 @@ export default function TeacherExamListPage() {
               variant="destructive"
               size="sm"
               onClick={async () => {
-                if (!confirm("¿Eliminar examen?")) return
+                if (!confirm("¿Eliminar examen?")) return;
                 try {
-                  await deleteExam(exam.id)
-                  setExams(e => e.filter(x => x.id !== exam.id))
+                  await deleteExam(exam.id);
+                  setExams((e) => e.filter((x) => x.id !== exam.id));
                 } catch (err: any) {
-                  alert(err.message || "Error al eliminar")
+                  alert(err.message || "Error al eliminar");
                 }
               }}
             >
@@ -160,5 +163,5 @@ export default function TeacherExamListPage() {
       )}
       onAdd={() => router.push("/dashboard/teacher/exam/new")}
     />
-  )
+  );
 }

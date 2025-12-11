@@ -1,26 +1,36 @@
+// services/headTeacerService.ts (Función getHeadTeachers modificada)
 export async function getHeadTeachers() {
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/head-teacher`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      cache: "no-store",
-    });
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/head-teacher`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      cache: "no-store",
+    });
 
-    if (!response.ok) {
-      throw new Error("Error al obtener los jefes de asignatura");
-    }
+    if (!response.ok) {
+        // AÑADIDO: Capturamos el estado HTTP y el mensaje del servidor
+        const status = response.status;
+        const errorDetail = await response.text().catch(() => "Mensaje no disponible");
+        throw new Error(`Error al obtener los jefes de asignatura (Estado: ${status}, Detalle: ${errorDetail})`);
+    }
 
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error en getHeadTeachers:", error);
-    throw error;
-  }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error en getHeadTeachers:", error);
+    throw error;
+  }
 }
 
 export async function getHeadTeacherByID(id: number | string) {
   try {
+    // Paso 1a: Validar que el ID sea válido antes de llamar
+    if (id === undefined || id === null || id === "") {
+        console.error("ID no válido recibido en getHeadTeacherByID:", id);
+        throw new Error("El ID del profesor no fue proporcionado o es inválido.");
+    }
+
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/head-teacher/${id}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
@@ -29,7 +39,10 @@ export async function getHeadTeacherByID(id: number | string) {
     });
 
     if (!response.ok) {
-      throw new Error("Error al obtener el jefe de asignatura");
+        // Paso 1b: Capturar el estado y el mensaje del servidor
+        const status = response.status;
+        const errorDetail = await response.text().catch(() => "Mensaje no disponible"); 
+        throw new Error(`Error al obtener el jefe de asignatura (Estado: ${status}, Detalle: ${errorDetail})`);
     }
 
     const data = await response.json();

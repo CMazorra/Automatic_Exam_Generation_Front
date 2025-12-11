@@ -117,7 +117,7 @@ export default function StudentsPage() {
                 <h3 className="font-semibold text-card-foreground">{user.name}</h3>
                 <p className="text-sm text-muted-foreground">{user.account}</p>
                 <div className="ml-auto flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/students/${user.id_us}`)}>
+                  <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/head_teacher/students/${user.id_us}`)}>
                   Ver detalles
                   </Button>
                 </div>
