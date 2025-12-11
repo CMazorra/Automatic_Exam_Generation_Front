@@ -1,7 +1,7 @@
 // src/app/dashboard/head_teacher/exam_to_validate/[id]/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { getExamById } from "@/services/examService";
 import { getSubjectById } from "@/services/subjectService";
@@ -15,9 +15,9 @@ import { getCurrentUser } from "@/services/authService";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function ExamToValidateDetailsPage({ params }: { params: { id: string } }) {
+export default function ExamToValidateDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const { id } = params;
+  const { id } = use(params);
 
   const [exam, setExam] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -142,7 +142,9 @@ export default function ExamToValidateDetailsPage({ params }: { params: { id: st
 
     setSubmitting(true);
     try {
+      const currentDate = Date.now(); // Timestamp en milisegundos
       await postApprovedExam({
+        date_id: currentDate,
         exam_id: Number(id),
         head_teacher_id: currentUserId,
         guidelines: comments.trim(),
@@ -165,8 +167,10 @@ export default function ExamToValidateDetailsPage({ params }: { params: { id: st
 
     setSubmitting(true);
     try {
+      const currentDate = Date.now(); // Timestamp en milisegundos
       const guidelines = `Rechazado: ${comments.trim()}`;
       await postApprovedExam({
+        date_id: currentDate,
         exam_id: Number(id),
         head_teacher_id: currentUserId,
         guidelines,

@@ -27,7 +27,7 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
           </Link>
           
           <Link href="/dashboard/teacher/exam" className="block">
-            <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Examenes</span>
+            <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Exámenes</span>
           </Link>
 
           <Link href="/dashboard/teacher/question" className="block">

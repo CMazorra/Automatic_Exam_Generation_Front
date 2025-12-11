@@ -509,13 +509,6 @@ export default function ExamCreatePage() {
               </ul>
             </div>
           )}
-
-          {/* READONLY */}
-          <div>
-            <label className="text-sm text-muted-foreground">Estado</label>
-            <div className="mt-1">borrador</div>
-          </div>
-
           {/* ACTIONS */}
           <div className="flex gap-3">
             <Link href="/dashboard/teacher/exam">

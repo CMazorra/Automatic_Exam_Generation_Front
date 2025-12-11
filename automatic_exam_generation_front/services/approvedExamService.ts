@@ -21,7 +21,7 @@ export async function getApprovedExams() {
   }
 }
 
-export async function postApprovedExam(approved_exam: { exam_id: number, head_teacher_id: number, guidelines: string }) {
+export async function postApprovedExam(approved_exam: { date_id: number, exam_id: number, head_teacher_id: number, guidelines: string }) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/approved-exam`, {
       method: "POST",

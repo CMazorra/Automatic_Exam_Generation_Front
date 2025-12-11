@@ -19,7 +19,7 @@ export default function HeadTeacherLayout({ children }: { children: React.ReactN
           </Link>
 
           <Link href="/dashboard/head_teacher/exam_to_validate" className="block">
-            <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Examenes a validar</span>
+            <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Exámenes a validar</span>
           </Link>
 
           <Link href="/dashboard/head_teacher/exam_to_review" className="block">
@@ -27,7 +27,7 @@ export default function HeadTeacherLayout({ children }: { children: React.ReactN
           </Link>
 
           <Link href="/dashboard/head_teacher/exam" className="block">
-            <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Examenes</span>
+            <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Exámenes</span>
           </Link>
 
 

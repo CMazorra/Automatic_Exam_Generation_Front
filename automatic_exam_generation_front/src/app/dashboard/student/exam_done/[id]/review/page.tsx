@@ -247,7 +247,7 @@ export default function ExamReviewPage() {
                             />
 
                             {/* Mostrar Respuesta Correcta si NO está pendiente, NO es Argumentación y SÍ tiene una respuesta definida */}
-                            {!isPending && q.type !== 'Argumentación' && q.correct_answer && ( // <-- CORREGIDO
+                            {!isPending  && q.correct_answer && ( // <-- CORREGIDO
                                 <AnswerDisplay
                                     label="Respuesta Correcta"
                                     answer={q.correct_answer}

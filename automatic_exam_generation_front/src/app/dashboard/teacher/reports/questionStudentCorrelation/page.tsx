@@ -103,11 +103,12 @@ export default function QuestionStudentCorrelationPage() {
     return { label: 'Muy Débil', color: 'text-gray-600' };
   };
 
-  // Calcular tasa de reprobación
+  // Calcular tasa de reprobación basado en averageScore
   const calculateFailureRate = (question: WorstQuestion) => {
-    const maxScore = 5; // Asumiendo que el máximo es 5
-    const failedAnswers = question.answers.filter(a => a.score < maxScore * 0.6).length;
-    return Math.round((failedAnswers / question.totalAnswers) * 100);
+    // Calcular la tasa de reprobación: si el promedio es bajo, hay más reprobación
+    // averageScore es el promedio de calificaciones, convertimos a tasa de fallo
+    const failureRate = Math.max(0, Math.round((1 - question.averageScore / 5) * 100));
+    return failureRate;
   };
 
   // Top 10 preguntas con peor rendimiento

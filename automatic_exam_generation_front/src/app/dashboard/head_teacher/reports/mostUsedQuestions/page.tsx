@@ -141,7 +141,7 @@ export default function MostUsedQuestionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
           <p className="text-sm text-gray-600">Pregunta Más Usada</p>
-          <p className="text-2xl font-bold text-blue-600">{mostUsedQuestion?.usage_count || 0}x</p>
+          <p className="text-2xl font-bold text-blue-600">{mostUsedQuestion?.question_text}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-gray-600">Promedio de Usos</p>

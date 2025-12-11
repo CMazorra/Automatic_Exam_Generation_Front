@@ -73,7 +73,11 @@ export async function deleteExam(id: string | number) {
   return handleResponse(res);
 }
 
-// ❗ Importante: el backend NO tiene este endpoint aún
-export async function generateExamAutomatically(_payload: Record<string, any>) {
-  throw new Error("Endpoint de generación automática no implementado en backend.");
+export async function generateExam(parameters: { exam_id: string | number , subject_id: number | string, teacher_id: number | string, head_teacher_id: number | string, questionDistribution: Array<{ type: string; amount: number }> }) {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(parameters),
+  });
+  return handleResponse(res);
 }

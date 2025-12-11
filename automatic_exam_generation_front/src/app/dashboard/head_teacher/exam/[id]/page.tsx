@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { getExamById, deleteExam } from "@/services/examService";
 import { getSubjectById } from "@/services/subjectService"
@@ -11,9 +11,9 @@ import { getUserById } from "@/services/userService"
 import { getQuestionById } from "@/services/questionService"
 import { Button } from "@/components/ui/button";
 
-export default function ExamDetailsPage({ params }: { params: { id: string } }) {
+export default function ExamDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const { id } = params;
+  const { id } = use(params);
 
   const [exam, setExam] = useState<any>(null);
   const [loading, setLoading] = useState(true);

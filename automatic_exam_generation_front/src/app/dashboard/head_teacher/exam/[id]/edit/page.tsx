@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { useRouter } from "next/navigation"
 import { getExamById, updateExam } from "@/services/examService"
 import { getSubjects } from "@/services/subjectService"
@@ -22,9 +22,9 @@ interface ParamsOption {
   amount_quest?: string
 }
 
-export default function ExamEditPage({ params }: { params: { id: string } }) {
+export default function ExamEditPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
-  const id = params.id
+  const { id } = use(params)
 
   // loading / saving
   const [loading, setLoading] = useState(true)

@@ -69,7 +69,7 @@ export async function listApprovedByHeadTeacher(head_teacher_id: number) {
 
 export async function getPerformance(exam_id: number) {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/${exam_id}/performance`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reports/${exam_id}/exam-performance`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

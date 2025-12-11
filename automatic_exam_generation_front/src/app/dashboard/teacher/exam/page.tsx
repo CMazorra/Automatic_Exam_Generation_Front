@@ -4,11 +4,8 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
-import { getExams, deleteExam } from "@/services/examService"
+import { getExams } from "@/services/examService"
 import { getCurrentUser } from "@/services/authService"
-
-// Mantener SOLO este import correcto
-import { getTeacherByID } from "@/services/teacherService"
 import { getSubjectsByTeacherID } from "@/services/subjectService"
 
 import { ListViewWithAdd } from "@/components/list-view-with-add"
@@ -141,22 +138,6 @@ export default function TeacherExamListPage() {
               onClick={() => router.push(`/dashboard/teacher/exam/${exam.id}/edit`)}
             >
               Editar
-            </Button>
-
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={async () => {
-                if (!confirm("¿Eliminar examen?")) return;
-                try {
-                  await deleteExam(exam.id);
-                  setExams((e) => e.filter((x) => x.id !== exam.id));
-                } catch (err: any) {
-                  alert(err.message || "Error al eliminar");
-                }
-              }}
-            >
-              Eliminar
             </Button>
           </div>
         </div>

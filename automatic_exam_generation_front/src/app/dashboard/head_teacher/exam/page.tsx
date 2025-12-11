@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getExams, deleteExam } from "@/services/examService"
 import { getCurrentUser } from "@/services/authService"
-import { getTeacherByID } from "@/services/teacherService"
+import { getSubjectsByTeacherID } from "@/services/subjectService"
 import { ListViewWithAdd } from "@/components/list-view-with-add"
 import { Button } from "@/components/ui/button"
 
@@ -32,41 +32,44 @@ export default function TeacherExamListPage() {
         let finalUserId: number | null = null;
         try {
           const user = await getCurrentUser();
-          finalUserId = user?.id ?? null;
+          finalUserId = user.id ?? null;
         } catch (e) {
-          // Fallback: Intenta obtener el ID del usuario de localStorage
           const rawUserId = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
           finalUserId = rawUserId ? Number(rawUserId) : null;
+          console.error("[teacher/exam] getCurrentUser falló, usando localStorage", { rawUserId, finalUserId, error: e });
         }
 
         if (!finalUserId) {
-          console.error("No se pudo obtener el ID del usuario actual.");
           setExams([]);
           return
         }
 
-        // 2. Obtener los detalles del profesor para saber qué asignatura(s) imparte
-        // Asumimos que el ID de usuario es el mismo que el ID de profesor para getTeacherByID
-        const teacherData = await getTeacherByID(finalUserId)
-        
-        // Obtener la lista de IDs de asignaturas del profesor (Adaptar a tu estructura de datos)
-        let teacherSubjectIds: number[] = [];
-        if (teacherData?.subjects && Array.isArray(teacherData.subjects)) {
-          // Si el backend devuelve un array 'subjects' en el objeto teacher
-          teacherSubjectIds = teacherData.subjects.map((s: any) => s.id).filter(Boolean);
-        } else if (teacherData?.subject_id) {
-          // Si el backend solo devuelve un 'subject_id' directo
-          teacherSubjectIds = [teacherData.subject_id]; 
+        // 2. Obtener las asignaturas del profesor usando getSubjectsByTeacherID
+        let teacherSubjects: any[] = [];
+        try {
+          const subjectsData = await getSubjectsByTeacherID(String(finalUserId));
+          
+          if (Array.isArray(subjectsData)) {
+            teacherSubjects = subjectsData;
+          } else if (subjectsData?.data && Array.isArray(subjectsData.data)) {
+            teacherSubjects = subjectsData.data;
+          }
+        } catch (err) {
+          console.error("[teacher/exam] Error al obtener asignaturas del profesor", err);
         }
 
+        const teacherSubjectIds = teacherSubjects.map((s: any) => s.id).filter(Boolean);
+
         if (teacherSubjectIds.length === 0) {
-          console.log("El profesor no tiene asignaturas asignadas.");
           setExams([]);
           return;
         }
 
         // 3. Obtener todos los exámenes
         const allExams: Exam[] = await getExams()
+        if (!allExams || !Array.isArray(allExams) || allExams.length === 0) {
+          console.error("[teacher/exam] allExams vacío o no es array", { allExams });
+        }
         
         // 4. Filtrar los exámenes (Requisito 3: todos los exámenes de la asignatura(s) del profesor)
         const filteredExams = allExams.filter(exam => 
@@ -134,22 +137,6 @@ export default function TeacherExamListPage() {
               onClick={() => router.push(`/dashboard/head_teacher/exam/${exam.id}/edit`)}
             >
               Editar
-            </Button>
-
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={async () => {
-                if (!confirm("¿Eliminar examen?")) return
-                try {
-                  await deleteExam(exam.id)
-                  setExams(e => e.filter(x => x.id !== exam.id))
-                } catch (err: any) {
-                  alert(err.message || "Error al eliminar")
-                }
-              }}
-            >
-              Eliminar
             </Button>
           </div>
         </div>
