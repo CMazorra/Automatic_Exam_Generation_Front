@@ -7,7 +7,7 @@ import { getCurrentUser } from "@/services/authService";
 import { getExams, updateExamStatus } from "@/services/examService";
 import { postExamStudent } from "@/services/examStudentService";
 
-import { getSubjectsByTeacherID } from "@/services/subjectService"; 
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"; 
 
 import { Button } from "@/components/ui/button";
 import {
@@ -87,7 +87,7 @@ export default function AssignExamPage({ params }: { params: { id: string } }) {
 
         // --- Obtener Asignaturas Comunes y Nombres ---
         // 1. Obtener todas las asignaturas que imparte el profesor actual
-        const teacherSubjectsRaw = await getSubjectsByTeacherID(String(currentTeacherId));
+        const teacherSubjectsRaw = await getSubjectsFlatByTeacherID(String(currentTeacherId));
         
         // 🔑 USAMOS la función extractSubjects CORREGIDA para asegurar IDs numéricos
         const teacherSubjects: Subject[] = extractSubjects(teacherSubjectsRaw);

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { ListView } from "@/components/list-view"
 import { getCurrentUser } from "@/services/authService"
 import { getTeachers } from "@/services/teacherService"
-import { getSubjectsByTeacherID, getSubjects } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID, getSubjects } from "@/services/subjectService"
 import { Button } from "@/components/ui/button"
 
 export default function UserPage() {
@@ -37,7 +37,7 @@ export default function UserPage() {
             (all || []).map(async (t: any) => {
               const normalized = normalizeTeacher(t)
               const tid = normalized.id_us ?? normalized.id ?? normalized._id
-              const subjects = await getSubjectsByTeacherID(String(tid)).catch(() => [])
+              const subjects = await getSubjectsFlatByTeacherID(String(tid)).catch(() => [])
               const subjectsArray = Array.isArray(subjects) ? subjects : []
 
               const headSubjects = allSubjectsArray
@@ -61,7 +61,7 @@ export default function UserPage() {
           return
         }
 
-        const mySubjects = await getSubjectsByTeacherID(String(currentId))
+        const mySubjects = await getSubjectsFlatByTeacherID(String(currentId))
         const mySubjectIds = new Set(
           (mySubjects || []).map((s: any) => String(s.id ?? s._id ?? s.subject_id ?? s.id_subject))
         )
@@ -72,7 +72,7 @@ export default function UserPage() {
           (allTeachers || []).map(async (t: any) => {
             const normalized = normalizeTeacher(t)
             const tid = normalized.id_us ?? normalized.id ?? normalized._id
-            const subjects = await getSubjectsByTeacherID(String(tid)).catch(() => [])
+            const subjects = await getSubjectsFlatByTeacherID(String(tid)).catch(() => [])
             const subjectsArray = Array.isArray(subjects) ? subjects : []
 
             const headSubjects = allSubjectsArray

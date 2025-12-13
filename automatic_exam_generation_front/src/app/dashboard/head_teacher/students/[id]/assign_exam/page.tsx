@@ -9,7 +9,7 @@ import { getExams, updateExamStatus } from "@/services/examService";
 import { postExamStudent } from "@/services/examStudentService"; // **VERIFICA ESTA RUTA**
 
 // ASUMIMOS estas funciones de servicio
-import { getSubjectsByTeacherID, getSubjectsByStudentID } from "@/services/subjectService"; // 🎯 Añadido para obtener la lista del Jefe de Estudios
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"; // 🎯 Añadido para obtener la lista del Jefe de Estudios
 
 import { Button } from "@/components/ui/button";
 import {
@@ -78,7 +78,7 @@ export default function AssignExamHeadTeacherPage({ params }: { params: { id: st
         // --- Lógica para obtener Asignaturas Comunes ---
         
         // A. Obtener asignaturas impartidas por el Jefe de Estudios
-        const teacherSubjectsRaw = await getSubjectsByTeacherID(String(currentHeadTeacherId));
+        const teacherSubjectsRaw = await getSubjectsFlatByTeacherID(String(currentHeadTeacherId));
         // Aseguramos que sea un array de objetos Subject
         const teacherSubjects: Subject[] = extractSubjects(teacherSubjectsRaw)
             .map(s => ({ id: Number(s.id), name: s.name || `ID ${s.id}` }));

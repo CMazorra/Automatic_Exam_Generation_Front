@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getStudentByID } from "@/services/studentService"
 import { getCurrentUser } from "@/services/authService"
-import { getSubjectsByTeacherID,getSubjectsByStudentID } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID,getSubjectsByStudentID } from "@/services/subjectService"
 
 interface Student {
   id: number | string
@@ -80,7 +80,7 @@ export default function StudentView({ params }: { params: Promise<{ id: string }
           current?.teacher?.id ??
           current?.user?.id
         if (teacherId) {
-          const ts = await getSubjectsByTeacherID(String(teacherId))
+          const ts = await getSubjectsFlatByTeacherID(String(teacherId))
           setTeacherSubjects(ts || [])
         } else {
           setTeacherSubjects([])

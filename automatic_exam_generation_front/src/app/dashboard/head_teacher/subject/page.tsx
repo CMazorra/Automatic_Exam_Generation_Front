@@ -5,7 +5,7 @@ import { ListView } from "@/components/list-view"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/services/authService"
-import { getSubjectsByTeacherID } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 import { getHeadTeacherByID } from "@/services/headTeacerService"
 import { getTopicsBySubjectId } from "@/services/topicService"
 
@@ -25,7 +25,7 @@ export default function SubjectPage() {
           if (mounted) setEntities([])
           return
         }
-        const subjects = await getSubjectsByTeacherID(String(teacherId))
+        const subjects = await getSubjectsFlatByTeacherID(String(teacherId))
         const subjectsArray = Array.isArray(subjects) ? subjects : []
         
         const enrichedSubjects = await Promise.all(

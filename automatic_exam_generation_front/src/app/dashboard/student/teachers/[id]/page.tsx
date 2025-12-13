@@ -4,7 +4,7 @@ import React, { useEffect, useState , use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getTeacherByID } from "@/services/teacherService"
-import { getSubjects,getSubjectsByTeacherID } from "@/services/subjectService"
+import { getSubjects,getSubjectsFlatByTeacherID } from "@/services/subjectService"
 
 interface Teacher {
   id: number | string
@@ -49,7 +49,7 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     const loadSubjectsByTeacher = async () => {
       try {
-        const all = await getSubjectsByTeacherID(String(id))
+        const all = await getSubjectsFlatByTeacherID(String(id))
         setSubjects(all || [])
       } catch (e) {
         console.error("Error fetching subjects by teacher:", e)

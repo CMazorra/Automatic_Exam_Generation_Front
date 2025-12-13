@@ -4,7 +4,7 @@ import React, { useEffect, useState , use } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getTeacherByID } from "@/services/teacherService"
-import { getSubjects,getSubjectsByTeacherID } from "@/services/subjectService"
+import { getSubjects,getSubjectsFlatByTeacherID } from "@/services/subjectService"
 
 interface Teacher {
   id: number | string
@@ -49,7 +49,7 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     const loadSubjectsByTeacher = async () => {
       try {
-        const all = await getSubjectsByTeacherID(String(id))
+        const all = await getSubjectsFlatByTeacherID(String(id))
         setSubjects(all || [])
       } catch (e) {
         console.error("Error fetching subjects by teacher:", e)
@@ -95,6 +95,11 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
       headSubjects.push(subject)
     }
   }
+
+  console.log("Head Subjects:", headSubjects)
+  console.log("All Subjects:", allSubjects)
+  console.log("Teacher ID:", teacher.id)
+  console.log("Subjects by Teacher:", subjects)
 
   const displayName = teacher.user?.name || "(Sin nombre)"
 
@@ -161,7 +166,7 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
           </div>
 
           <div className="flex gap-3 flex-wrap">
-            <Link href="/dashboard/teacher/teachers">
+            <Link href="/dashboard/head_teacher/teachers">
               <Button variant="outline">Volver</Button>
             </Link>
           </div>

@@ -3,9 +3,9 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { getExams, deleteExam } from "@/services/examService"
+import { getExams } from "@/services/examService"
 import { getCurrentUser } from "@/services/authService"
-import { getSubjectsByTeacherID } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 import { ListViewWithAdd } from "@/components/list-view-with-add"
 import { Button } from "@/components/ui/button"
 
@@ -44,10 +44,10 @@ export default function TeacherExamListPage() {
           return
         }
 
-        // 2. Obtener las asignaturas del profesor usando getSubjectsByTeacherID
+        // 2. Obtener las asignaturas del profesor usando getSubjectsFlatByTeacherID
         let teacherSubjects: any[] = [];
         try {
-          const subjectsData = await getSubjectsByTeacherID(String(finalUserId));
+          const subjectsData = await getSubjectsFlatByTeacherID(String(finalUserId));
           
           if (Array.isArray(subjectsData)) {
             teacherSubjects = subjectsData;

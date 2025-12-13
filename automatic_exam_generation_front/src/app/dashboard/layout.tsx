@@ -5,23 +5,53 @@ import { useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { getCurrentUser } from "@/services/authService"
+import { getUserById } from "@/services/userService"
+
+interface User {
+  id?: string | number
+  name?: string
+  account?: string
+  email?: string
+  role?: string
+  phone?: string
+  age?: number
+  course?: string
+  is_head_teacher?: boolean
+  headTeacher?: boolean
+  [key: string]: any
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const [userRole, setUserRole] = useState<string>("Usuario")
+  const [user, setUser] = useState<User>({ account: "Usuario" })
 
   useEffect(() => {
-    const loadUserRole = async () => {
+    const loadUserData = async () => {
       try {
-        const user = await getCurrentUser()
-        setUserRole(user.role || "Usuario")
+        const currentUserData = await getCurrentUser()
+        console.log("Datos del usuario (getCurrentUser):", currentUserData)
+        
+        // Obtener detalles completos usando el ID
+        if (currentUserData?.id) {
+          const fullUserData = await getUserById(currentUserData.id)
+          console.log("Datos completos del usuario:", fullUserData)
+          // Merge head teacher flags from getCurrentUser into the full user data
+          const headTeacherFlag = currentUserData?.headTeacher ?? currentUserData?.is_head_teacher
+          const merged = typeof headTeacherFlag !== "undefined"
+            ? { ...fullUserData, headTeacher: headTeacherFlag, is_head_teacher: headTeacherFlag }
+            : fullUserData
+          setUser(merged || currentUserData)
+        } else {
+          setUser(currentUserData || { account: "Usuario" })
+        }
       } catch (error) {
-        console.error("Error al cargar el rol del usuario:", error)
-        setUserRole("Usuario")
+        console.error("Error al cargar los datos del usuario:", error)
+        setUser({ account: "Usuario" })
       }
     }
-    loadUserRole()
+    loadUserData()
   }, [])
 
   const openNotifications = () => {
@@ -79,12 +109,69 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               Cerrar sesión
             </Button>
 
-            <div className="relative">
-              <button className="flex items-center gap-2 rounded-full px-3 py-1 bg-muted text-muted-foreground hover:bg-muted/80" aria-label="profile menu">
-                <span className="w-8 h-8 rounded-full bg-primary inline-block" />
-                <span className="text-sm">{userRole}</span>
-              </button>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 rounded-full px-3 py-1 bg-muted text-muted-foreground hover:bg-muted/80" aria-label="profile menu">
+                  <span className="w-8 h-8 rounded-full bg-primary inline-block" />
+                  <span className="text-sm">{user.name || user.account || "Usuario"}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Detalles de Perfil</h4>
+                  </div>
+                  <div className="space-y-3">
+                    {(user.name || user.account) && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Nombre</p>
+                        <p className="text-sm">{user.name || user.account}</p>
+                      </div>
+                    )}
+                    {user.account && !user.name && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Usuario</p>
+                        <p className="text-sm">{user.account}</p>
+                      </div>
+                    )}
+                    {user.email && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Correo</p>
+                        <p className="text-sm">{user.email}</p>
+                      </div>
+                    )}
+                    {user.role && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Rol</p>
+                        <p className="text-sm">{
+                          (user.is_head_teacher || user.headTeacher)
+                            ? "Head Teacher"
+                            : (user.role?.toUpperCase() === "TEACHER" ? "Teacher" : user.role)
+                        }</p>
+                      </div>
+                    )}
+                    {user.age && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Edad</p>
+                        <p className="text-sm">{user.age}</p>
+                      </div>
+                    )}
+                    {user.course && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Curso</p>
+                        <p className="text-sm">{user.course}</p>
+                      </div>
+                    )}
+                    {user.phone && (
+                      <div>
+                        <p className="text-xs font-semibold text-muted-foreground">Teléfono</p>
+                        <p className="text-sm">{user.phone}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </header>

@@ -31,7 +31,7 @@ export default function TopicNewPage() {
         router.push(returnTo)
       }
       else {
-        router.push(`/dashboard/teacher/topic`)
+        router.push(`/dashboard/head_teacher/topic`)
       }
     } catch (err: any) {
       console.error(err)
@@ -62,7 +62,7 @@ export default function TopicNewPage() {
               onClick={() =>
                 returnTo
                   ? router.push(returnTo)
-                  : router.push("/dashboard/teacher/topic")
+                  : router.push("/dashboard/head_teacher/topic")
               }
               disabled={saving}
             >

@@ -10,10 +10,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         <h2 className="text-lg font-semibold mb-4">Panel — Estudiante</h2>
 
         <nav className="flex flex-col gap-2 text-sm">
-          <Link href="/dashboard/student/students" className="block">
-            <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Compañeros</span>
-          </Link>
-
           <Link href="/dashboard/student/teachers" className="block">
             <span className="inline-block w-full text-left px-3 py-2 rounded-md bg-card border hover:bg-primary/10">Profesores</span>
           </Link>

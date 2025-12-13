@@ -7,7 +7,7 @@ import { getAnswers } from "@/services/answerService"
 import { getExamById } from "@/services/examService"
 import { getStudentByID } from "@/services/studentService"
 import { getCurrentUser } from "@/services/authService"
-import { getSubjectsByTeacherID } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 import { getReevaluations } from "@/services/reevaluationService"
 import { ListView } from "@/components/list-view"
 import { Button } from "@/components/ui/button"
@@ -48,7 +48,7 @@ export default function TeacherExamToReviewPage() {
           return
         }
 
-        const subjectsData = await getSubjectsByTeacherID(String(teacherId))
+        const subjectsData = await getSubjectsFlatByTeacherID(String(teacherId))
         const subjects = Array.isArray(subjectsData) ? subjectsData : []
         const subjectIds = new Set(subjects.map((s: any) => s.id))
 

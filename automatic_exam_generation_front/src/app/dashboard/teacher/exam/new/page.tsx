@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createExam } from "@/services/examService"
-import { getSubjects, getSubjectsByTeacherID } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 import { getParams } from "@/services/paramsService"
 import { getQuestions } from "@/services/questionService"
 import { getCurrentUser } from "@/services/authService"
-import { getHeadTeachers } from "@/services/headTeacerService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
@@ -123,7 +122,7 @@ export default function ExamCreatePage() {
       try {
         setLoadingSubjects(true)
         // Usa la función para obtener solo las asignaturas del profesor
-        const subjectsList = await getSubjectsByTeacherID(String(teacherId)).catch(() => [])
+        const subjectsList = await getSubjectsFlatByTeacherID(String(teacherId)).catch(() => [])
         if (mounted) {
           setAllSubjects(Array.isArray(subjectsList) ? subjectsList : [])
         }

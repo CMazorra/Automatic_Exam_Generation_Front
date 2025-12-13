@@ -44,7 +44,7 @@ export default function TopicEdit({ params }: { params: Promise<{ id: string }> 
     setIsSaving(true)
     try {
       await updateTopic(id, { name: nombre.trim() })
-      router.push(`/dashboard/teacher/topic`)
+      router.push(`/dashboard/head_teacher/topic`)
     } catch (error) {
       console.error("Error updating topic:", error)
     } finally {
@@ -93,7 +93,7 @@ export default function TopicEdit({ params }: { params: Promise<{ id: string }> 
             </FieldGroup>
 
             <div className="flex gap-3">
-              <Link href={`/dashboard/teacher/topic/${topic.id}`}>
+              <Link href={`/dashboard/head_teacher/topic/${topic.id}`}>
                 <Button type="button" variant="outline">
                   Cancelar
                 </Button>

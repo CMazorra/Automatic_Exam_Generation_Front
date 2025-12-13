@@ -92,7 +92,7 @@ export default function SubtopicEdit({
               </FieldSet>
             </FieldGroup>
             <div className="flex gap-3">
-              <Link href={`/dashboard/teacher/subtopic/${id}/${topic_id}`}>
+              <Link href={`/dashboard/head_teacher/subtopic/${id}/${topic_id}`}>
                 <Button type="button" variant="outline">
                   Cancelar
                 </Button>

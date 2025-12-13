@@ -5,7 +5,7 @@ import { ListViewWithAdd } from "@/components/list-view-with-add"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { getCurrentUser } from "@/services/authService"
-import { getSubjectsByTeacherID } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 import { getTopicsBySubjectId } from "@/services/topicService"
 
 export default function TopicPage() {
@@ -23,7 +23,7 @@ export default function TopicPage() {
             return
           }
 
-          const subjects = await getSubjectsByTeacherID(teacherId)
+          const subjects = await getSubjectsFlatByTeacherID(teacherId)
           if (!Array.isArray(subjects) || subjects.length === 0) {
             setEntities([])
             return
@@ -60,13 +60,13 @@ export default function TopicPage() {
                   <h3 className="font-semibold text-card-foreground">{topic.name}</h3>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/topic/${topic.id}`)}>
+              <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/head_teacher/topic/${topic.id}`)}>
                 Ver detalles
               </Button>
             </div>
           </div>
         )}
-        onAdd={() => router.push("/dashboard/teacher/topic/new")}
+        onAdd={() => router.push("/dashboard/head_teacher/topic/new")}
       />
     )
 }

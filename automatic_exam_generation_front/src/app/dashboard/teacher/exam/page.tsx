@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 
 import { getExams } from "@/services/examService"
 import { getCurrentUser } from "@/services/authService"
-import { getSubjectsByTeacherID } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 
 import { ListViewWithAdd } from "@/components/list-view-with-add"
 import { Button } from "@/components/ui/button"
@@ -56,7 +56,7 @@ export default function TeacherExamListPage() {
         let teacherSubjects: any[] = [];
 
         try {
-          const subjectsData = await getSubjectsByTeacherID(String(finalUserId));
+          const subjectsData = await getSubjectsFlatByTeacherID(String(finalUserId));
 
           if (Array.isArray(subjectsData)) {
             teacherSubjects = subjectsData;

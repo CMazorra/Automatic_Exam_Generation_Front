@@ -71,7 +71,7 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
         )
       }
       await deleteTopic(topic.id)
-      router.push(`/dashboard/teacher/topic`)
+      router.push(`/dashboard/head_teacher/topic`)
     } catch (e) {
       console.error(e)
       alert("No se pudo eliminar el tema.")
@@ -104,10 +104,10 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
         <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
           <h2 className="font-semibold leading-none text-xl">{displayName}</h2>
           <div className="flex gap-3 flex-wrap">
-            <Link href="/dashboard/teacher/topic">
+            <Link href="/dashboard/head_teacher/topic">
               <Button variant="outline">Volver</Button>
             </Link>
-            <Link href={`/dashboard/teacher/topic/${topic.id}/edit`}>
+            <Link href={`/dashboard/head_teacher/topic/${topic.id}/edit`}>
               <Button>Editar</Button>
             </Link>
             <Button
@@ -134,8 +134,8 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
               size="sm"
               onClick={() =>
                 router.push(
-                  `/dashboard/teacher/subtopic/new?topicId=${topic.id}&returnTo=${encodeURIComponent(
-                    `/dashboard/teacher/topic/${topic.id}`
+                  `/dashboard/head_teacher/subtopic/new?topicId=${topic.id}&returnTo=${encodeURIComponent(
+                    `/dashboard/head_teacher/topic/${topic.id}`
                   )}`
                 )
               }
@@ -166,7 +166,7 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => router.push(`/dashboard/teacher/subtopic/${s.id}/${s.topic_id}`)}
+                      onClick={() => router.push(`/dashboard/head_teacher/subtopic/${s.id}/${s.topic_id}`)}
                     >
                       Ver
                     </Button>
@@ -174,7 +174,7 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
                       variant="ghost"
                       size="sm"
                       onClick={() =>
-                        router.push(`/dashboard/teacher/subtopic/${s.id}/${s.topic_id}/edit`)
+                        router.push(`/dashboard/head_teacher/subtopic/${s.id}/${s.topic_id}/edit`)
                       }
                     >
                       Editar

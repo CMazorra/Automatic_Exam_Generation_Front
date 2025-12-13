@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { ListView } from "@/components/list-view"
 import { getCurrentUser } from "@/services/authService"
 import { getStudents } from "@/services/studentService"
-import { getSubjectsByTeacherID, getSubjectsByStudentID } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID, getSubjectsByStudentID } from "@/services/subjectService"
 import { Button } from "@/components/ui/button"
 
 export default function StudentsPage() {
@@ -55,7 +55,7 @@ export default function StudentsPage() {
           return
         }
 
-        const mySubjectsRaw = await getSubjectsByTeacherID(String(currentId)).catch(() => [])
+        const mySubjectsRaw = await getSubjectsFlatByTeacherID(String(currentId)).catch(() => [])
         const mySubjects = ensureArray(mySubjectsRaw)
         const mySubjectIds = new Set(
           mySubjects.map((s: any) => String(s.id ?? s._id ?? s.subject_id ?? s.id_subject)).filter(Boolean)

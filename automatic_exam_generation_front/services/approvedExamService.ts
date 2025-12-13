@@ -87,7 +87,7 @@ export async function getApprovedExamById(date: Date, exam_id: string, head_teac
   }
 }
 
-export async function updateApprovedExam(date: Date, exam_id: string, head_teacher_id: string, approved_exam: { guidelines: string }) {
+export async function updateApprovedExam(date: Date, exam_id: string, head_teacher_id: string, approved_exam: { guidelines: string, seen?: boolean }) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/approved-exam/${date}/${exam_id}/${head_teacher_id}`, {
       method: "PATCH",

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { getSubtopics } from "@/services/subtopicService"
 import { getTopicById, getTopicsBySubjectId } from "@/services/topicService"
 import { getCurrentUser } from "@/services/authService"
-import { getSubjectsByTeacherID } from "@/services/subjectService"
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 
 export default function SubtopicPage() {
     const router = useRouter()
@@ -27,7 +27,7 @@ export default function SubtopicPage() {
             return
           }
 
-          const subjects = await getSubjectsByTeacherID(String(teacherId)).catch(() => [])
+          const subjects = await getSubjectsFlatByTeacherID(String(teacherId)).catch(() => [])
           const subjectsArray = Array.isArray(subjects) ? subjects : []
           const subjectIds = subjectsArray
             .map((s: any) => s.id ?? s._id ?? s.subject_id)
