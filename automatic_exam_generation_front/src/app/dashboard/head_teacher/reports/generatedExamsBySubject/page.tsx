@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { getGeneratedExamsBySubject } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   BarChart,
@@ -168,7 +169,22 @@ export default function GeneratedExamsBySubjectPage() {
   };
 
   return (
-    <div className="w-full p-6 space-y-6">
+    <div id="report-content" className="w-full p-6 space-y-6">
+      <div className="flex justify-end gap-2 print:hidden">
+        <Button
+          onClick={() => {
+            try {
+              document.documentElement.classList.add('pdf-override');
+              window.print();
+            } finally {
+              setTimeout(() => document.documentElement.classList.remove('pdf-override'), 1000);
+            }
+          }}
+          variant="outline"
+        >
+          Imprimir
+        </Button>
+      </div>
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">Exámenes Generados Automáticamente</h1>
         <p className="text-gray-600">
@@ -397,6 +413,15 @@ export default function GeneratedExamsBySubjectPage() {
           <p className="text-gray-600">No hay exámenes generados para esta asignatura</p>
         </Card>
       )}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #report-content, #report-content * { visibility: visible; }
+          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { size: A4; margin: 12mm; }
+          .print:hidden { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }

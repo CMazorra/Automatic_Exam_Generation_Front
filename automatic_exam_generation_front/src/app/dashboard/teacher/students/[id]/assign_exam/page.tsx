@@ -1,241 +1,249 @@
-// src/app/dashboard/teacher/students/[id]/assign_exam/page.tsx
+// src/app/dashboard/head_teacher/students/[id]/assign_exam/page.tsx
+
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser } from "@/services/authService";
 import { getExams, updateExamStatus } from "@/services/examService";
-import { postExamStudent } from "@/services/examStudentService";
+import { postExamStudent } from "@/services/examStudentService"; // **VERIFICA ESTA RUTA**
 
-import { getSubjectsFlatByTeacherID } from "@/services/subjectService"; 
+// ASUMIMOS estas funciones de servicio
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"; // 🎯 Añadido para obtener la lista del Jefe de Estudios
 
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
-
 interface Exam {
-  id: number;
-  name: string;
-  subject_id: number;
-  teacher_id: number;
-  status: string;
+  id: number;
+  name: string;
+  subject_id: number;
+  teacher_id: number; 
+  status: string;
 }
 
 interface Subject {
-    id: number; // Aseguramos que el ID de la asignatura sea un número
-    name: string;
+    id: number | string;
+    name: string;
 }
 
-export default function AssignExamPage({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+export default function AssignExamTeacherPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const studentId = Number(params.id);
-  // Asignaturas que cursa el estudiante (vienen de la URL)
-  const studentSubjectIds = searchParams.get("subjects")?.split(",").map(Number).filter(id => !isNaN(id)) || [];
+  const { id } = use(params);
+  const studentId = Number(id);
+  // Asignaturas que cursa el estudiante (vienen de la URL de la vista de estudiante)
+  const studentSubjectIds = searchParams.get("subjects")?.split(",").map(Number).filter(id => !isNaN(id)) || [];
 
-  const [teacherId, setTeacherId] = useState<number | null>(null);
-  const [availableExams, setAvailableExams] = useState<Exam[]>([]);
-  const [commonSubjects, setCommonSubjects] = useState<Subject[]>([]);
-  
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
-  const [selectedExamId, setSelectedExamId] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [TeacherId, setTeacherId] = useState<number | null>(null);
+  const [availableExams, setAvailableExams] = useState<Exam[]>([]);
+  const [commonSubjects, setCommonSubjects] = useState<Subject[]>([]); // Asignaturas en común con nombres
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
+  const [selectedExamId, setSelectedExamId] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const extractSubjects = (v: any): Subject[] => {
+    if (v == null) return []
+    if (Array.isArray(v)) return v
+    if (typeof v === "object") {
+      if (Array.isArray(v.subjects)) return v.subjects
+    }
+    // Convertir si el objeto solo tiene {id, name}
+    if (v.id && v.name) return [v] 
+    return []
+  }
 
-    // 🔑 FUNCIÓN UNIFICADA: Igualamos la lógica de Head Teacher para asegurar el tipo Subject con ID numérico
-    const extractSubjects = (v: any): Subject[] => {
-        if (v == null) return []
-        
-        let rawSubjects: any[] = []
-        if (Array.isArray(v)) {
-            rawSubjects = v
-        } else if (typeof v === "object" && Array.isArray(v.subjects)) {
-            rawSubjects = v.subjects
-        } else if (v.id && v.name) {
-            rawSubjects = [v]
+  // 1. Cargar Usuario Actual (Jefe de Estudios), sus asignaturas, y filtrar las asignaturas comunes.
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const current = await getCurrentUser();
+        const currentTeacherId = current?.id || current?.id_us || current?.user?.id || null;
+        setTeacherId(currentTeacherId);
+
+        if (!currentTeacherId) {
+          alert("Error: No se pudo obtener el ID del Jefe de Estudios actual.");
+          router.back();
+          return;
         }
+
+        // --- Lógica para obtener Asignaturas Comunes ---
         
-        return rawSubjects.map((s: any) => ({ 
-            id: Number(s.id), 
-            name: s.name || `ID ${s.id}` 
-        }));
-    }
+        // A. Obtener asignaturas impartidas por el Jefe de Estudios
+        const teacherSubjectsRaw = await getSubjectsFlatByTeacherID(String(currentTeacherId));
+        // Aseguramos que sea un array de objetos Subject
+        const teacherSubjects: Subject[] = extractSubjects(teacherSubjectsRaw)
+            .map(s => ({ id: Number(s.id), name: s.name || `ID ${s.id}` }));
+            
+        const teacherSubjectIds = teacherSubjects.map(s => Number(s.id));
+
+        // B. Encontrar la intersección (Asignaturas que él imparte Y que el estudiante cursa)
+        const commonSubjectObjects = teacherSubjects.filter(s =>
+            studentSubjectIds.includes(Number(s.id))
+        );
+        
+        setCommonSubjects(commonSubjectObjects);
+        const commonSubjectIds = commonSubjectObjects.map(s => Number(s.id));
 
 
-  // 1. Cargar Usuario Actual (Profesor), sus asignaturas y Exámenes Disponibles
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const current = await getCurrentUser();
-        const currentTeacherId = current?.id || current?.id_us || current?.user?.id || null;
-        setTeacherId(currentTeacherId);
+        // --- Lógica para obtener Exámenes Disponibles ---
+        
+        const allExams: Exam[] = await getExams();
 
-        if (!currentTeacherId) {
-          alert("Error: No se pudo obtener el ID del profesor actual.");
-          router.back();
-          return;
-        }
+        // 🎯 FILTRADO CLAVE:
+        // 1) Creados por el Profesor actual (Asumiendo que el Profesor solo puede asignar sus propios exámenes, como un profesor normal)
+        // O: Se puede cambiar el filtro para que el Profesor pueda asignar CUALQUIER examen Aprobado que cubra la asignatura común. **Mantendremos la restricción de crear/asignar sus propios exámenes por coherencia con el rol de "Profesor/Jefe de Estudios".**
 
-        // --- Obtener Asignaturas Comunes y Nombres ---
-        // 1. Obtener todas las asignaturas que imparte el profesor actual
-        const teacherSubjectsRaw = await getSubjectsFlatByTeacherID(String(currentTeacherId));
-        
-        // 🔑 USAMOS la función extractSubjects CORREGIDA para asegurar IDs numéricos
-        const teacherSubjects: Subject[] = extractSubjects(teacherSubjectsRaw);
-        
-        // 2. Filtrar para obtener la intersección (asignaturas que él imparte Y que el estudiante cursa)
-        const commonSubjectObjects = teacherSubjects.filter(s => 
-            studentSubjectIds.includes(s.id) // s.id ya es un número gracias a extractSubjects
-        );
-        
-        setCommonSubjects(commonSubjectObjects);
-        const commonSubjectIds = commonSubjectObjects.map(s => s.id);
+        const filteredExams = allExams.filter(exam =>
+            // 1. Debe ser un examen creado por el profesor logeado
+            exam.teacher_id === currentTeacherId && 
+            // 2. Debe ser de una asignatura que el profesor imparte Y que el alumno cursa
+            commonSubjectIds.includes(Number(exam.subject_id)) &&
+            // 3. Debe estar Aprobado (listo para ser asignado)
+            (exam.status === "Aprobado")
+        );
 
+        setAvailableExams(filteredExams);
 
-        // --- Obtener y Filtrar Exámenes ---
-        const allExams: Exam[] = await getExams();
+        // Auto-seleccionar la primera asignatura si solo hay una
+        if (commonSubjectObjects.length === 1) {
+            setSelectedSubjectId(String(commonSubjectObjects[0].id));
+        }
 
-        // Filtrar exámenes: 1) Creados por el profesor, 2) Pertenecen a asignaturas comunes, 3) Listos para asignar.
-        const filteredExams = allExams.filter(exam => 
-            exam.teacher_id === currentTeacherId && 
-            commonSubjectIds.includes(exam.subject_id) && // exam.subject_id es number, commonSubjectIds es array de number
-            (exam.status === "Aprobado") 
-        );
-
-        setAvailableExams(filteredExams);
-
-        // Auto-seleccionar la primera asignatura si solo hay una
-        if (commonSubjectObjects.length === 1) {
-            setSelectedSubjectId(String(commonSubjectObjects[0].id));
-        }
-
-      } catch (e) {
-        console.error("Error loading data:", e);
-        alert("Error al cargar los datos de asignación.");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadData();
-  }, [router, studentSubjectIds]);
+      } catch (e) {
+        console.error("Error loading data:", e);
+        alert("Error al cargar los datos de asignación.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadData();
+  }, [router, studentSubjectIds]);
 
 
-    const handleAssign = async () => {
-      if (!selectedExamId || !teacherId) {
-        alert("Selecciona un examen y asegúrate de que el profesor esté identificado.");
-        return;
-      }
+  const handleAssign = async () => {
+    if (!selectedExamId || !TeacherId) {
+      alert("Selecciona un examen y asegúrate de que el Jefe de Estudios esté identificado.");
+      return;
+    }
 
-      setIsSubmitting(true);
-      try {
-        const examId = Number(selectedExamId);
+    setIsSubmitting(true);
+    try {
+      const examId = Number(selectedExamId);
+      const selectedExam = availableExams.find(e => e.id === examId);
 
-        // 1. CREAR LA ASIGNACIÓN
-        await postExamStudent({
-          exam_id: examId,
-          student_id: studentId,
-          teacher_id: teacherId,
-          score: 0,
-        });
+      if (!selectedExam) {
+        alert("Examen no encontrado en la lista disponible.");
+        return;
+      }
 
-        // 2. ACTUALIZAR EL ESTADO DEL EXAMEN (De 'Aprobado' a 'Asignado')
-        try {
-          await updateExamStatus(examId, "Asignado");
-        } catch (statusError) {
-          console.warn("La asignación se creó, pero falló la actualización del estado del examen:", statusError);
-        }
+      // 1. CREAR LA ASIGNACIÓN (usando el ID del Jefe de Estudios como "teacher_id" de la asignación)
+      await postExamStudent({
+        exam_id: examId,
+        student_id: studentId,
+        teacher_id: TeacherId, 
+        score: 0,
+      });
 
-        alert("Examen asignado y estado actualizado exitosamente.");
-        router.push(`/dashboard/teacher/students/${studentId}`); 
-      } catch (error) {
-        console.error("Error crítico en la asignación:", error);
-        alert("Error crítico al asignar el examen. Intenta de nuevo.");
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
+      // 2. ACTUALIZAR EL ESTADO DEL EXAMEN 
+      try {
+        await updateExamStatus(examId, "Asignado");
+      } catch (statusError) {
+        console.warn("La asignación se creó, pero falló la actualización del estado del examen:", statusError);
+      }
 
-  const examsForSelectedSubject = availableExams.filter(
-    (exam) => String(exam.subject_id) === selectedSubjectId
-  );
+      alert("Examen asignado y estado actualizado exitosamente.");
+      // Redirigir de vuelta a la vista del estudiante del Jefe de Estudios
+      router.push(`/dashboard/teacher/students/${studentId}`); 
+    } catch (error) {
+      console.error("Error crítico en la asignación:", error);
+      alert("Error crítico al asignar el examen. Intenta de nuevo.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const examsForSelectedSubject = availableExams.filter(
+    (exam) => String(exam.subject_id) === selectedSubjectId
+  );
+
+  if (isLoading) return <p className="p-8 flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando datos...</p>;
+  if (!TeacherId) return <p className="p-8 text-destructive">Error de autenticación. Profesor no identificado.</p>;
+  if (commonSubjects.length === 0) return <p className="p-8 text-destructive">Error: El Profesor no imparte ninguna de las asignaturas que cursa el estudiante.</p>;
 
 
-  if (isLoading) return <p className="p-8 flex items-center"><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Cargando datos...</p>;
-  if (commonSubjects.length === 0) return <p className="p-8 text-destructive">Error: No hay asignaturas comunes que impartas para asignar.</p>;
-  if (!teacherId) return <p className="p-8 text-destructive">Error de autenticación. Profesor no identificado.</p>;
+  return (
+    <main className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-xl space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+        <h2 className="text-2xl font-semibold">Asignar Examen a Estudiante ({studentId})</h2>
+        <p className="text-sm text-muted-foreground">Selecciona la asignatura que impartes y el examen aprobado creado por ti.</p>
 
-  return (
-    <main className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-xl space-y-6 rounded-xl border bg-card p-6 shadow-sm">
-        <h2 className="text-2xl font-semibold">Asignar Examen a Estudiante ({studentId})</h2>
-        <p className="text-sm text-muted-foreground">Selecciona la asignatura y luego el examen creado por ti y listo para asignar.</p>
+        {/* Selector de Asignatura (ahora usa nombres reales) */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium leading-none">Asignatura</label>
+          <Select value={selectedSubjectId} onValueChange={(val) => {
+            setSelectedSubjectId(val);
+            setSelectedExamId(""); 
+          }}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecciona una asignatura común" />
+            </SelectTrigger>
+            <SelectContent>
+              {commonSubjects.map((s) => (
+                <SelectItem key={s.id} value={String(s.id)}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Selector de Asignatura */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium leading-none">Asignatura</label>
-          <Select value={selectedSubjectId} onValueChange={(val) => {
-            setSelectedSubjectId(val);
-            setSelectedExamId(""); // Limpiar la selección de examen
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecciona una asignatura" />
-            </SelectTrigger>
-            <SelectContent>
-              {commonSubjects.map((s) => (
-                <SelectItem key={s.id} value={String(s.id)}>
-                  {s.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Selector de Examen */}
+        {selectedSubjectId && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium leading-none">Examen</label>
+            <Select value={selectedExamId} onValueChange={setSelectedExamId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona el examen a asignar" />
+              </SelectTrigger>
+              <SelectContent>
+                {examsForSelectedSubject.length > 0 ? (
+                  examsForSelectedSubject.map((exam) => (
+                    <SelectItem key={exam.id} value={String(exam.id)}>
+                      {exam.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                    <SelectItem key="no-exams" value="no-exams-placeholder" disabled>
+                        No hay exámenes creados por ti para esta asignatura.
+                    </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-        {/* Selector de Examen */}
-        {selectedSubjectId && (
-          <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">Examen</label>
-            <Select value={selectedExamId} onValueChange={setSelectedExamId} disabled={examsForSelectedSubject.length === 0}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona el examen a asignar" />
-              </SelectTrigger>
-              <SelectContent>
-                {examsForSelectedSubject.length > 0 ? (
-                  examsForSelectedSubject.map((exam) => (
-                    <SelectItem key={exam.id} value={String(exam.id)}>
-                      {exam.name}
-                    </SelectItem>
-                  ))
-                ) : (
-                    <SelectItem key="no-exams" value="no-exams-placeholder" disabled>
-                        No hay exámenes Aprobados creados por ti para esta asignatura.
-                    </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        <div className="flex justify-end gap-3 pt-4">
-          <Button variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleAssign} 
-            disabled={!selectedExamId || isSubmitting || examsForSelectedSubject.length === 0}
-          >
-            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Asignando...</> : "Asignar"}
-          </Button>
-        </div>
-      </div>
-    </main>
-  );
+        <div className="flex justify-end gap-3 pt-4">
+          <Button variant="outline" onClick={() => router.back()} disabled={isSubmitting}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleAssign}
+            disabled={!selectedExamId || isSubmitting || examsForSelectedSubject.length === 0}
+          >
+            {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Asignando...</> : "Asignar Examen"}
+          </Button>
+        </div>
+      </div>
+    </main>
+  );
 }

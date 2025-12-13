@@ -32,6 +32,16 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
   const [isLoadingTeacher, setIsLoadingTeacher] = useState(true)
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(true)
 
+  const extractSubjects = (v: any): Subject[] => {
+    if (v == null) return []
+    if (Array.isArray(v)) return v
+    if (typeof v === "object") {
+      if (Array.isArray(v.subjects)) return v.subjects
+    }
+    if (v.id) return [v]
+    return []
+  }
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -49,8 +59,9 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
   useEffect(() => {
     const loadSubjectsByTeacher = async () => {
       try {
-        const all = await getSubjectsFlatByTeacherID(String(id))
-        setSubjects(all || [])
+        const raw = await getSubjectsFlatByTeacherID(String(id))
+        const list = extractSubjects(raw)
+        setSubjects(list || [])
       } catch (e) {
         console.error("Error fetching subjects by teacher:", e)
       } finally {
@@ -147,7 +158,7 @@ export default function TeacherView({ params }: { params: Promise<{ id: string }
               <div className="mt-1">
                 {isLoadingSubjects ? (
                   <p className="text-sm text-muted-foreground">Comprobando asignaturas...</p>
-                ) : headSubjects.length === 0 ? (
+                ) : subjects.length === 0 ? (
                   <p className="mt-1 whitespace-pre-wrap">No imparte asignaturas</p>
                 ) : (
                   <ul className="mt-1 list-disc pl-5">

@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser } from "@/services/authService";
 import { getExams, updateExamStatus } from "@/services/examService";
@@ -34,11 +34,12 @@ interface Subject {
     name: string;
 }
 
-export default function AssignExamHeadTeacherPage({ params }: { params: { id: string } }) {
+export default function AssignExamHeadTeacherPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const studentId = Number(params.id);
+  const { id } = use(params);
+  const studentId = Number(id);
   // Asignaturas que cursa el estudiante (vienen de la URL de la vista de estudiante)
   const studentSubjectIds = searchParams.get("subjects")?.split(",").map(Number).filter(id => !isNaN(id)) || [];
 

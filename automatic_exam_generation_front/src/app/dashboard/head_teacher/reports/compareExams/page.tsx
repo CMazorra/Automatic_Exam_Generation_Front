@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getCompareExams } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   BarChart,
   Bar,
@@ -189,7 +190,22 @@ export default function CompareExamsPage() {
   };
 
   return (
-    <div className="w-full p-6 space-y-6">
+    <div id="report-content" className="w-full p-6 space-y-6">
+      <div className="flex justify-end gap-2 print:hidden">
+        <Button
+          onClick={() => {
+            try {
+              document.documentElement.classList.add('pdf-override');
+              window.print();
+            } finally {
+              setTimeout(() => document.documentElement.classList.remove('pdf-override'), 1000);
+            }
+          }}
+          variant="outline"
+        >
+          Imprimir
+        </Button>
+      </div>
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">Comparación de Exámenes</h1>
         <p className="text-gray-600">
@@ -526,6 +542,15 @@ export default function CompareExamsPage() {
           </table>
         </div>
       </Card>
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #report-content, #report-content * { visibility: visible; }
+          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { size: A4; margin: 12mm; }
+          .print:hidden { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }

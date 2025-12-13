@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getTeachersReview } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   BarChart,
   Bar,
@@ -128,6 +129,20 @@ export default function TeachersReviewPage() {
 
   return (
     <div className="w-full p-6 space-y-6">
+      {/* Toolbar */}
+      <div className="flex justify-end">
+        <Button
+          onClick={() => {
+            document.documentElement.classList.add('pdf-override');
+            window.print();
+            setTimeout(() => {
+              document.documentElement.classList.remove('pdf-override');
+            }, 0);
+          }}
+        >
+          Imprimir
+        </Button>
+      </div>
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">Registro de Profesores Revisores</h1>
         <p className="text-gray-600">
@@ -363,6 +378,15 @@ export default function TeachersReviewPage() {
           </table>
         </div>
       </Card>
+      {/* Print styles scoped */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          .printable, .printable * { visibility: visible; }
+          .printable { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { size: A4 portrait; margin: 10mm; }
+        }
+      `}</style>
     </div>
   );
 }

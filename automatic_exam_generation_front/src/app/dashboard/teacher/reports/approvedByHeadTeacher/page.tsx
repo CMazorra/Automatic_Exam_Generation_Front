@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getHeadTeachers } from '@/services/headTeacerService';
 import { listApprovedByHeadTeacher } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
@@ -62,6 +62,7 @@ export default function ApprovedByHeadTeacherPage() {
   const [filterDateFrom, setFilterDateFrom] = useState<string>('');
   const [filterDateTo, setFilterDateTo] = useState<string>('');
   const [reportGenerated, setReportGenerated] = useState(false);
+  const reportRef = useRef<HTMLDivElement | null>(null);
 
   // Cargar lista de head teachers
   useEffect(() => {
@@ -212,6 +213,24 @@ export default function ApprovedByHeadTeacherPage() {
               >
                 {loading ? 'Cargando...' : 'Generar Reporte'}
               </Button>
+              {/* Removed PDF export; using window.print instead */}
+              {reportGenerated && exams.length > 0 && (
+                <Button
+                  onClick={() => {
+                    // Ensure printable colors avoid oklch
+                    document.documentElement.classList.add('pdf-override');
+                    window.print();
+                    // Remove after print returns
+                    setTimeout(() => {
+                      document.documentElement.classList.remove('pdf-override');
+                    }, 0);
+                  }}
+                  variant="outline"
+                  className="whitespace-nowrap"
+                >
+                  Imprimir
+                </Button>
+              )}
             </div>
           </div>
 
@@ -225,7 +244,22 @@ export default function ApprovedByHeadTeacherPage() {
 
       {/* Contenido del Reporte */}
       {reportGenerated && exams.length > 0 && (
-        <>
+        <div
+          ref={reportRef}
+          id="report-content"
+          className="bg-white p-6 rounded-lg space-y-6"
+        >
+          {/* Print styles scoped */}
+          <style>{`
+            @media print {
+              /* Hide everything except the report content */
+              body * { visibility: hidden; }
+              #report-content, #report-content * { visibility: visible; }
+              #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+              /* Page setup */
+              @page { size: A4 portrait; margin: 10mm; }
+            }
+          `}</style>
           {/* Título con nombre del jefe seleccionado */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h2 className="text-lg font-semibold text-blue-900">
@@ -437,7 +471,7 @@ export default function ApprovedByHeadTeacherPage() {
               </table>
             </div>
           </Card>
-        </>
+        </div>
       )}
 
       {reportGenerated && exams.length === 0 && !loading && (
