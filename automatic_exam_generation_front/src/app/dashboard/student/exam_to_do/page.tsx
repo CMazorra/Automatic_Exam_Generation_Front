@@ -6,7 +6,6 @@ import { getCurrentUser } from '@/services/authService';
 import { getExams } from '@/services/examService';
 import { getAnswers } from '@/services/answerService';
 import { Button } from '@/components/ui/button';
-import { getAnswers } from '@/services/answerService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 

@@ -24,12 +24,29 @@ export default function UserPage() {
         return { ...t, id_us, name, account, role, user }
       }
 
+      const extractSubjects = (v: any): any[] => {
+        if (v == null) return []
+        if (Array.isArray(v)) return v
+        if (typeof v === "object") {
+          if (Array.isArray(v.subjects)) return v.subjects
+          // some services might return { data: [...] }
+          if (Array.isArray((v as any).data)) return (v as any).data
+        }
+        // single subject object
+        if (typeof v === "object" && (v.id || v._id || v.subject_id || v.id_subject)) return [v]
+        return []
+      }
+
       try {
         const current = await getCurrentUser()
         const currentId = current?.id ?? current?.id_us ?? current?._id
         
         const allSubjects = await getSubjects()
-        const allSubjectsArray = Array.isArray(allSubjects) ? allSubjects : []
+        const allSubjectsArray = Array.isArray(allSubjects)
+          ? allSubjects
+          : Array.isArray((allSubjects as any)?.data)
+            ? (allSubjects as any).data
+            : []
         
         if (!currentId) {
           const all = await getTeachers()
@@ -37,15 +54,15 @@ export default function UserPage() {
             (all || []).map(async (t: any) => {
               const normalized = normalizeTeacher(t)
               const tid = normalized.id_us ?? normalized.id ?? normalized._id
-              const subjects = await getSubjectsFlatByTeacherID(String(tid)).catch(() => [])
-              const subjectsArray = Array.isArray(subjects) ? subjects : []
+              const rawSubjects = await getSubjectsFlatByTeacherID(String(tid)).catch(() => [])
+              const subjectsArray = extractSubjects(rawSubjects)
 
               const headSubjects = allSubjectsArray
                 .filter((s: any) => String(s.head_teacher_id) === String(tid))
                 .map((s: any) => s.name)
                 .filter(Boolean)
 
-              const teacherSubjects = subjectsArray.map((s: any) => s.name).filter(Boolean)
+              const teacherSubjects = subjectsArray.map((s: any) => s.name ?? s.subject_name).filter(Boolean)
 
               const allSubjectsNames = [...new Set([...teacherSubjects, ...headSubjects])].join(" | ")
               const headSubjectsNames = headSubjects.join(" | ")
@@ -62,11 +79,7 @@ export default function UserPage() {
         }
 
         const mySubjectsRaw = await getSubjectsByStudentID(String(currentId))
-        const mySubjectsArray = Array.isArray(mySubjectsRaw)
-          ? mySubjectsRaw
-          : Array.isArray((mySubjectsRaw as any)?.data)
-            ? (mySubjectsRaw as any).data
-            : []
+        const mySubjectsArray = extractSubjects(mySubjectsRaw)
         const mySubjectIds = new Set(
           (mySubjectsArray || []).map((s: any) => String(s.id ?? s._id ?? s.subject_id ?? s.id_subject))
         )
@@ -77,15 +90,15 @@ export default function UserPage() {
           (allTeachers || []).map(async (t: any) => {
             const normalized = normalizeTeacher(t)
             const tid = normalized.id_us ?? normalized.id ?? normalized._id
-            const subjects = await getSubjectsFlatByTeacherID(String(tid)).catch(() => [])
-            const subjectsArray = Array.isArray(subjects) ? subjects : []
+            const rawSubjects = await getSubjectsFlatByTeacherID(String(tid)).catch(() => [])
+            const subjectsArray = extractSubjects(rawSubjects)
 
             const headSubjects = allSubjectsArray
               .filter((s: any) => String(s.head_teacher_id) === String(tid))
               .map((s: any) => s.name)
               .filter(Boolean)
 
-            const teacherSubjects = subjectsArray.map((s: any) => s.name).filter(Boolean)
+            const teacherSubjects = subjectsArray.map((s: any) => s.name ?? s.subject_name).filter(Boolean)
 
             const allSubjectsNames = [...new Set([...teacherSubjects, ...headSubjects])].join(" | ")
             const headSubjectsNames = headSubjects.join(" | ")
@@ -105,9 +118,9 @@ export default function UserPage() {
           .filter(({ teacher, subjects }) => {
             const tid = String(teacher.id_us ?? teacher.id ?? teacher._id)
             if (tid === String(currentId)) return false
-            return (subjects || []).some((s: any) =>
-              mySubjectIds.has(String(s.id ?? s._id ?? s.subject_id ?? s.id_subject))
-            )
+            // include teachers with any overlap (as teacher or head) by subject id
+            const subjectIds = new Set((subjects || []).map((s: any) => String(s.id ?? s._id ?? s.subject_id ?? s.id_subject)))
+            return [...subjectIds].some((sid) => mySubjectIds.has(sid))
           })
           .map(({ teacher }) => teacher)
 
