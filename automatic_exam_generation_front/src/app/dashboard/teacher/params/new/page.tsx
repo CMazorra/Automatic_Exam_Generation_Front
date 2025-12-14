@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { postParams } from "@/services/paramsService"
 
-const QUESTION_TYPES = ["VoF","Argumentacion","Opcion Multiple"]
+const QUESTION_TYPES = ["VoF","Argumentación","Opción Múltiple"]
 
 export default function ParamsNewPage() {
   const router = useRouter()

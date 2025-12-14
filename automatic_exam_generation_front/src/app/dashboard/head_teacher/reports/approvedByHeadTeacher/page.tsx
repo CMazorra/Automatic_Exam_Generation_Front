@@ -281,6 +281,14 @@ export default function ApprovedByHeadTeacherPage() {
                   <Bar dataKey="count" fill="#3b82f6" name="Cantidad" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+              <div className="mt-4 text-sm text-gray-600">
+                <p className="font-semibold mb-1">Leyenda</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Eje X: nombre de la materia.</li>
+                  <li>Eje Y: cantidad de exámenes aprobados para esa materia.</li>
+                  <li>Barra azul: total de aprobaciones por materia.</li>
+                </ul>
+              </div>
             </Card>
           )}
 
@@ -312,6 +320,14 @@ export default function ApprovedByHeadTeacherPage() {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-sm text-gray-600">
+                  <p className="font-semibold mb-1">Leyenda</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Verde: exámenes aprobados.</li>
+                    <li>Rojo: exámenes rechazados.</li>
+                    <li>Etiqueta del sector: nombre del estado y cantidad.</li>
+                  </ul>
+                </div>
               </Card>
             )}
 
@@ -336,6 +352,14 @@ export default function ApprovedByHeadTeacherPage() {
                     />
                   </LineChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-sm text-gray-600">
+                  <p className="font-semibold mb-1">Leyenda</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Eje X: fecha (últimos 10 días con actividad).</li>
+                    <li>Eje Y: cantidad de exámenes aprobados en la fecha.</li>
+                    <li>Línea azul: tendencia diaria de aprobaciones.</li>
+                  </ul>
+                </div>
               </Card>
             )}
           </div>
@@ -450,6 +474,14 @@ export default function ApprovedByHeadTeacherPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+            <div className="mt-4 text-sm text-gray-600">
+              <p className="font-semibold mb-1">Leyenda</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li><span className="font-medium">Estado:</span> Aprobado (verde) o Rechazado (rojo) según las directrices.</li>
+                <li><span className="font-medium">Fecha:</span> día de aprobación o rechazo registrado.</li>
+                <li><span className="font-medium">Notas/Directrices:</span> comentarios del proceso de revisión.</li>
+              </ul>
             </div>
           </Card>
         </>

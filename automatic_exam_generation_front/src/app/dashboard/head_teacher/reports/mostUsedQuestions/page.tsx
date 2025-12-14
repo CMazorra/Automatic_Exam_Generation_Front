@@ -220,6 +220,13 @@ export default function MostUsedQuestionsPage() {
               <Bar dataKey="uses" fill="#3b82f6" radius={[0, 8, 8, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p className="font-semibold mb-1">Leyenda:</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li>Barra: número de <span className="font-medium">usos</span> de cada pregunta en exámenes.</li>
+              <li>Eje Y muestra el texto abreviado de la pregunta.</li>
+            </ul>
+          </div>
         </Card>
       )}
 
@@ -253,6 +260,13 @@ export default function MostUsedQuestionsPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li>Cada porción representa el <span className="font-medium">conteo de preguntas</span> por dificultad.</li>
+                <li>Colores: Fácil (verde), Medio (amarillo), Difícil (rojo).</li>
+              </ul>
+            </div>
           </Card>
         )}
 
@@ -279,6 +293,13 @@ export default function MostUsedQuestionsPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li>Proporción de preguntas más usadas por materia.</li>
+                <li>Las etiquetas muestran el conteo por materia.</li>
+              </ul>
+            </div>
           </Card>
         )}
       </div>
@@ -318,6 +339,14 @@ export default function MostUsedQuestionsPage() {
               })}
             </tbody>
           </table>
+        </div>
+        <div className="mt-4 text-xs text-muted-foreground">
+          <p className="font-semibold mb-1">Leyenda:</p>
+          <ul className="list-disc ml-4 space-y-1">
+            <li><span className="font-medium">Ranking</span>: posición según usos (mayor primero).</li>
+            <li><span className="font-medium">Veces Usada</span>: cantidad de exámenes en los que aparece.</li>
+            <li><span className="font-medium">Tema</span>: tópico padre del subtema.</li>
+          </ul>
         </div>
       </Card>
       <style>{`

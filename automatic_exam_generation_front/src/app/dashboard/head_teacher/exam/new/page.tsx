@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createExam } from "@/services/examService"
-import { getSubjects, getSubjectsFlatByTeacherID } from "@/services/subjectService"
+import { createExam, generateExam } from "@/services/examService"
+import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 import { getParams } from "@/services/paramsService"
 import { getQuestions } from "@/services/questionService"
 import { getCurrentUser } from "@/services/authService"
@@ -209,25 +209,28 @@ export default function ExamCreatePage() {
   }, [isManual])
 
 
-  const onSelectSubject = (s: SubjectOption) => {
+  const onSelectSubject = async (s: SubjectOption) => {
     setSubjectId(s.id)
     setSubjectQuery(s.name || "")
 
-    // Lógica para auto-seleccionar el Jefe de Asignatura (Requisito 5)
     if (s.head_teacher_id) {
       setHeadTeacherId(s.head_teacher_id)
-      // Busca el nombre del jefe en la lista ya cargada (allHeadTeachers)
-      const autoHT = allHeadTeachers.find(ht => String(ht.id) === String(s.head_teacher_id))
-      if (autoHT) {
-        // Resuelve el nombre del Jefe de Asignatura desde el objeto
-        const htName = autoHT.name || autoHT.user?.name || autoHT.teacher?.user?.name || ""
-        setHeadTeacherQuery(htName)
-      } else {
-        // Si no se encuentra, limpia la consulta del nombre para no mostrar un nombre incorrecto
-        setHeadTeacherQuery("")
+      // Primero intenta resolver con la lista cargada
+      let autoHT = allHeadTeachers.find(ht => String(ht.id) === String(s.head_teacher_id))
+      if (!autoHT) {
+        // Fallback: volver a consultar jefes de asignatura y resolver nombre
+        try {
+          const refreshed = await getHeadTeachers().catch(() => [])
+          autoHT = Array.isArray(refreshed)
+            ? refreshed.find((ht: any) => String(ht.id) === String(s.head_teacher_id))
+            : undefined
+        } catch (e) {
+          // Ignora errores de red
+        }
       }
+      const htName = autoHT?.name || autoHT?.user?.name || autoHT?.teacher?.user?.name || ""
+      setHeadTeacherQuery(htName)
     } else {
-      // Si la asignatura no tiene jefe, limpiamos la selección anterior
       setHeadTeacherId("")
       setHeadTeacherQuery("")
     }
@@ -298,7 +301,99 @@ export default function ExamCreatePage() {
         payload.questions = []
       }
 
-      await createExam(payload)
+      const created = await createExam(payload)
+
+      // Si es automático, generar el examen con distribución de preguntas
+      if (!isManual && created?.id && subjectId) {
+        // Derivar total de preguntas y proporciones desde la parametrización seleccionada
+        const selectedParams = allParams.find(p => String(p.id) === String(paramsId))
+        const total = Number(selectedParams?.amount_quest) || 0
+        const proportionStrRaw = String(selectedParams?.proportion || "")
+        const proportionStr = proportionStrRaw.toLowerCase()
+
+        // Mapear porcentajes por tipo directamente desde el string de proportion
+        // Formatos soportados:
+        // - "50% vof - 50% argumentacion"
+        // - "60% opcion multiple - 40% vof"
+        // - "50-VoF,50-Argumentacion" (nuevo formato)
+        const typeMap: Record<string, string> = {
+          "vof": "VoF",
+          "verdadero": "VoF",
+          "falso": "VoF",
+          // Mapear sin tildes a las formas con tildes que espera el backend
+          "argumentacion": "Argumentación",
+          "argumentación": "Argumentación",
+          "opcion multiple": "Opción Múltiple",
+          "opción múltiple": "Opción Múltiple",
+          "multiple": "Opción Múltiple",
+          "múltiple": "Opción Múltiple",
+        }
+        const pctByType: Record<string, number> = {}
+
+        // Intento 1: nuevo formato "50-VoF,50-Argumentacion"
+        const csvParts = proportionStrRaw.split(",").map(s => s.trim()).filter(Boolean)
+        if (csvParts.length > 0 && csvParts.every(p => /\d+\s*-\s*/.test(p))) {
+          for (const part of csvParts) {
+            const m = part.match(/(\d+)\s*-\s*(.+)/)
+            if (m) {
+              const pct = parseInt(m[1])
+              const labelRaw = (m[2] || "").trim()
+              const labelLc = labelRaw.toLowerCase()
+              const key = Object.keys(typeMap).find(k => labelLc.includes(k))
+              if (!isNaN(pct) && key) {
+                const canonical = typeMap[key]
+                pctByType[canonical] = pct
+              }
+            }
+          }
+        }
+
+        // Intento 2: formato con "% tipo" y separadores "-" o "+"
+        if (Object.keys(pctByType).length === 0) {
+          const parts = proportionStr.split(/[-+]/).map(s => s.trim()).filter(Boolean)
+          for (const part of parts) {
+            const m = part.match(/(\d+)\s*%\s*(.*)/)
+            if (m) {
+              const pct = parseInt(m[1])
+              const labelLc = (m[2] || "").trim().toLowerCase()
+              const key = Object.keys(typeMap).find(k => labelLc.includes(k))
+              if (!isNaN(pct) && key) {
+                const canonical = typeMap[key]
+                pctByType[canonical] = pct
+              }
+            }
+          }
+        }
+
+        // Si no se pudo parsear nada, fallback 100% Argumentacion
+        if (Object.keys(pctByType).length === 0) {
+          pctByType["Argumentación"] = 100
+        }
+
+        // Convertir porcentajes a cantidades, asegurando sumar exactamente 'total'
+        const tempDistribution: Array<{ type: string; amount: number }> = []
+        let assigned = 0
+        const entries = Object.entries(pctByType)
+        for (let i = 0; i < entries.length; i++) {
+          const [type, pct] = entries[i]
+          let amount = Math.floor((total * pct) / 100)
+          // Para el último tipo, ajustar para que la suma sea total
+          if (i === entries.length - 1) {
+            amount = Math.max(total - assigned, 0)
+          } else {
+            assigned += amount
+          }
+          if (amount > 0) tempDistribution.push({ type, amount })
+        }
+        await generateExam({
+          exam_id: String(created.id),
+          subject_id: String(subjectId),
+          teacher_id: String(teacherId),
+          head_teacher_id: String(headTeacherId),
+          questionDistribution: tempDistribution,
+        })
+      }
+
       router.push("/dashboard/head_teacher/exam")
     } catch (err: any) {
       console.error("Error creando examen:", err)

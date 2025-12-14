@@ -17,7 +17,6 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { useRouter } from 'next/navigation';
 import { getSubjects } from '@/services/subjectService';
 
 interface Subject {
@@ -283,6 +282,13 @@ export default function GeneratedExamsBySubjectPage() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-xs text-muted-foreground">
+                  <p className="font-semibold mb-1">Leyenda:</p>
+                  <ul className="list-disc ml-4 space-y-1">
+                    <li>Cada barra muestra la <span className="font-medium">cantidad de exámenes</span> por estado.</li>
+                    <li>Colores: Aprobado (verde), Pendiente (amarillo), Rechazado (rojo).</li>
+                  </ul>
+                </div>
               </Card>
             )}
 
@@ -304,6 +310,13 @@ export default function GeneratedExamsBySubjectPage() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-xs text-muted-foreground">
+                  <p className="font-semibold mb-1">Leyenda:</p>
+                  <ul className="list-disc ml-4 space-y-1">
+                    <li>Conteo de exámenes por dificultad declarada.</li>
+                    <li>Colores: Fácil (verde), Medio (amarillo), Difícil (rojo).</li>
+                  </ul>
+                </div>
               </Card>
             )}
 
@@ -330,6 +343,13 @@ export default function GeneratedExamsBySubjectPage() {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-xs text-muted-foreground">
+                  <p className="font-semibold mb-1">Leyenda:</p>
+                  <ul className="list-disc ml-4 space-y-1">
+                    <li>Cada porción representa la <span className="font-medium">proporción</span> de exámenes por profesor.</li>
+                    <li>Las etiquetas muestran el porcentaje aproximado sobre el total.</li>
+                  </ul>
+                </div>
               </Card>
             )}
           </div>
@@ -403,6 +423,14 @@ export default function GeneratedExamsBySubjectPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li><span className="font-medium">Estado</span>: aprobado/pendiente/rechazado.</li>
+                <li><span className="font-medium">Dificultad</span>: nivel declarado del examen.</li>
+                <li><span className="font-medium">Parámetros</span>: identificador de configuración con el que se generó.</li>
+              </ul>
             </div>
           </Card>
         </>

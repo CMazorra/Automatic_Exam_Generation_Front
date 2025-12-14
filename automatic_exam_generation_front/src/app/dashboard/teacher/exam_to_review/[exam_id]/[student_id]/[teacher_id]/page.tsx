@@ -41,8 +41,8 @@ export default function GradeReevaluationPage() {
   const [reeval, setReeval] = useState<any>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Answer[]>([])
-  const [argScores, setArgScores] = useState<Record<number, number>>({})
-  const [finalScore, setFinalScore] = useState<number>(0)
+  const [argScores, setArgScores] = useState<Record<number, number | undefined>>({})
+  const [finalScore, setFinalScore] = useState<number | undefined>(undefined)
 
   useEffect(() => {
     async function load() {
@@ -104,11 +104,11 @@ export default function GradeReevaluationPage() {
         )
         setAnswers(examAnswers)
 
-        const initialArgScores: Record<number, number> = {}
+        const initialArgScores: Record<number, number | undefined> = {}
         examAnswers.forEach(a => {
           const q = combinedQuestions.find((question: Question) => question.id === a.question_id)
           if (q && q.type?.toLowerCase().includes("arg")) {
-            initialArgScores[a.question_id] = typeof a.score === "number" ? a.score : 0
+            initialArgScores[a.question_id] = typeof a.score === "number" ? a.score : undefined
           }
         })
         setArgScores(initialArgScores)
@@ -117,8 +117,8 @@ export default function GradeReevaluationPage() {
         const baseScore =
           typeof reevaluationData?.score === "number"
             ? reevaluationData.score
-            : Number(examStudentData?.score ?? 0)
-        setFinalScore(Number(baseScore))
+            : (typeof examStudentData?.score === "number" ? Number(examStudentData.score) : undefined)
+        setFinalScore(baseScore)
       } catch (err) {
         console.error("Error loading reevaluation grading data:", err)
       } finally {
@@ -148,17 +148,16 @@ export default function GradeReevaluationPage() {
       grouped.forEach(({ question, answer }) => {
         if (!answer) return
         if (question.type?.toLowerCase().includes("arg")) {
-          const newScore = Number(argScores[question.id] ?? 0)
-          argOps.push(
-            updateAnswer(examId, question.id, studentId, { score: newScore })
-          )
+          const val = argScores[question.id]
+          const scoreToSend = typeof val === "number" ? val : 0
+          argOps.push(updateAnswer(examId, question.id, studentId, { score: scoreToSend }))
         }
       })
       await Promise.all(argOps)
 
       // 2) Update exam_student and reevaluation conditionally
-      const sanitizedFinal = Number.isFinite(finalScore) ? Number(finalScore) : 0
-      const currentExamScore = Number(examStudent?.score ?? 0)
+      const sanitizedFinal = typeof finalScore === "number" ? Number(finalScore) : 0
+      const currentExamScore = typeof examStudent?.score === "number" ? Number(examStudent.score) : 0
 
       if (sanitizedFinal > currentExamScore) {
         await updateExamStudent(examId, studentId, { score: sanitizedFinal })
@@ -198,8 +197,11 @@ export default function GradeReevaluationPage() {
             type="number"
             min={0}
             max={100}
-            value={finalScore}
-            onChange={(e) => setFinalScore(Number(e.target.value))}
+            value={finalScore ?? ""}
+            onChange={(e) => {
+              const v = e.target.value
+              setFinalScore(v === "" ? undefined : Number(v))
+            }}
             placeholder="Nota final"
           />
           <Button onClick={handleSave} disabled={saving}>
@@ -237,10 +239,11 @@ export default function GradeReevaluationPage() {
                   type="number"
                   min={0}
                   max={100}
-                  value={argScores[question.id] ?? 0}
-                  onChange={(e) =>
-                    setArgScores((prev) => ({ ...prev, [question.id]: Number(e.target.value) }))
-                  }
+                  value={argScores[question.id] ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value
+                    setArgScores((prev) => ({ ...prev, [question.id]: v === "" ? undefined : Number(v) }))
+                  }}
                 />
               </div>
             ) : (

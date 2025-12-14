@@ -7,8 +7,8 @@ import {
   getReevaluationComparison,
 } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   BarChart,
   Bar,
@@ -197,17 +197,18 @@ export default function QuestionStudentCorrelationPage() {
   }
 
   return (
-    <div className="w-full p-6 space-y-6">
-      {/* Toolbar */}
-      <div className="flex justify-end">
+    <div id="report-content" className="w-full p-6 space-y-6">
+      <div className="flex justify-end gap-2 print:hidden">
         <Button
           onClick={() => {
-            document.documentElement.classList.add('pdf-override');
-            window.print();
-            setTimeout(() => {
-              document.documentElement.classList.remove('pdf-override');
-            }, 0);
+            try {
+              document.documentElement.classList.add('pdf-override');
+              window.print();
+            } finally {
+              setTimeout(() => document.documentElement.classList.remove('pdf-override'), 1000);
+            }
           }}
+          variant="outline"
         >
           Imprimir
         </Button>
@@ -272,6 +273,13 @@ export default function QuestionStudentCorrelationPage() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li><span className="font-medium">Reprobación (%)</span>: 100 − promedio de calificación.</li>
+                <li>Color de barra según dificultad (verde/amarillo/rojo).</li>
+              </ul>
+            </div>
           </Card>
         )}
 
@@ -382,6 +390,14 @@ export default function QuestionStudentCorrelationPage() {
               </tbody>
             </table>
           </div>
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p className="font-semibold mb-1">Leyenda:</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li><span className="font-medium">Coeficiente</span>: relación entre dificultad y rendimiento (−1 a 1).</li>
+              <li><span className="font-medium">Fuerza</span>: Muy Débil/ Débil/ Moderada/ Fuerte según |coef|.</li>
+              <li>Signo negativo: a mayor dificultad, menor rendimiento.</li>
+            </ul>
+          </div>
         </Card>
 
         {/* Gráficos de Dispersión */}
@@ -415,6 +431,12 @@ export default function QuestionStudentCorrelationPage() {
                   <Scatter data={subjectData.data} fill="#3b82f6" />
                 </ScatterChart>
               </ResponsiveContainer>
+              <div className="mt-3 text-xs text-muted-foreground">
+                <ul className="list-disc ml-4 space-y-1">
+                  <li>Eje X: dificultad (1=Fácil, 2=Medio, 3=Difícil).</li>
+                  <li>Eje Y: rendimiento (% de acierto).</li>
+                </ul>
+              </div>
             </Card>
           ))}
         </div>
@@ -440,6 +462,13 @@ export default function QuestionStudentCorrelationPage() {
                 <Bar dataKey="average" fill="#f59e0b" name="Promedio Curso" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li>Rojo: nota original. Verde: recalificada. Amarillo: promedio del curso.</li>
+                <li>Las barras se muestran por estudiante; el eje Y es calificación.</li>
+              </ul>
+            </div>
           </Card>
 
           {/* Tabla de Recalificaciones */}
@@ -479,16 +508,23 @@ export default function QuestionStudentCorrelationPage() {
                 </tbody>
               </table>
             </div>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li><span className="font-medium">Mejora</span>: diferencia (Recalificado − Original).</li>
+                <li><span className="font-medium">Promedio Curso</span>: referencia del rendimiento medio en la asignatura.</li>
+              </ul>
+            </div>
           </Card>
         </div>
       )}
-      {/* Print styles scoped */}
       <style>{`
         @media print {
           body * { visibility: hidden; }
-          .printable, .printable * { visibility: visible; }
-          .printable { position: absolute; left: 0; top: 0; width: 100%; }
-          @page { size: A4 portrait; margin: 10mm; }
+          #report-content, #report-content * { visibility: visible; }
+          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { size: A4; margin: 12mm; }
+          .print:hidden { display: none !important; }
         }
       `}</style>
     </div>

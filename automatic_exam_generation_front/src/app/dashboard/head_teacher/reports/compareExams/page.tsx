@@ -317,6 +317,14 @@ export default function CompareExamsPage() {
             </tbody>
           </table>
         </div>
+        <div className="mt-4 text-xs text-muted-foreground">
+          <p className="font-semibold mb-1">Leyenda:</p>
+          <ul className="list-disc ml-4 space-y-1">
+            <li><span className="font-medium">Puntuación Balance</span>: indicador (0–100%) del equilibrio global por asignatura.</li>
+            <li><span className="font-medium">Equilibrado/Revisar</span>: estado derivado del score; Equilibrado ≥ 70%.</li>
+            <li><span className="font-medium">Exámenes</span>: cantidad de exámenes analizados para la asignatura.</li>
+          </ul>
+        </div>
       </Card>
 
       {/* Gráfico de Barras Apiladas - Distribución de Dificultad */}
@@ -335,6 +343,13 @@ export default function CompareExamsPage() {
               <Bar dataKey="Difícil" stackId="a" fill={COLORS.hard} />
             </BarChart>
           </ResponsiveContainer>
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p className="font-semibold mb-1">Leyenda:</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li>Colores: <span className="font-medium" style={{color:'#10b981'}}>Fácil</span>, <span className="font-medium" style={{color:'#f59e0b'}}>Medio</span>, <span className="font-medium" style={{color:'#ef4444'}}>Difícil</span>.</li>
+              <li>Cada barra representa un examen; las secciones apiladas son el número de preguntas por dificultad.</li>
+            </ul>
+          </div>
         </Card>
       )}
 
@@ -374,6 +389,14 @@ export default function CompareExamsPage() {
                 />
               </RadarChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li><span className="font-medium">Dif. Score</span>: equilibrio de dificultad (0–100%).</li>
+                <li><span className="font-medium">Topic Entropy</span>: diversidad de temas (0–100%).</li>
+                <li><span className="font-medium">Subtopic Variety</span>: variedad de subtemas (0–100%).</li>
+              </ul>
+            </div>
           </Card>
         )}
 
@@ -406,6 +429,13 @@ export default function CompareExamsPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li>Etiqueta de cada porción: <span className="font-medium">Tema</span> y su <span className="font-medium">porcentaje</span> de preguntas.</li>
+                <li>Los colores diferencian cada tema dentro del examen seleccionado.</li>
+              </ul>
+            </div>
           </Card>
         )}
       </div>
@@ -496,6 +526,14 @@ export default function CompareExamsPage() {
             </tbody>
           </table>
         </div>
+        <div className="mt-4 text-xs text-muted-foreground">
+          <p className="font-semibold mb-1">Leyenda:</p>
+          <ul className="list-disc ml-4 space-y-1">
+            <li>Verde: criterio cumplido. Rojo: criterio no cumplido.</li>
+            <li>Criterios: equilibrio por <span className="font-medium">Dificultad</span>, <span className="font-medium">Tema</span> y <span className="font-medium">Subtema</span>.</li>
+            <li><span className="font-medium">Balance Global</span>: todos los criterios cumplidos (Equilibrado) o parcial.</li>
+          </ul>
+        </div>
       </Card>
 
       {/* Tabla Detallada con Parámetros */}
@@ -540,6 +578,14 @@ export default function CompareExamsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="mt-4 text-xs text-muted-foreground">
+          <p className="font-semibold mb-1">Leyenda:</p>
+          <ul className="list-disc ml-4 space-y-1">
+            <li><span className="font-medium">Proporción</span>: configuración del examen (porcentajes por tipo de pregunta).</li>
+            <li><span className="font-medium">Dificultad (F/M/D)</span>: conteo de preguntas Fácil/Medio/Difícil.</li>
+            <li><span className="font-medium">Score Dif.</span>: equilibrio de dificultad (0–100%).</li>
+          </ul>
         </div>
       </Card>
       <style>{`

@@ -112,13 +112,11 @@ export default function AssignExamTeacherPage({ params }: { params: Promise<{ id
         // O: Se puede cambiar el filtro para que el Profesor pueda asignar CUALQUIER examen Aprobado que cubra la asignatura común. **Mantendremos la restricción de crear/asignar sus propios exámenes por coherencia con el rol de "Profesor/Jefe de Estudios".**
 
         const filteredExams = allExams.filter(exam =>
-            // 1. Debe ser un examen creado por el profesor logeado
-            exam.teacher_id === currentTeacherId && 
-            // 2. Debe ser de una asignatura que el profesor imparte Y que el alumno cursa
+            // 1. Debe ser de una asignatura que el profesor imparte Y que el alumno cursa
             commonSubjectIds.includes(Number(exam.subject_id)) &&
-            // 3. Debe estar Aprobado (listo para ser asignado)
+            // 2. Debe estar Aprobado (listo para ser asignado)
           (exam.status === "Aprobado" || exam.status === "Asignado") &&
-          // 4. No mostrar exámenes ya asignados al estudiante
+          // 3. No mostrar exámenes ya asignados al estudiante
           !assignedExamIdsForStudent.includes(Number(exam.id))
         );
 

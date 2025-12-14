@@ -273,6 +273,13 @@ export default function QuestionStudentCorrelationPage() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li><span className="font-medium">Reprobación (%)</span>: 100 − promedio de calificación.</li>
+                <li>Color de barra según dificultad (verde/amarillo/rojo).</li>
+              </ul>
+            </div>
           </Card>
         )}
 
@@ -383,6 +390,14 @@ export default function QuestionStudentCorrelationPage() {
               </tbody>
             </table>
           </div>
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p className="font-semibold mb-1">Leyenda:</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li><span className="font-medium">Coeficiente</span>: relación entre dificultad y rendimiento (−1 a 1).</li>
+              <li><span className="font-medium">Fuerza</span>: Muy Débil/ Débil/ Moderada/ Fuerte según |coef|.</li>
+              <li>Signo negativo: a mayor dificultad, menor rendimiento.</li>
+            </ul>
+          </div>
         </Card>
 
         {/* Gráficos de Dispersión */}
@@ -416,6 +431,12 @@ export default function QuestionStudentCorrelationPage() {
                   <Scatter data={subjectData.data} fill="#3b82f6" />
                 </ScatterChart>
               </ResponsiveContainer>
+              <div className="mt-3 text-xs text-muted-foreground">
+                <ul className="list-disc ml-4 space-y-1">
+                  <li>Eje X: dificultad (1=Fácil, 2=Medio, 3=Difícil).</li>
+                  <li>Eje Y: rendimiento (% de acierto).</li>
+                </ul>
+              </div>
             </Card>
           ))}
         </div>
@@ -441,6 +462,13 @@ export default function QuestionStudentCorrelationPage() {
                 <Bar dataKey="average" fill="#f59e0b" name="Promedio Curso" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li>Rojo: nota original. Verde: recalificada. Amarillo: promedio del curso.</li>
+                <li>Las barras se muestran por estudiante; el eje Y es calificación.</li>
+              </ul>
+            </div>
           </Card>
 
           {/* Tabla de Recalificaciones */}
@@ -479,6 +507,13 @@ export default function QuestionStudentCorrelationPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li><span className="font-medium">Mejora</span>: diferencia (Recalificado − Original).</li>
+                <li><span className="font-medium">Promedio Curso</span>: referencia del rendimiento medio en la asignatura.</li>
+              </ul>
             </div>
           </Card>
         </div>
