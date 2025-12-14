@@ -140,12 +140,7 @@ export default function GradeExamPage() {
         examAnswers.forEach(a => {
           const q = combinedQuestions.find(q => q.id === a.question_id)
           if (q && q.type?.toLowerCase().includes("arg")) {
-<<<<<<< HEAD
             initialArgScores[a.question_id] = typeof a.score === "number" ? a.score : undefined
-=======
-            initialArgScores[a.question_id] =
-              typeof a.score === "number" ? a.score : 0
->>>>>>> 135b299 (refactor(exam-grade): replace alert with toast and add error/success notifications)
           }
         })
         setArgScores(initialArgScores)
@@ -189,39 +184,16 @@ export default function GradeExamPage() {
       grouped.forEach(({ question, answer }) => {
         if (!answer) return
         if (question.type?.toLowerCase().includes("arg")) {
-<<<<<<< HEAD
           const val = argScores[question.id]
           const scoreToSend = typeof val === "number" ? val : 0
           argOps.push(updateAnswer(examId, question.id, studentId, { score: scoreToSend }))
-=======
-          const newScore = Number(argScores[question.id] ?? 0)
-          argOps.push(
-            updateAnswer(examId, question.id, studentId, {
-              score: newScore,
-            })
-          )
->>>>>>> 135b299 (refactor(exam-grade): replace alert with toast and add error/success notifications)
         }
       })
       await Promise.all(argOps)
 
-<<<<<<< HEAD
       // 2) Save final exam score in exam_student
       const sanitizedFinal = typeof finalScore === "number" ? Number(finalScore) : 0
       await updateExamStudent(examId, studentId, { score: sanitizedFinal })
-=======
-      const sanitizedFinal = Number.isFinite(finalScore)
-        ? Number(finalScore)
-        : 0
-
-      await updateExamStudent(examId, studentId, {
-        score: sanitizedFinal,
-      })
-
-      toast.success("Calificación guardada", {
-        description: `Nota final: ${sanitizedFinal}`,
-      })
->>>>>>> 135b299 (refactor(exam-grade): replace alert with toast and add error/success notifications)
 
       router.back()
     } catch (err) {
@@ -258,16 +230,11 @@ export default function GradeExamPage() {
             type="number"
             min={0}
             max={100}
-<<<<<<< HEAD
             value={finalScore ?? ""}
             onChange={(e) => {
               const v = e.target.value
               setFinalScore(v === "" ? undefined : Number(v))
             }}
-=======
-            value={finalScore}
-            onChange={e => setFinalScore(Number(e.target.value))}
->>>>>>> 135b299 (refactor(exam-grade): replace alert with toast and add error/success notifications)
             placeholder="Nota final"
           />
           <Button onClick={handleSave} disabled={saving}>
@@ -310,21 +277,11 @@ export default function GradeExamPage() {
                   type="number"
                   min={0}
                   max={100}
-<<<<<<< HEAD
                   value={argScores[question.id] ?? ""}
                   onChange={(e) => {
                     const v = e.target.value
                     setArgScores((prev) => ({ ...prev, [question.id]: v === "" ? undefined : Number(v) }))
                   }}
-=======
-                  value={argScores[question.id] ?? 0}
-                  onChange={e =>
-                    setArgScores(prev => ({
-                      ...prev,
-                      [question.id]: Number(e.target.value),
-                    }))
-                  }
->>>>>>> 135b299 (refactor(exam-grade): replace alert with toast and add error/success notifications)
                 />
               </div>
             ) : (
