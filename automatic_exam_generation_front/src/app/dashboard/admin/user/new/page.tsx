@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldLabel, FieldGroup, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { postUser } from "@/services/userService"
+import { toast } from "sonner"
 
 type Role = "ADMIN" | "TEACHER" | "STUDENT"
 
@@ -16,6 +17,8 @@ const roles: { value: Role; label: string }[] = [
 ]
 
 export default function NewUserPage() {
+  const router = useRouter()
+
   const [form, setForm] = useState({
     name: "",
     account: "",
@@ -24,18 +27,23 @@ export default function NewUserPage() {
     course: "",
     role: "" as Role | "",
   })
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { id, value } = e.target
     setForm((prev) => ({ ...prev, [id]: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!form.name.trim() || !form.account.trim() || !form.role) {
-      alert("Por favor, completa los campos obligatorios.")
+      toast.warning("Faltan campos obligatorios", {
+        description: "Nombre, Cuenta y Rol son obligatorios.",
+      })
       return
     }
 
@@ -44,16 +52,22 @@ export default function NewUserPage() {
       await postUser({
         name: form.name.trim(),
         account: form.account.trim(),
-        password: form.password || "default123", // 🔹 si el backend lo requiere
+        password: form.password || "default123",
         age: form.age ? Number(form.age) : undefined,
         course: form.course.trim() || undefined,
         role: form.role,
       })
-      alert("✅ Usuario creado correctamente.")
+
+      toast.success("Usuario creado", {
+        description: `El usuario "${form.name}" fue creado correctamente.`,
+      })
+
       router.push("/dashboard/admin/user")
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert("❌ Hubo un error al crear el usuario.")
+      toast.error("Error al crear usuario", {
+        description: err?.message || "No se pudo crear el usuario.",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -63,9 +77,7 @@ export default function NewUserPage() {
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-2xl">
         <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
-          <div>
-            <h2 className="font-semibold leading-none text-xl">Nuevo Usuario</h2>
-          </div>
+          <h2 className="text-xl font-semibold">Nuevo Usuario</h2>
 
           <FieldGroup>
             <FieldSet>
@@ -73,7 +85,6 @@ export default function NewUserPage() {
                 <FieldLabel htmlFor="name">Nombre</FieldLabel>
                 <Input
                   id="name"
-                  placeholder="Nombre del usuario"
                   value={form.name}
                   onChange={handleChange}
                   required
@@ -84,7 +95,6 @@ export default function NewUserPage() {
                 <FieldLabel htmlFor="account">Cuenta</FieldLabel>
                 <Input
                   id="account"
-                  placeholder="Correo o identificador"
                   value={form.account}
                   onChange={handleChange}
                   required
@@ -96,7 +106,6 @@ export default function NewUserPage() {
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Contraseña del usuario"
                   value={form.password}
                   onChange={handleChange}
                 />
@@ -107,7 +116,6 @@ export default function NewUserPage() {
                 <Input
                   id="age"
                   type="number"
-                  placeholder="Edad del usuario"
                   value={form.age}
                   onChange={handleChange}
                 />
@@ -117,7 +125,6 @@ export default function NewUserPage() {
                 <FieldLabel htmlFor="course">Curso</FieldLabel>
                 <Input
                   id="course"
-                  placeholder="Curso o grupo"
                   value={form.course}
                   onChange={handleChange}
                 />
@@ -130,7 +137,7 @@ export default function NewUserPage() {
                   value={form.role}
                   onChange={handleChange}
                   required
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring"
                 >
                   <option value="">Selecciona un rol</option>
                   {roles.map((r) => (
@@ -147,6 +154,7 @@ export default function NewUserPage() {
             <Button type="submit" disabled={isLoading}>
               {isLoading ? "Creando..." : "Crear Usuario"}
             </Button>
+
             <Button
               type="button"
               variant="outline"
