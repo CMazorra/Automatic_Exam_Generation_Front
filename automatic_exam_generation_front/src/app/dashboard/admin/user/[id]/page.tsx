@@ -5,28 +5,68 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useRouter, useParams } from "next/navigation"
 import { getUserById, deleteUser } from "@/services/userService"
+import { toast } from "sonner"
 
 export default function UserView() {
   const params = useParams()
   const id = params?.id as string
   const [user, setUser] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     if (!id) return
+
     const fetchUser = async () => {
       try {
         const data = await getUserById(id)
         setUser({ ...data, id_us: data.id_us ?? data.id ?? data._id })
       } catch (error) {
         console.error("Error fetching user:", error)
+        toast.error("Error de carga", {
+          description: "No se pudo obtener la información del usuario.",
+        })
       } finally {
         setIsLoading(false)
       }
     }
+
     fetchUser()
   }, [id])
+
+  const handleDelete = async () => {
+    if (!user || isDeleting) return
+
+    const confirmed = window.confirm(
+      `¿Seguro que deseas eliminar al usuario "${user.name}"? Esta acción es irreversible.`
+    )
+
+    if (!confirmed) {
+      toast.info("Operación cancelada", {
+        description: "La eliminación del usuario fue cancelada.",
+      })
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      await deleteUser(user.id_us)
+
+      toast.success("Usuario eliminado", {
+        description: `El usuario "${user.name}" ha sido eliminado correctamente.`,
+      })
+
+      router.push("/dashboard/admin/user")
+    } catch (error: any) {
+      console.error("Error deleting user:", error)
+      toast.error("Error al eliminar", {
+        description: error?.message || "No se pudo eliminar el usuario.",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -65,7 +105,8 @@ export default function UserView() {
               </p>
             )}
             <p>
-              <strong>Rol:</strong> {user.role}</p>
+              <strong>Rol:</strong> {user.role}
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -83,18 +124,10 @@ export default function UserView() {
 
             <Button
               variant="destructive"
-              onClick={async () => {
-                if (!confirm(`¿Seguro que deseas eliminar al usuario "${user.name}"?`)) return
-                try {
-                  await deleteUser(user.id_us)
-                  router.push("/dashboard/admin/user")
-                } catch (error) {
-                  console.error("Error deleting user:", error)
-                  alert("Hubo un error al eliminar el usuario.")
-                }
-              }}
+              onClick={handleDelete}
+              disabled={isDeleting}
             >
-              Eliminar
+              {isDeleting ? "Eliminando..." : "Eliminar"}
             </Button>
           </div>
         </div>
