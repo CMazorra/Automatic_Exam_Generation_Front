@@ -7,6 +7,7 @@ import { getExams } from '@/services/examService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import { getAnswers } from '@/services/answerService';
 
 interface ExamStudent {
     score: number;
