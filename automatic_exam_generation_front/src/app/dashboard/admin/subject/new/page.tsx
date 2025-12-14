@@ -115,7 +115,6 @@ export default function SubjectCreatePage() {
       router.push("/dashboard/admin/subject")
     } catch (err: any) {
       console.error("Crear asignatura falló:", err)
-      // Reemplazamos alert() por toast.error()
       toast.error("Error de Creación", {
           description: err?.message || "Ocurrió un error inesperado al intentar crear la asignatura.",
       })
