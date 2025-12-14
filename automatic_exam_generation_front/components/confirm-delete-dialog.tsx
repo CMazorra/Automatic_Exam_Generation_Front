@@ -1,4 +1,5 @@
-// src/components/confirm-delete-dialog.tsx
+// components/confirm-delete-dialog.tsx
+import React from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -8,40 +9,58 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 
+// Define las props que recibirá el diálogo
 interface ConfirmDeleteDialogProps {
-  children: React.ReactNode
+  isOpen: boolean
+  onClose: () => void
   onConfirm: () => void
-  title?: string
-  description?: string
-  buttonText?: string
+  title: string
+  description: string | React.ReactNode
+  confirmText?: string
+  cancelText?: string
+  isDeleting?: boolean // Para manejar el estado de carga del botón de confirmación
 }
 
-export function ConfirmDeleteDialog({
-  children,
+export const ConfirmDeleteDialog: React.FC<ConfirmDeleteDialogProps> = ({
+  isOpen,
+  onClose,
   onConfirm,
-  title = "¿Estás absolutamente seguro?",
-  description = "Esta acción no se puede deshacer. Esto eliminará permanentemente la entidad y todos los datos relacionados.",
-  buttonText = "Eliminar",
-}: ConfirmDeleteDialogProps) {
+  title,
+  description,
+  confirmText = "Eliminar",
+  cancelText = "Cancelar",
+  isDeleting = false,
+}) => {
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction 
-            onClick={onConfirm} 
-            className="bg-destructive hover:bg-destructive/90"
-          >
-            {buttonText}
+          <AlertDialogCancel asChild>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onClose} 
+              disabled={isDeleting}
+            >
+              {cancelText}
+            </Button>
+          </AlertDialogCancel>
+          <AlertDialogAction asChild>
+            <Button 
+              type="button" 
+              variant="destructive" 
+              onClick={onConfirm} 
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : confirmText}
+            </Button>
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
