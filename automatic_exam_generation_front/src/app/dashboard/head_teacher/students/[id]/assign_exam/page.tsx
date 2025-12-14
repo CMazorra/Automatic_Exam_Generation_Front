@@ -6,7 +6,7 @@ import React, { useEffect, useState, use } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser } from "@/services/authService";
 import { getExams, updateExamStatus } from "@/services/examService";
-import { postExamStudent } from "@/services/examStudentService"; // **VERIFICA ESTA RUTA**
+import { postExamStudent, getExamStudents } from "@/services/examStudentService"; // **VERIFICA ESTA RUTA**
 
 // ASUMIMOS estas funciones de servicio
 import { getSubjectsFlatByTeacherID } from "@/services/subjectService"; // 🎯 Añadido para obtener la lista del Jefe de Estudios
@@ -99,6 +99,14 @@ export default function AssignExamHeadTeacherPage({ params }: { params: Promise<
         
         const allExams: Exam[] = await getExams();
 
+        // Cargar asignaciones existentes y excluir las del estudiante actual
+        const allExamStudents = await getExamStudents().catch(() => [] as any[]);
+        const assignedExamIdsForStudent: number[] = Array.isArray(allExamStudents)
+          ? allExamStudents
+              .filter((es: any) => Number(es.student_id) === studentId)
+              .map((es: any) => Number(es.exam_id))
+          : [];
+
         // 🎯 FILTRADO CLAVE:
         // 1) Creados por el Jefe de Estudios/Profesor actual (Asumiendo que el Jefe de Estudios solo puede asignar sus propios exámenes, como un profesor normal)
         // O: Se puede cambiar el filtro para que el Jefe de Estudios pueda asignar CUALQUIER examen Aprobado que cubra la asignatura común. **Mantendremos la restricción de crear/asignar sus propios exámenes por coherencia con el rol de "Profesor/Jefe de Estudios".**
@@ -109,7 +117,9 @@ export default function AssignExamHeadTeacherPage({ params }: { params: Promise<
             // 2. Debe ser de una asignatura que el Jefe de Estudios imparte Y que el alumno cursa
             commonSubjectIds.includes(Number(exam.subject_id)) &&
             // 3. Debe estar Aprobado (listo para ser asignado)
-            (exam.status === "Aprobado")
+          (exam.status === "Aprobado" || exam.status === "Asignado") &&
+          // 4. No mostrar exámenes ya asignados al estudiante
+          !assignedExamIdsForStudent.includes(Number(exam.id))
         );
 
         setAvailableExams(filteredExams);
@@ -146,12 +156,14 @@ export default function AssignExamHeadTeacherPage({ params }: { params: Promise<
         return;
       }
 
+      // Ya se filtra arriba para no mostrar exámenes asignados
+
       // 1. CREAR LA ASIGNACIÓN (usando el ID del Jefe de Estudios como "teacher_id" de la asignación)
       await postExamStudent({
+        score: 0,
         exam_id: examId,
         student_id: studentId,
         teacher_id: headTeacherId, 
-        score: 0,
       });
 
       // 2. ACTUALIZAR EL ESTADO DEL EXAMEN 
@@ -224,7 +236,7 @@ export default function AssignExamHeadTeacherPage({ params }: { params: Promise<
                   ))
                 ) : (
                     <SelectItem key="no-exams" value="no-exams-placeholder" disabled>
-                        No hay exámenes Aprobados creados por ti para esta asignatura.
+                        No hay examenes a asignar.
                     </SelectItem>
                 )}
               </SelectContent>

@@ -108,7 +108,7 @@ export default function QuestionStudentCorrelationPage() {
   const calculateFailureRate = (question: WorstQuestion) => {
     // Calcular la tasa de reprobación: si el promedio es bajo, hay más reprobación
     // averageScore es el promedio de calificaciones, convertimos a tasa de fallo
-    const failureRate = Math.max(0, Math.round((1 - question.averageScore / 5) * 100));
+    const failureRate = Math.max(0, Math.round((1 - question.averageScore) * 100));
     return failureRate;
   };
 

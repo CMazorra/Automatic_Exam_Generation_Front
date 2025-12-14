@@ -21,7 +21,7 @@ export async function getExamStudents() {
   }
 }
 
-export async function postExamStudent(examStudent: { exam_id: number, student_id: number, teacher_id: number, score: number }) {
+export async function postExamStudent(examStudent: { score: number, exam_id: number, student_id: number, teacher_id: number }) {
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam-student`, {
       method: "POST",
@@ -32,13 +32,15 @@ export async function postExamStudent(examStudent: { exam_id: number, student_id
       body: JSON.stringify(examStudent),
     });
     if (!response.ok) {
-      throw new Error("Error al crear el examen del estudiante");
+      const text = await response.text().catch(() => "<sin cuerpo>");
+      const msg = `Error al crear el examen del estudiante (HTTP ${response.status} ${response.statusText}). Respuesta: ${text}`;
+      console.error(msg);
+      throw new Error(msg);
     }
     const data = await response.json();
     return data;
-  }
-  catch (error) {
-    console.error("Error en postQuestions:", error);
+  } catch (error) {
+    console.error("Error en postExamStudent:", error);
     throw error;
   }
 }
