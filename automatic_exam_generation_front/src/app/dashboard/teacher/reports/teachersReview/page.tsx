@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { getTeachersReview } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   BarChart,
   Bar,
@@ -128,17 +128,18 @@ export default function TeachersReviewPage() {
   }
 
   return (
-    <div className="w-full p-6 space-y-6">
-      {/* Toolbar */}
-      <div className="flex justify-end">
+    <div id="report-content" className="w-full p-6 space-y-6">
+      <div className="flex justify-end gap-2 print:hidden">
         <Button
           onClick={() => {
-            document.documentElement.classList.add('pdf-override');
-            window.print();
-            setTimeout(() => {
-              document.documentElement.classList.remove('pdf-override');
-            }, 0);
+            try {
+              document.documentElement.classList.add('pdf-override');
+              window.print();
+            } finally {
+              setTimeout(() => document.documentElement.classList.remove('pdf-override'), 1000);
+            }
           }}
+          variant="outline"
         >
           Imprimir
         </Button>
@@ -204,6 +205,13 @@ export default function TeachersReviewPage() {
               <Bar dataKey="reviews" fill="#3b82f6" name="Exámenes Revisados" radius={[0, 8, 8, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p className="font-semibold mb-1">Leyenda:</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li>Cada barra representa el <span className="font-medium">total de exámenes revisados</span> por profesor.</li>
+              <li>Ordenado por mayor carga de revisión.</li>
+            </ul>
+          </div>
         </Card>
       )}
 
@@ -232,6 +240,13 @@ export default function TeachersReviewPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li>Porciones muestran la <span className="font-medium">proporción</span> del total de revisiones por asignatura.</li>
+                <li>Los colores corresponden a la lista de asignaturas en el panel lateral.</li>
+              </ul>
+            </div>
           </Card>
         )}
 
@@ -253,6 +268,13 @@ export default function TeachersReviewPage() {
                 </Badge>
               </div>
             ))}
+          </div>
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p className="font-semibold mb-1">Leyenda:</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li>Cada fila muestra el <span className="font-medium">conteo</span> de revisiones por asignatura.</li>
+              <li>El marcador de color coincide con el de la gráfica circular.</li>
+            </ul>
           </div>
         </Card>
       </div>
@@ -279,6 +301,13 @@ export default function TeachersReviewPage() {
               ))}
             </BarChart>
           </ResponsiveContainer>
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p className="font-semibold mb-1">Leyenda:</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li>Gráfico apilado: <span className="font-medium">revisiones</span> por asignatura sobre cada profesor.</li>
+              <li>Cada color corresponde a una asignatura; la leyenda muestra su nombre.</li>
+            </ul>
+          </div>
         </Card>
       )}
 
@@ -325,6 +354,13 @@ export default function TeachersReviewPage() {
               })}
             </tbody>
           </table>
+        </div>
+        <div className="mt-4 text-xs text-muted-foreground">
+          <p className="font-semibold mb-1">Leyenda:</p>
+          <ul className="list-disc ml-4 space-y-1">
+            <li><span className="font-medium">Asignaturas</span>: detalle del número de revisiones por materia.</li>
+            <li><span className="font-medium">Carga de Trabajo</span>: Alta (≥15), Media (8–14), Baja (&lt;8).</li>
+          </ul>
         </div>
       </Card>
 
@@ -377,14 +413,21 @@ export default function TeachersReviewPage() {
             </tbody>
           </table>
         </div>
+        <div className="mt-4 text-xs text-muted-foreground">
+          <p className="font-semibold mb-1">Leyenda:</p>
+          <ul className="list-disc ml-4 space-y-1">
+            <li>Intensidad de color azul indica <span className="font-medium">mayor número</span> de revisiones.</li>
+            <li>La última columna <span className="font-medium">Total</span> suma todas las asignaturas por profesor.</li>
+          </ul>
+        </div>
       </Card>
-      {/* Print styles scoped */}
       <style>{`
         @media print {
           body * { visibility: hidden; }
-          .printable, .printable * { visibility: visible; }
-          .printable { position: absolute; left: 0; top: 0; width: 100%; }
-          @page { size: A4 portrait; margin: 10mm; }
+          #report-content, #report-content * { visibility: visible; }
+          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { size: A4; margin: 12mm; }
+          .print:hidden { display: none !important; }
         }
       `}</style>
     </div>

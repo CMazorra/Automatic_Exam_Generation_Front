@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { getGeneratedExamsBySubject } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   BarChart,
   Bar,
@@ -168,17 +168,18 @@ export default function GeneratedExamsBySubjectPage() {
   };
 
   return (
-    <div className="w-full p-6 space-y-6">
-      {/* Toolbar */}
-      <div className="flex justify-end">
+    <div id="report-content" className="w-full p-6 space-y-6">
+      <div className="flex justify-end gap-2 print:hidden">
         <Button
           onClick={() => {
-            document.documentElement.classList.add('pdf-override');
-            window.print();
-            setTimeout(() => {
-              document.documentElement.classList.remove('pdf-override');
-            }, 0);
+            try {
+              document.documentElement.classList.add('pdf-override');
+              window.print();
+            } finally {
+              setTimeout(() => document.documentElement.classList.remove('pdf-override'), 1000);
+            }
           }}
+          variant="outline"
         >
           Imprimir
         </Button>
@@ -281,6 +282,13 @@ export default function GeneratedExamsBySubjectPage() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-xs text-muted-foreground">
+                  <p className="font-semibold mb-1">Leyenda:</p>
+                  <ul className="list-disc ml-4 space-y-1">
+                    <li>Cada barra muestra la <span className="font-medium">cantidad de exámenes</span> por estado.</li>
+                    <li>Colores: Aprobado (verde), Pendiente (amarillo), Rechazado (rojo).</li>
+                  </ul>
+                </div>
               </Card>
             )}
 
@@ -302,6 +310,13 @@ export default function GeneratedExamsBySubjectPage() {
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-xs text-muted-foreground">
+                  <p className="font-semibold mb-1">Leyenda:</p>
+                  <ul className="list-disc ml-4 space-y-1">
+                    <li>Conteo de exámenes por dificultad declarada.</li>
+                    <li>Colores: Fácil (verde), Medio (amarillo), Difícil (rojo).</li>
+                  </ul>
+                </div>
               </Card>
             )}
 
@@ -328,6 +343,13 @@ export default function GeneratedExamsBySubjectPage() {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-xs text-muted-foreground">
+                  <p className="font-semibold mb-1">Leyenda:</p>
+                  <ul className="list-disc ml-4 space-y-1">
+                    <li>Cada porción representa la <span className="font-medium">proporción</span> de exámenes por profesor.</li>
+                    <li>Las etiquetas muestran el porcentaje aproximado sobre el total.</li>
+                  </ul>
+                </div>
               </Card>
             )}
           </div>
@@ -402,6 +424,14 @@ export default function GeneratedExamsBySubjectPage() {
                 </tbody>
               </table>
             </div>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li><span className="font-medium">Estado</span>: aprobado/pendiente/rechazado.</li>
+                <li><span className="font-medium">Dificultad</span>: nivel declarado del examen.</li>
+                <li><span className="font-medium">Parámetros</span>: identificador de configuración con el que se generó.</li>
+              </ul>
+            </div>
           </Card>
         </>
       )}
@@ -411,13 +441,13 @@ export default function GeneratedExamsBySubjectPage() {
           <p className="text-gray-600">No hay exámenes generados para esta asignatura</p>
         </Card>
       )}
-      {/* Print styles scoped */}
       <style>{`
         @media print {
           body * { visibility: hidden; }
-          .printable, .printable * { visibility: visible; }
-          .printable { position: absolute; left: 0; top: 0; width: 100%; }
-          @page { size: A4 portrait; margin: 10mm; }
+          #report-content, #report-content * { visibility: visible; }
+          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { size: A4; margin: 12mm; }
+          .print:hidden { display: none !important; }
         }
       `}</style>
     </div>

@@ -82,6 +82,7 @@ export async function generateExam(parameters: { exam_id: string | number , subj
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/exam/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify(parameters),
   });
   return handleResponse(res);

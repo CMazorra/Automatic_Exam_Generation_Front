@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { createExam } from "@/services/examService"
+import { createExam, generateExam } from "@/services/examService"
 import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 import { getParams } from "@/services/paramsService"
 import { getQuestions } from "@/services/questionService"
@@ -10,6 +10,7 @@ import { getCurrentUser } from "@/services/authService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { getHeadTeachers } from "@/services/headTeacerService"
 
 interface SubjectOption {
   id: number | string
@@ -200,22 +201,28 @@ export default function ExamCreatePage() {
 
 
 // REEMPLAZAR FUNCIÓN COMPLETA (aprox. Líneas 207-230)
-  const onSelectSubject = (s: SubjectOption) => {
-    setSubjectId(s.id)
-    setSubjectQuery(s.name || "")
+  const onSelectSubject = async (s: SubjectOption) => {
+    setSubjectId(s.id)
+    setSubjectQuery(s.name || "")
 
-    // Lógica para auto-seleccionar el Jefe de Asignatura
-    if (s.head_teacher_id) {
-      setHeadTeacherId(s.head_teacher_id)
-      // Dado que ya no cargamos la lista de Jefes, usamos el nombre de la asignatura como confirmación temporal
-      // y limpiamos el query del jefe de asignatura para evitar confusión si se re-escribe.
-      setHeadTeacherQuery("Auto-seleccionado") 
-    } else {
-      // Si la asignatura no tiene jefe, limpiamos la selección anterior
-      setHeadTeacherId("")
-      setHeadTeacherQuery("")
-    }
-  }
+    if (s.head_teacher_id) {
+      setHeadTeacherId(s.head_teacher_id)
+      try {
+        const headTeachers = await getHeadTeachers().catch(() => [])
+        const ht = Array.isArray(headTeachers)
+          ? headTeachers.find((h: any) => String(h.id) === String(s.head_teacher_id))
+          : null
+        const htName = ht?.name || ht?.user?.name || ht?.teacher?.user?.name || ""
+        setHeadTeacherQuery(htName || "")
+      } catch (e) {
+        console.warn("No se pudo resolver el nombre del jefe de asignatura", e)
+        setHeadTeacherQuery("")
+      }
+    } else {
+      setHeadTeacherId("")
+      setHeadTeacherQuery("")
+    }
+  }
 
   const onSelectParams = (p: ParamsOption) => {
     setParamsId(p.id)
@@ -285,6 +292,91 @@ export default function ExamCreatePage() {
       }
 
       await createExam(payload)
+      const created = await createExam(payload)
+
+      // Si es automático, generar el examen con distribución de preguntas
+      if (!isManual && created?.id && subjectId) {
+        const selectedParams = allParams.find(p => String(p.id) === String(paramsId))
+        const total = Number(selectedParams?.amount_quest) || 0
+        const proportionStrRaw = String(selectedParams?.proportion || "")
+        const proportionStr = proportionStrRaw.toLowerCase()
+
+        // Tipos canónicos con tildes según backend
+        const typeMap: Record<string, string> = {
+          "vof": "VoF",
+          "verdadero": "VoF",
+          "falso": "VoF",
+          "argumentacion": "Argumentación",
+          "argumentación": "Argumentación",
+          "opcion multiple": "Opción Múltiple",
+          "opción múltiple": "Opción Múltiple",
+          "multiple": "Opción Múltiple",
+          "múltiple": "Opción Múltiple",
+        }
+        const pctByType: Record<string, number> = {}
+
+        // Formato "50-VoF,50-Argumentación"
+        const csvParts = proportionStrRaw.split(",").map(s => s.trim()).filter(Boolean)
+        if (csvParts.length > 0 && csvParts.every(p => /\d+\s*-\s*/.test(p))) {
+          for (const part of csvParts) {
+            const m = part.match(/(\d+)\s*-\s*(.+)/)
+            if (m) {
+              const pct = parseInt(m[1])
+              const labelLc = (m[2] || "").trim().toLowerCase()
+              const key = Object.keys(typeMap).find(k => labelLc.includes(k))
+              if (!isNaN(pct) && key) {
+                const canonical = typeMap[key]
+                pctByType[canonical] = pct
+              }
+            }
+          }
+        }
+
+        // Formato con "%" y separadores "-" o "+"
+        if (Object.keys(pctByType).length === 0) {
+          const parts = proportionStr.split(/[-+]/).map(s => s.trim()).filter(Boolean)
+          for (const part of parts) {
+            const m = part.match(/(\d+)\s*%\s*(.*)/)
+            if (m) {
+              const pct = parseInt(m[1])
+              const labelLc = (m[2] || "").trim().toLowerCase()
+              const key = Object.keys(typeMap).find(k => labelLc.includes(k))
+              if (!isNaN(pct) && key) {
+                const canonical = typeMap[key]
+                pctByType[canonical] = pct
+              }
+            }
+          }
+        }
+
+        if (Object.keys(pctByType).length === 0) {
+          pctByType["Argumentación"] = 100
+        }
+
+        // Convertir porcentajes a cantidades asegurando suma exacta
+        const tempDistribution: Array<{ type: string; amount: number }> = []
+        let assigned = 0
+        const entries = Object.entries(pctByType)
+        for (let i = 0; i < entries.length; i++) {
+          const [type, pct] = entries[i]
+          let amount = Math.floor((total * pct) / 100)
+          if (i === entries.length - 1) {
+            amount = Math.max(total - assigned, 0)
+          } else {
+            assigned += amount
+          }
+          if (amount > 0) tempDistribution.push({ type, amount })
+        }
+
+        await generateExam({
+          exam_id: String(created.id),
+          subject_id: String(subjectId),
+          teacher_id: String(teacherId),
+          head_teacher_id: String(headTeacherId),
+          questionDistribution: tempDistribution,
+        })
+      }
+
       router.push("/dashboard/teacher/exam")
     } catch (err: any) {
       console.error("Error creando examen:", err)

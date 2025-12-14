@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { getCurrentUser } from "@/services/authService"
-import { getUserById } from "@/services/userService"
+import { getTeacherByID } from "@/services/teacherService"
+import { getStudentByID } from "@/services/studentService"
 
 interface User {
   id?: string | number
@@ -33,16 +34,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         const currentUserData = await getCurrentUser()
         console.log("Datos del usuario (getCurrentUser):", currentUserData)
         
-        // Obtener detalles completos usando el ID
+        // Obtener detalles completos usando el ID, según rol
         if (currentUserData?.id) {
-          const fullUserData = await getUserById(currentUserData.id)
-          console.log("Datos completos del usuario:", fullUserData)
-          // Merge head teacher flags from getCurrentUser into the full user data
+          const userId = currentUserData.id
+          const role = String(currentUserData?.role ?? "").toLowerCase()
+          let detailed: any = null
+          try {
+            if (role === "teacher" || currentUserData?.is_head_teacher || currentUserData?.headTeacher) {
+              detailed = await getTeacherByID(userId)
+            } else if (role === "student") {
+              detailed = await getStudentByID(userId)
+            }
+          } catch (e) {
+            console.warn("No se pudo obtener detalles por rol, usando datos actuales", e)
+          }
           const headTeacherFlag = currentUserData?.headTeacher ?? currentUserData?.is_head_teacher
           const merged = typeof headTeacherFlag !== "undefined"
-            ? { ...fullUserData, headTeacher: headTeacherFlag, is_head_teacher: headTeacherFlag }
-            : fullUserData
-          setUser(merged || currentUserData)
+            ? { ...(detailed || {}), headTeacher: headTeacherFlag, is_head_teacher: headTeacherFlag }
+            : (detailed || {})
+
+          // Normaliza campos planos para que el UI los muestre correctamente
+          const base: any = Object.keys(merged).length ? merged : (currentUserData || {})
+          const normalized: any = {
+            ...base,
+            id: base.id ?? base.user?.id ?? base.user?.id_us,
+            name: base.name ?? base.user?.name ?? base.teacher?.user?.name,
+            account: base.account ?? base.user?.account,
+            email: base.email ?? base.user?.email,
+            role: (base.role ?? base.user?.role ?? currentUserData?.role) as string | undefined,
+            age: base.age ?? base.user?.age,
+            course: base.course ?? base.user?.course,
+            phone: base.phone ?? base.user?.phone,
+          }
+          setUser(Object.keys(normalized).length ? normalized : { account: "Usuario" })
         } else {
           setUser(currentUserData || { account: "Usuario" })
         }

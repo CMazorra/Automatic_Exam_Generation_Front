@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react';
 import { getExams } from '@/services/examService';
 import { getPerformance } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   BarChart,
   Bar,
@@ -202,17 +202,18 @@ export default function ExamPerformancePage() {
     ? Math.round((filteredData.reduce((sum, item) => sum + (item?.accuracyRate || 0), 0) / filteredData.length) * 100)
     : 0;
   return (
-    <div className="w-full p-6 space-y-6">
-      {/* Toolbar */}
-      <div className="flex justify-end">
+    <div id="report-content" className="w-full p-6 space-y-6">
+      <div className="flex justify-end gap-2 print:hidden">
         <Button
           onClick={() => {
-            document.documentElement.classList.add('pdf-override');
-            window.print();
-            setTimeout(() => {
-              document.documentElement.classList.remove('pdf-override');
-            }, 0);
+            try {
+              document.documentElement.classList.add('pdf-override');
+              window.print();
+            } finally {
+              setTimeout(() => document.documentElement.classList.remove('pdf-override'), 1000);
+            }
           }}
+          variant="outline"
         >
           Imprimir
         </Button>
@@ -313,6 +314,13 @@ export default function ExamPerformancePage() {
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
+              <div className="mt-4 text-xs text-muted-foreground">
+                <p className="font-semibold mb-1">Leyenda:</p>
+                <ul className="list-disc ml-4 space-y-1">
+                  <li>Colores por barra: <span className="font-medium" style={{color:'#10b981'}}>≥ 70% acierto</span>, <span className="font-medium" style={{color:'#f59e0b'}}>40–69%</span>, <span className="font-medium" style={{color:'#ef4444'}}>&lt; 40%</span>.</li>
+                  <li>Eje Y: tasa de acierto (%) por pregunta. El tooltip muestra el valor exacto.</li>
+                </ul>
+              </div>
             </Card>
           )}
 
@@ -344,6 +352,13 @@ export default function ExamPerformancePage() {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-xs text-muted-foreground">
+                  <p className="font-semibold mb-1">Leyenda:</p>
+                  <ul className="list-disc ml-4 space-y-1">
+                    <li>Cada porción indica el <span className="font-medium">número de preguntas</span> por dificultad.</li>
+                    <li>Colores: Fácil (verde), Medio (amarillo), Difícil (rojo).</li>
+                  </ul>
+                </div>
               </Card>
             )}
 
@@ -368,6 +383,13 @@ export default function ExamPerformancePage() {
                     />
                   </LineChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-xs text-muted-foreground">
+                  <p className="font-semibold mb-1">Leyenda:</p>
+                  <ul className="list-disc ml-4 space-y-1">
+                    <li>La línea muestra la <span className="font-medium">tasa promedio de acierto (%)</span> por dificultad.</li>
+                    <li>Orden de dificultades: Fácil → Medio → Difícil.</li>
+                  </ul>
+                </div>
               </Card>
             )}
           </div>
@@ -449,6 +471,14 @@ export default function ExamPerformancePage() {
                 </tbody>
               </table>
             </div>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li><span className="font-medium">Intentos</span>: número de respuestas registradas para la pregunta.</li>
+                <li><span className="font-medium">Correctas</span>: cantidad de respuestas acertadas.</li>
+                <li><span className="font-medium">Tasa de Acierto</span>: porcentaje de aciertos sobre intentos.</li>
+              </ul>
+            </div>
           </Card>
         </>
       )}
@@ -458,13 +488,13 @@ export default function ExamPerformancePage() {
           <p className="text-gray-600">No hay datos disponibles para este examen</p>
         </Card>
       )}
-      {/* Print styles scoped */}
       <style>{`
         @media print {
           body * { visibility: hidden; }
-          .printable, .printable * { visibility: visible; }
-          .printable { position: absolute; left: 0; top: 0; width: 100%; }
-          @page { size: A4 portrait; margin: 10mm; }
+          #report-content, #report-content * { visibility: visible; }
+          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { size: A4; margin: 12mm; }
+          .print:hidden { display: none !important; }
         }
       `}</style>
     </div>

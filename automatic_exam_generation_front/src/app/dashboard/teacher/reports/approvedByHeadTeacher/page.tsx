@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { getHeadTeachers } from '@/services/headTeacerService';
 import { listApprovedByHeadTeacher } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
@@ -62,7 +62,6 @@ export default function ApprovedByHeadTeacherPage() {
   const [filterDateFrom, setFilterDateFrom] = useState<string>('');
   const [filterDateTo, setFilterDateTo] = useState<string>('');
   const [reportGenerated, setReportGenerated] = useState(false);
-  const reportRef = useRef<HTMLDivElement | null>(null);
 
   // Cargar lista de head teachers
   useEffect(() => {
@@ -177,7 +176,22 @@ export default function ApprovedByHeadTeacherPage() {
   };
 
   return (
-    <div className="w-full p-6 space-y-6">
+    <div id="report-content" className="w-full p-6 space-y-6">
+      <div className="flex justify-end gap-2 print:hidden">
+        <Button
+          onClick={() => {
+            try {
+              document.documentElement.classList.add('pdf-override');
+              window.print();
+            } finally {
+              setTimeout(() => document.documentElement.classList.remove('pdf-override'), 1000);
+            }
+          }}
+          variant="outline"
+        >
+          Imprimir
+        </Button>
+      </div>
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold">Exámenes Aprobados</h1>
         <p className="text-gray-600">Gestión de exámenes aprobados por jefes de departamento</p>
@@ -213,24 +227,6 @@ export default function ApprovedByHeadTeacherPage() {
               >
                 {loading ? 'Cargando...' : 'Generar Reporte'}
               </Button>
-              {/* Removed PDF export; using window.print instead */}
-              {reportGenerated && exams.length > 0 && (
-                <Button
-                  onClick={() => {
-                    // Ensure printable colors avoid oklch
-                    document.documentElement.classList.add('pdf-override');
-                    window.print();
-                    // Remove after print returns
-                    setTimeout(() => {
-                      document.documentElement.classList.remove('pdf-override');
-                    }, 0);
-                  }}
-                  variant="outline"
-                  className="whitespace-nowrap"
-                >
-                  Imprimir
-                </Button>
-              )}
             </div>
           </div>
 
@@ -244,22 +240,7 @@ export default function ApprovedByHeadTeacherPage() {
 
       {/* Contenido del Reporte */}
       {reportGenerated && exams.length > 0 && (
-        <div
-          ref={reportRef}
-          id="report-content"
-          className="bg-white p-6 rounded-lg space-y-6"
-        >
-          {/* Print styles scoped */}
-          <style>{`
-            @media print {
-              /* Hide everything except the report content */
-              body * { visibility: hidden; }
-              #report-content, #report-content * { visibility: visible; }
-              #report-content { position: absolute; left: 0; top: 0; width: 100%; }
-              /* Page setup */
-              @page { size: A4 portrait; margin: 10mm; }
-            }
-          `}</style>
+        <>
           {/* Título con nombre del jefe seleccionado */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h2 className="text-lg font-semibold text-blue-900">
@@ -300,6 +281,14 @@ export default function ApprovedByHeadTeacherPage() {
                   <Bar dataKey="count" fill="#3b82f6" name="Cantidad" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
+              <div className="mt-4 text-sm text-gray-600">
+                <p className="font-semibold mb-1">Leyenda</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Eje X: nombre de la materia.</li>
+                  <li>Eje Y: cantidad de exámenes aprobados para esa materia.</li>
+                  <li>Barra azul: total de aprobaciones por materia.</li>
+                </ul>
+              </div>
             </Card>
           )}
 
@@ -331,6 +320,14 @@ export default function ApprovedByHeadTeacherPage() {
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-sm text-gray-600">
+                  <p className="font-semibold mb-1">Leyenda</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Verde: exámenes aprobados.</li>
+                    <li>Rojo: exámenes rechazados.</li>
+                    <li>Etiqueta del sector: nombre del estado y cantidad.</li>
+                  </ul>
+                </div>
               </Card>
             )}
 
@@ -355,6 +352,14 @@ export default function ApprovedByHeadTeacherPage() {
                     />
                   </LineChart>
                 </ResponsiveContainer>
+                <div className="mt-4 text-sm text-gray-600">
+                  <p className="font-semibold mb-1">Leyenda</p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Eje X: fecha (últimos 10 días con actividad).</li>
+                    <li>Eje Y: cantidad de exámenes aprobados en la fecha.</li>
+                    <li>Línea azul: tendencia diaria de aprobaciones.</li>
+                  </ul>
+                </div>
               </Card>
             )}
           </div>
@@ -470,8 +475,16 @@ export default function ApprovedByHeadTeacherPage() {
                 </tbody>
               </table>
             </div>
+            <div className="mt-4 text-sm text-gray-600">
+              <p className="font-semibold mb-1">Leyenda</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li><span className="font-medium">Estado:</span> Aprobado (verde) o Rechazado (rojo) según las directrices.</li>
+                <li><span className="font-medium">Fecha:</span> día de aprobación o rechazo registrado.</li>
+                <li><span className="font-medium">Notas/Directrices:</span> comentarios del proceso de revisión.</li>
+              </ul>
+            </div>
           </Card>
-        </div>
+        </>
       )}
 
       {reportGenerated && exams.length === 0 && !loading && (
@@ -479,6 +492,15 @@ export default function ApprovedByHeadTeacherPage() {
           <p className="text-gray-600">No hay exámenes aprobados para este jefe de departamento</p>
         </Card>
       )}
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #report-content, #report-content * { visibility: visible; }
+          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { size: A4; margin: 12mm; }
+          .print:hidden { display: none !important; }
+        }
+      `}</style>
     </div>
   );
 }

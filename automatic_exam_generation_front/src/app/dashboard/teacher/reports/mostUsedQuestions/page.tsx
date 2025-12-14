@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { getMostUsedQuestions } from '@/services/reportService';
 import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   BarChart,
   Bar,
@@ -132,17 +132,18 @@ export default function MostUsedQuestionsPage() {
   }
 
   return (
-    <div className="w-full p-6 space-y-6">
-      {/* Toolbar */}
-      <div className="flex justify-end">
+    <div id="report-content" className="w-full p-6 space-y-6">
+      <div className="flex justify-end gap-2 print:hidden">
         <Button
           onClick={() => {
-            document.documentElement.classList.add('pdf-override');
-            window.print();
-            setTimeout(() => {
-              document.documentElement.classList.remove('pdf-override');
-            }, 0);
+            try {
+              document.documentElement.classList.add('pdf-override');
+              window.print();
+            } finally {
+              setTimeout(() => document.documentElement.classList.remove('pdf-override'), 1000);
+            }
           }}
+          variant="outline"
         >
           Imprimir
         </Button>
@@ -156,7 +157,7 @@ export default function MostUsedQuestionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
           <p className="text-sm text-gray-600">Pregunta Más Usada</p>
-          <p className="text-2xl font-bold text-blue-600">{mostUsedQuestion?.usage_count || 0}x</p>
+          <p className="text-2xl font-bold text-blue-600">{mostUsedQuestion?.question_text}</p>
         </Card>
         <Card className="p-4">
           <p className="text-sm text-gray-600">Promedio de Usos</p>
@@ -219,6 +220,13 @@ export default function MostUsedQuestionsPage() {
               <Bar dataKey="uses" fill="#3b82f6" radius={[0, 8, 8, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          <div className="mt-4 text-xs text-muted-foreground">
+            <p className="font-semibold mb-1">Leyenda:</p>
+            <ul className="list-disc ml-4 space-y-1">
+              <li>Barra: número de <span className="font-medium">usos</span> de cada pregunta en exámenes.</li>
+              <li>Eje Y muestra el texto abreviado de la pregunta.</li>
+            </ul>
+          </div>
         </Card>
       )}
 
@@ -252,6 +260,13 @@ export default function MostUsedQuestionsPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li>Cada porción representa el <span className="font-medium">conteo de preguntas</span> por dificultad.</li>
+                <li>Colores: Fácil (verde), Medio (amarillo), Difícil (rojo).</li>
+              </ul>
+            </div>
           </Card>
         )}
 
@@ -278,6 +293,13 @@ export default function MostUsedQuestionsPage() {
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p className="font-semibold mb-1">Leyenda:</p>
+              <ul className="list-disc ml-4 space-y-1">
+                <li>Proporción de preguntas más usadas por materia.</li>
+                <li>Las etiquetas muestran el conteo por materia.</li>
+              </ul>
+            </div>
           </Card>
         )}
       </div>
@@ -318,14 +340,22 @@ export default function MostUsedQuestionsPage() {
             </tbody>
           </table>
         </div>
+        <div className="mt-4 text-xs text-muted-foreground">
+          <p className="font-semibold mb-1">Leyenda:</p>
+          <ul className="list-disc ml-4 space-y-1">
+            <li><span className="font-medium">Ranking</span>: posición según usos (mayor primero).</li>
+            <li><span className="font-medium">Veces Usada</span>: cantidad de exámenes en los que aparece.</li>
+            <li><span className="font-medium">Tema</span>: tópico padre del subtema.</li>
+          </ul>
+        </div>
       </Card>
-      {/* Print styles scoped */}
       <style>{`
         @media print {
           body * { visibility: hidden; }
-          .printable, .printable * { visibility: visible; }
-          .printable { position: absolute; left: 0; top: 0; width: 100%; }
-          @page { size: A4 portrait; margin: 10mm; }
+          #report-content, #report-content * { visibility: visible; }
+          #report-content { position: absolute; left: 0; top: 0; width: 100%; }
+          @page { size: A4; margin: 12mm; }
+          .print:hidden { display: none !important; }
         }
       `}</style>
     </div>
