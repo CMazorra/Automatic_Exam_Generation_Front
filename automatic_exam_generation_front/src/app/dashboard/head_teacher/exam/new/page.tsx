@@ -2,11 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-<<<<<<< HEAD
 import { createExam, generateExam } from "@/services/examService"
-=======
-import { createExam } from "@/services/examService"
->>>>>>> 464d4af (refactor(exam-create): replace all alerts and enhance error reporting with toast notifications)
 import { getSubjectsFlatByTeacherID } from "@/services/subjectService"
 import { getParams } from "@/services/paramsService"
 import { getQuestions } from "@/services/questionService"
