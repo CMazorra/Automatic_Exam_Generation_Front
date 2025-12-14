@@ -236,7 +236,156 @@ export default function ExamToValidateDetailsPage({
   /* ⬇️ JSX COMPLETO ORIGINAL SIN CAMBIOS ⬇️ */
   return (
     <main className="min-h-screen bg-background p-8">
-      {/* … JSX exactamente igual al original … */}
+      <div className="max-w-xl mx-auto p-6 border bg-card rounded-xl shadow-sm space-y-6">
+        <h2 className="text-2xl font-semibold">Validar Examen</h2>
+
+        <div className="space-y-3 text-foreground">
+          <p><strong>Nombre:</strong> {exam.name}</p>
+          <p><strong>Estado:</strong> {exam.status}</p>
+          <p><strong>Dificultad:</strong> {exam.difficulty}</p>
+          <p><strong>Asignatura:</strong> {subjectName ?? exam.subject_id}</p>
+          <p><strong>Profesor:</strong> {teacherName ?? exam.teacher_id}</p>
+          <p><strong>Parametrización:</strong> {paramsLabel ?? exam.parameters_id}</p>
+
+          <p><strong>Jefe de Asignatura:</strong> {headName ?? exam.head_teacher_id}</p>
+        </div>
+
+
+        {fullQuestions.length > 0 && (
+          <div className="pt-6 border-t border-border mt-6 space-y-4">
+            <h3 className="text-xl font-semibold">Preguntas del Examen ({fullQuestions.length})</h3>
+            
+            <ul className="space-y-6">
+              {fullQuestions.map((q: any, index: number) => (
+                <li key={q.id || index} className="border-l-4 border-primary p-3 bg-gray-50 rounded-md">
+                  {/* Título de la pregunta, usando question_text o text */}
+                  <p className="font-medium">
+                    {index + 1}. {q.question_text || q.text || "Pregunta sin texto"}
+                  </p>
+                  
+                  {/* Visualización de Respuestas */}
+                  
+                  {/* Lógica 1: Mostrar Opciones (si el array 'answers' existe) */}
+                  {q.answers && Array.isArray(q.answers) && q.answers.length > 0 ? (
+                    <ul className="mt-2 ml-4 space-y-1 text-sm">
+                      {q.answers.map((a: any, aIndex: number) => (
+                        <li 
+                          key={a.id || aIndex}
+                          // Resalta la respuesta correcta
+                          className={`flex gap-2 items-start ${a.is_correct ? 'text-green-700 font-semibold' : 'text-foreground/80'}`}
+                        >
+                          <span className='pt-0.5'>{a.is_correct ? '✅' : '•'}</span>
+                          <span className={`${a.is_correct ? 'italic' : ''} flex-1`}>
+                            {a.answer_text || a.text || "Respuesta sin texto"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    // Lógica 2: Mostrar Respuesta Única (si el campo 'answer' existe)
+                    q.answer && (
+                      <div className="mt-3 ml-4 p-3 border-l-4 border-green-500 bg-green-50 rounded-r-md text-sm text-green-800">
+                        <p className="font-semibold mb-1 flex items-center gap-2">
+                            <span className="text-base">✅</span> Respuesta Correcta (Teórica/Ensayo):
+                        </p>
+                        <p className="ml-5 mt-1">{q.answer}</p>
+                      </div>
+                    )
+                  )}
+                  
+                  {/* Metadata de la pregunta (dificultad, tipo, temas) */}
+                  <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-gray-200">
+                    <span className="font-semibold">Info:</span>
+                    {q.type && <span> {q.type}</span>}
+                    {(q.type && q.difficulty) && <span className="mx-1">•</span>}
+                    {q.difficulty && <span>{q.difficulty}</span>}
+                    {q.topic?.name && <span className="mx-1">•</span>}
+                    {q.topic?.name && <span>Tema: {q.topic.name}</span>}
+                    {q.sub_topic?.name && <span className="mx-1">•</span>}
+                    {q.sub_topic?.name && <span>Subtema: {q.sub_topic.name}</span>}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {/* ----------------------------------------------------------------- */}
+
+        <div className="flex justify-between pt-4">
+          <Button variant="outline" onClick={() => router.push("/dashboard/head_teacher/exam_to_validate")}>
+            Volver
+          </Button>
+
+          <div className="flex gap-3">
+            <Button variant="default" onClick={() => setShowApproveModal(true)}>
+              Aprobar
+            </Button>
+            <Button variant="destructive" onClick={() => setShowRejectModal(true)}>
+              Desaprobar
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal Aprobar */}
+      {showApproveModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-md w-full space-y-4">
+            <h3 className="text-lg font-semibold">Aprobar Examen</h3>
+            <div>
+              <label className="text-sm font-medium">Comentarios</label>
+              <Textarea
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                placeholder="Escribe tus comentarios aquí..."
+                rows={4}
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => {
+                setShowApproveModal(false);
+                setComments("");
+              }}>
+                Cancelar
+              </Button>
+              <Button onClick={handleApprove} disabled={submitting}>
+                {submitting ? "Guardando..." : "Listo"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Desaprobar */}
+      {showRejectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card p-6 rounded-lg max-w-md w-full space-y-4">
+            <h3 className="text-lg font-semibold">Desaprobar Examen</h3>
+            <div>
+              <label className="text-sm font-medium">Comentarios</label>
+              <Textarea
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
+                placeholder="Escribe tus comentarios aquí..."
+                rows={4}
+                className="mt-1"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={() => {
+                setShowRejectModal(false);
+                setComments("");
+              }}>
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={handleReject} disabled={submitting}>
+                {submitting ? "Guardando..." : "Listo"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
