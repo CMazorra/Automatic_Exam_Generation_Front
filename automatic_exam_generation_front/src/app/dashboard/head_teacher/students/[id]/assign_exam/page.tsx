@@ -121,7 +121,6 @@ export default function AssignExamHeadTeacherPage({
               .map((es: any) => Number(es.exam_id))
           : [];
 
-<<<<<<< HEAD
         // 🎯 FILTRADO CLAVE:
         // 1) Creados por el Jefe de Estudios/Profesor actual (Asumiendo que el Jefe de Estudios solo puede asignar sus propios exámenes, como un profesor normal)
         // O: Se puede cambiar el filtro para que el Jefe de Estudios pueda asignar CUALQUIER examen Aprobado que cubra la asignatura común. **Mantendremos la restricción de crear/asignar sus propios exámenes por coherencia con el rol de "Profesor/Jefe de Estudios".**
@@ -133,15 +132,6 @@ export default function AssignExamHeadTeacherPage({
           (exam.status === "Aprobado" || exam.status === "Asignado") &&
           // 3. No mostrar exámenes ya asignados al estudiante
           !assignedExamIdsForStudent.includes(Number(exam.id))
-=======
-        const filteredExams = allExams.filter(
-          (exam) =>
-            exam.teacher_id === currentHeadTeacherId &&
-            commonSubjectIds.includes(Number(exam.subject_id)) &&
-            (exam.status === "Aprobado" ||
-              exam.status === "Asignado") &&
-            !assignedExamIdsForStudent.includes(Number(exam.id))
->>>>>>> 2f354d1 (refactor(head-teacher-assign-exam): replace multiple alerts with toasts for notifications)
         );
 
         setAvailableExams(filteredExams);
