@@ -6,14 +6,16 @@ import { Button } from "@/components/ui/button"
 import { useRouter, useParams } from "next/navigation"
 import { getUserById, deleteUser } from "@/services/userService"
 import { toast } from "sonner"
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog"
 
 export default function UserView() {
   const params = useParams()
   const id = params?.id as string
+  const router = useRouter()
+
   const [user, setUser] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isDeleting, setIsDeleting] = useState(false)
-  const router = useRouter()
 
   useEffect(() => {
     if (!id) return
@@ -38,17 +40,6 @@ export default function UserView() {
   const handleDelete = async () => {
     if (!user || isDeleting) return
 
-    const confirmed = window.confirm(
-      `¿Seguro que deseas eliminar al usuario "${user.name}"? Esta acción es irreversible.`
-    )
-
-    if (!confirmed) {
-      toast.info("Operación cancelada", {
-        description: "La eliminación del usuario fue cancelada.",
-      })
-      return
-    }
-
     setIsDeleting(true)
     try {
       await deleteUser(user.id_us)
@@ -70,66 +61,57 @@ export default function UserView() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center">Cargando...</div>
+      <main className="flex min-h-screen items-center justify-center">
+        <p>Cargando...</p>
       </main>
     )
   }
 
   if (!user) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center text-destructive">Usuario no encontrado</div>
+      <main className="flex min-h-screen items-center justify-center">
+        <p className="text-destructive">Usuario no encontrado</p>
       </main>
     )
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-2xl">
-        <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
-          <div>
-            <h2 className="font-semibold leading-none">{user.name}</h2>
-            <p className="text-sm text-muted-foreground">{user.account}</p>
-          </div>
+    <main className="flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-2xl space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+        <div>
+          <h2 className="text-lg font-semibold">{user.name}</h2>
+          <p className="text-sm text-muted-foreground">{user.account}</p>
+        </div>
 
-          <div className="space-y-2">
-            {user.age && (
-              <p>
-                <strong>Edad:</strong> {user.age}
-              </p>
-            )}
-            {user.course && (
-              <p>
-                <strong>Curso:</strong> {user.course}
-              </p>
-            )}
-            <p>
-              <strong>Rol:</strong> {user.role}
-            </p>
-          </div>
+        <div className="space-y-2">
+          {user.age && <p><strong>Edad:</strong> {user.age}</p>}
+          {user.course && <p><strong>Curso:</strong> {user.course}</p>}
+          <p><strong>Rol:</strong> {user.role}</p>
+        </div>
 
-          <div className="flex gap-3 pt-4">
-            <Link href="/dashboard/admin/user">
-              <Button variant="outline">Volver</Button>
-            </Link>
+        <div className="flex gap-3 pt-4">
+          <Link href="/dashboard/admin/user">
+            <Button variant="outline">Volver</Button>
+          </Link>
 
-            <Button
-              onClick={() =>
-                router.push(`/dashboard/admin/user/${user.id_us}/edit`)
-              }
-            >
-              Editar
-            </Button>
+          <Button
+            onClick={() =>
+              router.push(`/dashboard/admin/user/${user.id_us}/edit`)
+            }
+          >
+            Editar
+          </Button>
 
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
+          {/* 🔥 CONFIRMACIÓN REAL */}
+          <ConfirmDeleteDialog
+            title={`Eliminar usuario "${user.name}"`}
+            description="¿Estás seguro de que deseas eliminar este usuario? Esta acción es irreversible."
+            onConfirm={handleDelete}
+          >
+            <Button variant="destructive" disabled={isDeleting}>
               {isDeleting ? "Eliminando..." : "Eliminar"}
             </Button>
-          </div>
+          </ConfirmDeleteDialog>
         </div>
       </div>
     </main>
