@@ -11,193 +11,194 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { getHeadTeachers } from "@/services/headTeacerService"
+import { toast } from "sonner" // <-- Importamos TOAST
 
 interface SubjectOption {
-  id: number | string
-  name?: string
-  head_teacher_id: number | string
+  id: number | string
+  name?: string
+  head_teacher_id: number | string
 }
 
 interface ParamsOption {
-  id: number | string
-  proportion?: string
-  quest_topics?: string
-  amount_quest?: string
+  id: number | string
+  proportion?: string
+  quest_topics?: string
+  amount_quest?: string
 }
 
 interface HeadTeacherOption {
-  id: number | string
-  name?: string
-  user?: { name?: string }
-  teacher?: { user?: { name?: string } }
+  id: number | string
+  name?: string
+  user?: { name?: string }
+  teacher?: { user?: { name?: string } }
 }
 
 export default function ExamCreatePage() {
-  const router = useRouter()
+  const router = useRouter()
 
-  // form fields
-  const [name, setName] = useState("")
-  const [difficulty, setDifficulty] = useState("")
-  const [subjectId, setSubjectId] = useState<number | string | "">("")
-  const [paramsId, setParamsId] = useState<number | string | "">("")
-  const [teacherId, setTeacherId] = useState<number | string>("") // obtenido automáticamente
-  const [headTeacherId, setHeadTeacherId] = useState<number | string | "">("")
-  const [isManual, setIsManual] = useState(false)
+  // form fields
+  const [name, setName] = useState("")
+  const [difficulty, setDifficulty] = useState("")
+  const [subjectId, setSubjectId] = useState<number | string | "">("")
+  const [paramsId, setParamsId] = useState<number | string | "">("")
+  const [teacherId, setTeacherId] = useState<number | string>("") // obtenido automáticamente
+  const [headTeacherId, setHeadTeacherId] = useState<number | string | "">("")
+  const [isManual, setIsManual] = useState(false)
 
-  // lists + search
-  const [allSubjects, setAllSubjects] = useState<SubjectOption[]>([])
-  const [subjectQuery, setSubjectQuery] = useState("")
-  const [loadingSubjects, setLoadingSubjects] = useState(false)
+  // lists + search
+  const [allSubjects, setAllSubjects] = useState<SubjectOption[]>([])
+  const [subjectQuery, setSubjectQuery] = useState("")
+  const [loadingSubjects, setLoadingSubjects] = useState(false)
 
-  const [allParams, setAllParams] = useState<ParamsOption[]>([])
-  const [paramsQuery, setParamsQuery] = useState("")
-  const [loadingParams, setLoadingParams] = useState(false)
+  const [allParams, setAllParams] = useState<ParamsOption[]>([])
+  const [paramsQuery, setParamsQuery] = useState("")
+  const [loadingParams, setLoadingParams] = useState(false)
 
-  const [allHeadTeachers, setAllHeadTeachers] = useState<HeadTeacherOption[]>([])
-  const [headTeacherQuery, setHeadTeacherQuery] = useState("")
-  const [loadingHeadTeachers, setLoadingHeadTeachers] = useState(false)
+  const [allHeadTeachers, setAllHeadTeachers] = useState<HeadTeacherOption[]>([])
+  const [headTeacherQuery, setHeadTeacherQuery] = useState("")
+  const [loadingHeadTeachers, setLoadingHeadTeachers] = useState(false)
 
-  // UI para preguntas manuales
-  const [manualQuestions, setManualQuestions] = useState<{ id: number; text: string }[]>([])
-  const [newQuestionText, setNewQuestionText] = useState("")
-  const [questionSearch, setQuestionSearch] = useState("")
-  const [allQuestions, setAllQuestions] = useState<any[]>([])
-  const [loadingQuestions, setLoadingQuestions] = useState(false)
+  // UI para preguntas manuales
+  const [manualQuestions, setManualQuestions] = useState<{ id: number; text: string }[]>([])
+  const [newQuestionText, setNewQuestionText] = useState("")
+  const [questionSearch, setQuestionSearch] = useState("")
+  const [allQuestions, setAllQuestions] = useState<any[]>([])
+  const [loadingQuestions, setLoadingQuestions] = useState(false)
 
-  const filteredSubjects = allSubjects.filter((s) =>
-    (s.name || "").toLowerCase().includes(subjectQuery.toLowerCase())
-  )
+  const filteredSubjects = allSubjects.filter((s) =>
+    (s.name || "").toLowerCase().includes(subjectQuery.toLowerCase())
+  )
 
-  const filteredParams = allParams.filter((p) => {
-    const label = [p.proportion, p.quest_topics, p.amount_quest].filter(Boolean).join(" ").toLowerCase()
-    return label.includes(paramsQuery.toLowerCase())
-  })
+  const filteredParams = allParams.filter((p) => {
+    const label = [p.proportion, p.quest_topics, p.amount_quest].filter(Boolean).join(" ").toLowerCase()
+    return label.includes(paramsQuery.toLowerCase())
+  })
 
-  const filteredHeadTeachers = allHeadTeachers.filter((ht) => {
-    const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || ""
-    return htName.toLowerCase().includes(headTeacherQuery.toLowerCase())
-  })
+  const filteredHeadTeachers = allHeadTeachers.filter((ht) => {
+    const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || ""
+    return htName.toLowerCase().includes(headTeacherQuery.toLowerCase())
+  })
 
-  // Filtrar preguntas (sugerencias) mientras escribe el usuario
-  const filteredQuestionSuggestions = allQuestions.filter((q) => {
-    const haystack = [
-      q.question_text,
-      q.subject_name,
-      q.topic_name,
-      q.sub_topic_name,
-      q.type,
-      q.difficulty,
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase()
-    return haystack.includes(questionSearch.toLowerCase())
-  })
+  // Filtrar preguntas (sugerencias) mientras escribe el usuario
+  const filteredQuestionSuggestions = allQuestions.filter((q) => {
+    const haystack = [
+      q.question_text,
+      q.subject_name,
+      q.topic_name,
+      q.sub_topic_name,
+      q.type,
+      q.difficulty,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+    return haystack.includes(questionSearch.toLowerCase())
+  })
 
-  // Obtener teacher_id del usuario actual
-  useEffect(() => {
-    async function loadCurrentUser() {
-      try {
-        const user = await getCurrentUser()
-        if (user?.id) {
-          setTeacherId(user.id)
-        } else {
-          const raw = typeof window !== "undefined" ? localStorage.getItem("userId") : null
-          if (raw) setTeacherId(Number(raw))
-        }
-      } catch (error) {
-        console.error("Error obteniendo usuario actual:", error)
-        const raw = typeof window !== "undefined" ? localStorage.getItem("userId") : null
-        if (raw) setTeacherId(Number(raw))
-      }
-    }
-    loadCurrentUser()
-  }, [])
-
-
-  useEffect(() => {
-    let mounted = true
-    if (!teacherId) return // Espera a tener el ID del profesor
-
-    async function loadSubjects() {
-      try {
-        setLoadingSubjects(true)
-        // Usa la función para obtener solo las asignaturas del profesor
-        const subjectsList = await getSubjectsFlatByTeacherID(String(teacherId)).catch(() => [])
-        if (mounted) {
-          setAllSubjects(Array.isArray(subjectsList) ? subjectsList : [])
-        }
-      } catch (err) {
-        console.error("Error cargando asignaturas del profesor:", err)
-      } finally {
-        if (mounted) {
-          setLoadingSubjects(false)
-        }
-      }
-    }
-
-    loadSubjects()
-
-    return () => {
-      mounted = false
-    }
-  }, [teacherId]) // Se ejecuta cuando teacherId cambia o está disponible
+  // Obtener teacher_id del usuario actual
+  useEffect(() => {
+    async function loadCurrentUser() {
+      try {
+        const user = await getCurrentUser()
+        if (user?.id) {
+          setTeacherId(user.id)
+        } else {
+          const raw = typeof window !== "undefined" ? localStorage.getItem("userId") : null
+          if (raw) setTeacherId(Number(raw))
+        }
+      } catch (error) {
+        console.error("Error obteniendo usuario actual:", error)
+        const raw = typeof window !== "undefined" ? localStorage.getItem("userId") : null
+        if (raw) setTeacherId(Number(raw))
+      }
+    }
+    loadCurrentUser()
+  }, [])
 
 
-  useEffect(() => {
-    let mounted = true
+  useEffect(() => {
+    let mounted = true
+    if (!teacherId) return // Espera a tener el ID del profesor
 
-    const load = async () => {
-      try {
-        setLoadingParams(true)
+    async function loadSubjects() {
+      try {
+        setLoadingSubjects(true)
+        // Usa la función para obtener solo las asignaturas del profesor
+        const subjectsList = await getSubjectsFlatByTeacherID(String(teacherId)).catch(() => [])
+        if (mounted) {
+          setAllSubjects(Array.isArray(subjectsList) ? subjectsList : [])
+        }
+      } catch (err) {
+        console.error("Error cargando asignaturas del profesor:", err)
+      } finally {
+        if (mounted) {
+          setLoadingSubjects(false)
+        }
+      }
+    }
 
-        const paramsList = await getParams().catch(() => [])
+    loadSubjects()
 
-        if (!mounted) return
+    return () => {
+      mounted = false
+    }
+  }, [teacherId]) // Se ejecuta cuando teacherId cambia o está disponible
 
-        setAllParams(Array.isArray(paramsList) ? paramsList : [])
-      } catch (err) {
-        console.error("Error cargando listas de parámetros:", err)
-      } finally {
-        if (mounted) {
-          setLoadingParams(false)
-        }
-      }
-    }
 
-    load()
-    return () => {
-      mounted = false
-    }
-  }, [])
+  useEffect(() => {
+    let mounted = true
 
-  // Cargar sugerencias del banco de preguntas para modo manual (una sola vez al activar manual)
-  useEffect(() => {
-    let mounted = true
-    async function loadQuestions() {
-      if (!isManual) return
-      try {
-        setLoadingQuestions(true)
-        const qs = await getQuestions().catch(() => [])
-        const list = Array.isArray(qs) ? qs : []
-        // Normalizar campos que ayudan a filtrar por nombres si existen
-        const normalized = list.map((q: any) => ({
-          ...q,
-          question_text: q.question_text ?? q.text ?? q.statement ?? "",
-        }))
-        if (mounted) setAllQuestions(normalized)
-      } catch (e) {
-        console.error("Error cargando preguntas:", e)
-        if (mounted) setAllQuestions([])
-      } finally {
-        if (mounted) setLoadingQuestions(false)
-      }
-    }
-    loadQuestions()
-    return () => {
-      mounted = false
-    }
-  }, [isManual])
+    const load = async () => {
+      try {
+        setLoadingParams(true)
+
+        const paramsList = await getParams().catch(() => [])
+
+        if (!mounted) return
+
+        setAllParams(Array.isArray(paramsList) ? paramsList : [])
+      } catch (err) {
+        console.error("Error cargando listas de parámetros:", err)
+      } finally {
+        if (mounted) {
+          setLoadingParams(false)
+        }
+      }
+    }
+
+    load()
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  // Cargar sugerencias del banco de preguntas para modo manual (una sola vez al activar manual)
+  useEffect(() => {
+    let mounted = true
+    async function loadQuestions() {
+      if (!isManual) return
+      try {
+        setLoadingQuestions(true)
+        const qs = await getQuestions().catch(() => [])
+        const list = Array.isArray(qs) ? qs : []
+        // Normalizar campos que ayudan a filtrar por nombres si existen
+        const normalized = list.map((q: any) => ({
+          ...q,
+          question_text: q.question_text ?? q.text ?? q.statement ?? "",
+        }))
+        if (mounted) setAllQuestions(normalized)
+      } catch (e) {
+        console.error("Error cargando preguntas:", e)
+        if (mounted) setAllQuestions([])
+      } finally {
+        if (mounted) setLoadingQuestions(false)
+      }
+    }
+    loadQuestions()
+    return () => {
+      mounted = false
+    }
+  }, [isManual])
 
 
 // REEMPLAZAR FUNCIÓN COMPLETA (aprox. Líneas 207-230)
@@ -224,17 +225,17 @@ export default function ExamCreatePage() {
     }
   }
 
-  const onSelectParams = (p: ParamsOption) => {
-    setParamsId(p.id)
-    const label = [p.proportion, p.quest_topics, p.amount_quest].filter(Boolean).join(" / ")
-    setParamsQuery(label)
-  }
+  const onSelectParams = (p: ParamsOption) => {
+    setParamsId(p.id)
+    const label = [p.proportion, p.quest_topics, p.amount_quest].filter(Boolean).join(" / ")
+    setParamsQuery(label)
+  }
 
-  const onSelectHeadTeacher = (ht: HeadTeacherOption) => {
-    setHeadTeacherId(ht.id)
-    const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || ""
-    setHeadTeacherQuery(htName)
-  }
+  const onSelectHeadTeacher = (ht: HeadTeacherOption) => {
+    setHeadTeacherId(ht.id)
+    const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || ""
+    setHeadTeacherQuery(htName)
+  }
 
 // LÍNEA A REEMPLAZAR (aprox. 205)
   const addManualQuestion = () => {
@@ -245,373 +246,392 @@ export default function ExamCreatePage() {
     setNewQuestionText("")
   }
 
-  const addSuggestionToManual = (q: any) => {
-    const text = (q.question_text || "").trim()
-    const id = q.id
-    if (!text || !id) return
-    // Evitar duplicados
-    if (manualQuestions.some(mq => mq.id === id)) return
-    setManualQuestions((prev) => [...prev, { id, text }])
-  }
+  const addSuggestionToManual = (q: any) => {
+    const text = (q.question_text || "").trim()
+    const id = q.id
+    if (!text || !id) return
+    // Evitar duplicados
+    if (manualQuestions.some(mq => mq.id === id)) return
+    setManualQuestions((prev) => [...prev, { id, text }])
+  }
 
-  const removeManualQuestion = (idx: number) => {
-    setManualQuestions((prev) => prev.filter((_, i) => i !== idx))
-  }
+  const removeManualQuestion = (idx: number) => {
+    setManualQuestions((prev) => prev.filter((_, i) => i !== idx))
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
 
-    if (!teacherId) {
-      alert("No se pudo obtener el ID del profesor.")
-      return
-    }
+    if (!teacherId) {
+      toast.error("Error de autenticación. No se pudo obtener el ID del profesor.") // <-- Reemplazo de alert
+      return
+    }
 
-    if (!headTeacherId) {
-      alert("Debes seleccionar un jefe de asignatura.")
-      return
-    }
+    if (!headTeacherId) {
+      toast.error("Debes seleccionar un jefe de asignatura.") // <-- Reemplazo de alert
+      return
+    }
 
-    try {
-      const payload: any = {
-        name: name.trim(),
-        difficulty: difficulty || null,
-        subject_id: subjectId || null,
-        teacher_id: Number(teacherId),
-        head_teacher_id: Number(headTeacherId),
-        status: "Pendiente",
-      }
+    // Construcción del payload
+    const payload: any = {
+      name: name.trim(),
+      difficulty: difficulty || null,
+      subject_id: subjectId || null,
+      teacher_id: Number(teacherId),
+      head_teacher_id: Number(headTeacherId),
+      status: "Pendiente",
+    }
 
-      if (isManual) {
-        // Modo manual: parameters_id con valor por defecto, questions con IDs
-        payload.parameters_id = 1
-        payload.questions = manualQuestions.map(q => q.id)
-      } else {
-        // Modo automático: parameters_id con datos, questions vacío
-        payload.parameters_id = paramsId || null
-        payload.questions = []
-      }
+    if (isManual) {
+      // Modo manual: parameters_id con valor por defecto, questions con IDs
+      payload.parameters_id = 1
+      payload.questions = manualQuestions.map(q => q.id)
+    } else {
+      // Modo automático: parameters_id con datos, questions vacío
+      payload.parameters_id = paramsId || null
+      payload.questions = []
+    }
 
-      await createExam(payload)
-      const created = await createExam(payload)
+// Reemplaza todo el bloque desde `<<<<<<< HEAD` hasta `>>>>>>> e670c6e` con este código
+    // Usamos toast.promise para manejar la creación y la navegación
+    toast.promise(new Promise<void>(async (resolve, reject) => {
+        try {
+            const created = await createExam(payload)
 
-      // Si es automático, generar el examen con distribución de preguntas
-      if (!isManual && created?.id && subjectId) {
-        const selectedParams = allParams.find(p => String(p.id) === String(paramsId))
-        const total = Number(selectedParams?.amount_quest) || 0
-        const proportionStrRaw = String(selectedParams?.proportion || "")
-        const proportionStr = proportionStrRaw.toLowerCase()
+            // Si es automático, generar el examen con distribución de preguntas
+            if (!isManual && created?.id && subjectId) {
+                const selectedParams = allParams.find(p => String(p.id) === String(paramsId))
+                const total = Number(selectedParams?.amount_quest) || 0
+                const proportionStrRaw = String(selectedParams?.proportion || "")
+                const proportionStr = proportionStrRaw.toLowerCase()
 
-        // Tipos canónicos con tildes según backend
-        const typeMap: Record<string, string> = {
-          "vof": "VoF",
-          "verdadero": "VoF",
-          "falso": "VoF",
-          "argumentacion": "Argumentación",
-          "argumentación": "Argumentación",
-          "opcion multiple": "Opción Múltiple",
-          "opción múltiple": "Opción Múltiple",
-          "multiple": "Opción Múltiple",
-          "múltiple": "Opción Múltiple",
-        }
-        const pctByType: Record<string, number> = {}
+                // Tipos canónicos con tildes según backend
+                const typeMap: Record<string, string> = {
+                    "vof": "VoF",
+                    "verdadero": "VoF",
+                    "falso": "VoF",
+                    "argumentacion": "Argumentación",
+                    "argumentación": "Argumentación",
+                    "opcion multiple": "Opción Múltiple",
+                    "opción múltiple": "Opción Múltiple",
+                    "multiple": "Opción Múltiple",
+                    "múltiple": "Opción Múltiple",
+                }
+                const pctByType: Record<string, number> = {}
 
-        // Formato "50-VoF,50-Argumentación"
-        const csvParts = proportionStrRaw.split(",").map(s => s.trim()).filter(Boolean)
-        if (csvParts.length > 0 && csvParts.every(p => /\d+\s*-\s*/.test(p))) {
-          for (const part of csvParts) {
-            const m = part.match(/(\d+)\s*-\s*(.+)/)
-            if (m) {
-              const pct = parseInt(m[1])
-              const labelLc = (m[2] || "").trim().toLowerCase()
-              const key = Object.keys(typeMap).find(k => labelLc.includes(k))
-              if (!isNaN(pct) && key) {
-                const canonical = typeMap[key]
-                pctByType[canonical] = pct
-              }
+                // *** Lógica para el formato "50-VoF,50-Argumentación" (HEAD) ***
+                const csvParts = proportionStrRaw.split(",").map(s => s.trim()).filter(Boolean)
+                if (csvParts.length > 0 && csvParts.every(p => /\d+\s*-\s*/.test(p))) {
+                    for (const part of csvParts) {
+                        const m = part.match(/(\d+)\s*-\s*(.+)/)
+                        if (m) {
+                            const pct = parseInt(m[1])
+                            const labelLc = (m[2] || "").trim().toLowerCase()
+                            const key = Object.keys(typeMap).find(k => labelLc.includes(k))
+                            if (!isNaN(pct) && key) {
+                                const canonical = typeMap[key]
+                                pctByType[canonical] = pct
+                            }
+                        }
+                    }
+                }
+
+                // *** Lógica para el formato con "%" y separadores "-" o "+" (HEAD) ***
+                if (Object.keys(pctByType).length === 0) {
+                    const parts = proportionStr.split(/[-+]/).map(s => s.trim()).filter(Boolean)
+                    for (const part of parts) {
+                        const m = part.match(/(\d+)\s*%\s*(.*)/)
+                        if (m) {
+                            const pct = parseInt(m[1])
+                            const labelLc = (m[2] || "").trim().toLowerCase()
+                            const key = Object.keys(typeMap).find(k => labelLc.includes(k))
+                            if (!isNaN(pct) && key) {
+                                const canonical = typeMap[key]
+                                pctByType[canonical] = pct
+                            }
+                        }
+                    }
+                }
+
+                if (Object.keys(pctByType).length === 0) {
+                    // Fallback si no se puede parsear la proporción
+                    pctByType["Argumentación"] = 100
+                }
+
+                // Convertir porcentajes a cantidades asegurando suma exacta
+                const tempDistribution: Array<{ type: string; amount: number }> = []
+                let assigned = 0
+                const entries = Object.entries(pctByType)
+                for (let i = 0; i < entries.length; i++) {
+                    const [type, pct] = entries[i]
+                    let amount = Math.floor((total * pct) / 100)
+                    if (i === entries.length - 1) {
+                        amount = Math.max(total - assigned, 0)
+                    } else {
+                        assigned += amount
+                    }
+                    if (amount > 0) tempDistribution.push({ type, amount })
+                }
+                
+                // Llamada a generateExam
+                await generateExam({
+                    exam_id: String(created.id),
+                    subject_id: String(subjectId),
+                    teacher_id: String(teacherId),
+                    head_teacher_id: String(headTeacherId),
+                    questionDistribution: tempDistribution,
+                })
             }
-          }
-        }
-
-        // Formato con "%" y separadores "-" o "+"
-        if (Object.keys(pctByType).length === 0) {
-          const parts = proportionStr.split(/[-+]/).map(s => s.trim()).filter(Boolean)
-          for (const part of parts) {
-            const m = part.match(/(\d+)\s*%\s*(.*)/)
-            if (m) {
-              const pct = parseInt(m[1])
-              const labelLc = (m[2] || "").trim().toLowerCase()
-              const key = Object.keys(typeMap).find(k => labelLc.includes(k))
-              if (!isNaN(pct) && key) {
-                const canonical = typeMap[key]
-                pctByType[canonical] = pct
-              }
-            }
-          }
-        }
-
-        if (Object.keys(pctByType).length === 0) {
-          pctByType["Argumentación"] = 100
-        }
-
-        // Convertir porcentajes a cantidades asegurando suma exacta
-        const tempDistribution: Array<{ type: string; amount: number }> = []
-        let assigned = 0
-        const entries = Object.entries(pctByType)
-        for (let i = 0; i < entries.length; i++) {
-          const [type, pct] = entries[i]
-          let amount = Math.floor((total * pct) / 100)
-          if (i === entries.length - 1) {
-            amount = Math.max(total - assigned, 0)
-          } else {
-            assigned += amount
-          }
-          if (amount > 0) tempDistribution.push({ type, amount })
-        }
-
-        await generateExam({
-          exam_id: String(created.id),
-          subject_id: String(subjectId),
-          teacher_id: String(teacherId),
-          head_teacher_id: String(headTeacherId),
-          questionDistribution: tempDistribution,
-        })
-      }
-
-      router.push("/dashboard/teacher/exam")
-    } catch (err: any) {
-      console.error("Error creando examen:", err)
-      alert(err?.message || "Error al crear examen.")
-    }
-  }
-
-  return (
-    <main className="min-h-screen bg-background p-6">
-      <div className="mx-auto max-w-3xl">
-        <form className="space-y-6 rounded-xl border bg-card p-6 shadow-sm" onSubmit={handleSubmit}>
-          <h2 className="font-semibold text-xl">Crear nuevo examen</h2>
-
-          {/* NAME */}
-          <div>
-            <label className="text-sm text-muted-foreground">Nombre</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del examen" required />
-          </div>
-
-          {/* DIFFICULTY */}
-          <div>
-            <label className="text-sm text-muted-foreground">Dificultad</label>
-            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full mt-1 p-2 border rounded" required>
-              <option value="">(Seleccione una dificultad)</option>
-              <option value="facil">Fácil</option>
-              <option value="medio">Medio</option>
-              <option value="dificil">Difícil</option>
-            </select>
-          </div>
-
-
-          {/* SUBJECT SEARCH */}
-          <div>
-            <label className="text-sm text-muted-foreground">Asignatura (buscar)</label>
-            <input
-              value={subjectQuery}
-              onChange={(e) => {
-                setSubjectQuery(e.target.value)
-                // OPCIONAL: Si el usuario borra la búsqueda, quita la selección
-                if (e.target.value === "") setSubjectId("") 
-              }}
-              className="w-full mt-1 p-2 border rounded"
-              placeholder="Escribe para buscar asignaturas..."
-            />
             
-            {/* Condición para mostrar la lista de sugerencias: */}
-            {/* 1. La búsqueda no está vacía, O */}
-            {/* 2. Hay una selección, pero la búsqueda no coincide exactamente con el nombre (para poder re-seleccionar) */}
-            {(subjectQuery.length > 0 && 
-              (String(subjectId) === "" || subjectQuery !== allSubjects.find(s => String(s.id) === String(subjectId))?.name)
-            ) && (
-              <div className="mt-2">
-                {loadingSubjects ? (
-                  <div className="text-sm text-muted-foreground">Cargando...</div>
-                ) : (
-                  <ul className="border rounded max-h-40 overflow-auto">
-                    {filteredSubjects.map((s) => (
-                      <li
-                        key={s.id}
-                        className={`p-2 cursor-pointer ${String(subjectId) === String(s.id) ? "bg-slate-100 font-medium" : "hover:bg-gray-50"}`}
-                        onClick={() => onSelectSubject(s)}
-                      >
-                        {s.name}
-                        {/* Etiqueta de selección solo si está en la lista visible */}
-                        {String(subjectId) === String(s.id) && <span className="text-xs ml-2 text-green-600">(Seleccionada)</span>}
-                      </li>
-                    ))}
-                    {filteredSubjects.length === 0 && <li className="p-2 text-sm text-muted-foreground">No hay asignaturas que coincidan.</li>}
-                  </ul>
-                )}
-              </div>
-            )}
-            {/* MENSAJE DE CONFIRMACIÓN - Lo mantienes como estaba, pero con el nombre resuelto */}
-            <div className="text-xs text-muted-foreground mt-1">
-              Asignatura seleccionada: {
-                  allSubjects.find(s => String(s.id) === String(subjectId))?.name || "(ninguna)"
-              }
-            </div>
-          </div>
+            // Si todo sale bien, resolvemos la promesa.
+            resolve() 
 
-          {/* HEAD TEACHER SEARCH */}
-          <div>
-            <label className="text-sm text-muted-foreground">Jefe de Asignatura (buscar)</label>
+        } catch (err: any) {
+            console.error("Error creando o generando examen:", err)
+            // Rechazamos la promesa para que toast.promise maneje el error.
+            reject(err)
+        }
+    }), {
+        loading: 'Creando examen y generando preguntas...',
+        success: () => {
+            router.push("/dashboard/teacher/exam")
+            return "Examen creado y enviado para revisión.";
+        },
+        error: (err) => {
+            // El error ya viene del reject de la promesa
+            return err?.message || "Error al crear o generar examen. Inténtalo de nuevo."; 
+        },
+    });
+}
+  return (
+    <main className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-3xl">
+        <form className="space-y-6 rounded-xl border bg-card p-6 shadow-sm" onSubmit={handleSubmit}>
+          <h2 className="font-semibold text-xl">Crear nuevo examen</h2>
+
+          {/* NAME */}
+          <div>
+            <label className="text-sm text-muted-foreground">Nombre</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del examen" required />
+          </div>
+
+          {/* DIFFICULTY */}
+          <div>
+            <label className="text-sm text-muted-foreground">Dificultad</label>
+            <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} className="w-full mt-1 p-2 border rounded" required>
+              <option value="">(Seleccione una dificultad)</option>
+              <option value="facil">Fácil</option>
+              <option value="medio">Medio</option>
+              <option value="dificil">Difícil</option>
+            </select>
+          </div>
 
 
-            <input
-              value={headTeacherQuery}
-              onChange={(e) => {
-                setHeadTeacherQuery(e.target.value)
-                // OPCIONAL: Si el usuario borra la búsqueda, quita la selección
-                if (e.target.value === "") setHeadTeacherId("")
-              }}
-              className="w-full mt-1 p-2 border rounded"
-              // NUEVO: Deshabilitar si ya se ha seleccionado una asignatura (subjectId) y el jefe de asignatura (headTeacherId)
-              disabled={!!subjectId && !!headTeacherId}
-              placeholder="Escribe para buscar jefe de asignatura..."
-            />
-            {/* Condición para mostrar sugerencias de Jefes: si la consulta no está vacía Y el ID aún no está seleccionado */}
-            {(headTeacherQuery.length > 0 && String(headTeacherId) === "") && (
-              <div className="mt-2">
-                {loadingHeadTeachers ? (
-                  <div className="text-sm text-muted-foreground">Cargando...</div>
-                ) : (
-                  <ul className="border rounded max-h-40 overflow-auto">
-                    {filteredHeadTeachers.map((ht) => {
-                      const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || `ID: ${ht.id}`
-                      return (
-                        <li
-                          key={ht.id}
-                          className={`p-2 cursor-pointer ${String(headTeacherId) === String(ht.id) ? "bg-slate-100 font-medium" : "hover:bg-gray-50"}`}
-                          onClick={() => onSelectHeadTeacher(ht)}
-                        >
-                          {htName}
-                          {String(headTeacherId) === String(ht.id) && <span className="text-xs ml-2 text-green-600">(Seleccionado)</span>}
-                        </li>
-                      )
-                    })}
-                    {filteredHeadTeachers.length === 0 && <li className="p-2 text-sm text-muted-foreground">No hay jefes de asignatura que coincidan.</li>}
-                  </ul>
-                )}
-              </div>
-            )}
-            {/* MENSAJE DE CONFIRMACIÓN */}
-            <div className="text-xs text-muted-foreground mt-1">
-              Jefe seleccionado: {
-                  allHeadTeachers.find(ht => String(ht.id) === String(headTeacherId))?.name || 
-                  allHeadTeachers.find(ht => String(ht.id) === String(headTeacherId))?.user?.name || 
-                  allHeadTeachers.find(ht => String(ht.id) === String(headTeacherId))?.teacher?.user?.name || 
-                  "(ninguno)"
-              }
-            </div>
-          </div>
+          {/* SUBJECT SEARCH */}
+          <div>
+            <label className="text-sm text-muted-foreground">Asignatura (buscar)</label>
+            <input
+              value={subjectQuery}
+              onChange={(e) => {
+                setSubjectQuery(e.target.value)
+                // OPCIONAL: Si el usuario borra la búsqueda, quita la selección
+                if (e.target.value === "") setSubjectId("") 
+              }}
+              className="w-full mt-1 p-2 border rounded"
+              placeholder="Escribe para buscar asignaturas..."
+            />
+            
+            {/* Condición para mostrar la lista de sugerencias: */}
+            {/* 1. La búsqueda no está vacía, O */}
+            {/* 2. Hay una selección, pero la búsqueda no coincide exactamente con el nombre (para poder re-seleccionar) */}
+            {(subjectQuery.length > 0 && 
+              (String(subjectId) === "" || subjectQuery !== allSubjects.find(s => String(s.id) === String(subjectId))?.name)
+            ) && (
+              <div className="mt-2">
+                {loadingSubjects ? (
+                  <div className="text-sm text-muted-foreground">Cargando...</div>
+                ) : (
+                  <ul className="border rounded max-h-40 overflow-auto">
+                    {filteredSubjects.map((s) => (
+                      <li
+                        key={s.id}
+                        className={`p-2 cursor-pointer ${String(subjectId) === String(s.id) ? "bg-slate-100 font-medium" : "hover:bg-gray-50"}`}
+                        onClick={() => onSelectSubject(s)}
+                      >
+                        {s.name}
+                        {/* Etiqueta de selección solo si está en la lista visible */}
+                        {String(subjectId) === String(s.id) && <span className="text-xs ml-2 text-green-600">(Seleccionada)</span>}
+                      </li>
+                    ))}
+                    {filteredSubjects.length === 0 && <li className="p-2 text-sm text-muted-foreground">No hay asignaturas que coincidan.</li>}
+                  </ul>
+                )}
+              </div>
+            )}
+            {/* MENSAJE DE CONFIRMACIÓN - Lo mantienes como estaba, pero con el nombre resuelto */}
+            <div className="text-xs text-muted-foreground mt-1">
+              Asignatura seleccionada: {
+                  allSubjects.find(s => String(s.id) === String(subjectId))?.name || "(ninguna)"
+              }
+            </div>
+          </div>
 
-          {/* MANUAL TOGGLE */}
-          <div className="flex items-center gap-2">
-            <input id="manualToggle" type="checkbox" checked={isManual} onChange={(e) => setIsManual(e.target.checked)} />
-            <label htmlFor="manualToggle" className="text-sm text-muted-foreground">
-              Manual
-            </label>
-          </div>
+          {/* HEAD TEACHER SEARCH */}
+          <div>
+            <label className="text-sm text-muted-foreground">Jefe de Asignatura (buscar)</label>
 
-          {/* PARAMS SEARCH (solo si NO es manual) */}
-          {!isManual && (
-            <div>
-              <label className="text-sm text-muted-foreground">Parametrización (buscar)</label>
-              <input
-                value={paramsQuery}
-                onChange={(e) => setParamsQuery(e.target.value)}
-                className="w-full mt-1 p-2 border rounded"
-                placeholder="Escribe para buscar parametrizaciones..."
-              />
-              <div className="mt-2">
-                {loadingParams ? (
-                  <div className="text-sm text-muted-foreground">Cargando...</div>
-                ) : (
-                  <ul className="border rounded max-h-40 overflow-auto">
-                    {filteredParams.map((p) => (
-                      <li
-                        key={p.id}
-                        className={`p-2 cursor-pointer ${String(paramsId) === String(p.id) ? "bg-slate-100" : ""}`}
-                        onClick={() => onSelectParams(p)}
-                      >
-                        {[p.proportion, p.quest_topics, p.amount_quest].filter(Boolean).join(" — ")}
-                      </li>
-                    ))}
-                  </ul>
-                )}
 
-                <div className="text-xs text-muted-foreground mt-1">Parametrización seleccionada: {paramsId || "(ninguna)"}</div>
-              </div>
-            </div>
-          )}
+            <input
+              value={headTeacherQuery}
+              onChange={(e) => {
+                setHeadTeacherQuery(e.target.value)
+                // OPCIONAL: Si el usuario borra la búsqueda, quita la selección
+                if (e.target.value === "") setHeadTeacherId("")
+              }}
+              className="w-full mt-1 p-2 border rounded"
+              // NUEVO: Deshabilitar si ya se ha seleccionado una asignatura (subjectId) y el jefe de asignatura (headTeacherId)
+              disabled={!!subjectId && !!headTeacherId}
+              placeholder="Escribe para buscar jefe de asignatura..."
+            />
+            {/* Condición para mostrar sugerencias de Jefes: si la consulta no está vacía Y el ID aún no está seleccionado */}
+            {(headTeacherQuery.length > 0 && String(headTeacherId) === "") && (
+              <div className="mt-2">
+                {loadingHeadTeachers ? (
+                  <div className="text-sm text-muted-foreground">Cargando...</div>
+                ) : (
+                  <ul className="border rounded max-h-40 overflow-auto">
+                    {filteredHeadTeachers.map((ht) => {
+                      const htName = ht.name || ht.user?.name || ht.teacher?.user?.name || `ID: ${ht.id}`
+                      return (
+                        <li
+                          key={ht.id}
+                          className={`p-2 cursor-pointer ${String(headTeacherId) === String(ht.id) ? "bg-slate-100 font-medium" : "hover:bg-gray-50"}`}
+                          onClick={() => onSelectHeadTeacher(ht)}
+                        >
+                          {htName}
+                          {String(headTeacherId) === String(ht.id) && <span className="text-xs ml-2 text-green-600">(Seleccionado)</span>}
+                        </li>
+                      )
+                    })}
+                    {filteredHeadTeachers.length === 0 && <li className="p-2 text-sm text-muted-foreground">No hay jefes de asignatura que coincidan.</li>}
+                  </ul>
+                )}
+              </div>
+            )}
+            {/* MENSAJE DE CONFIRMACIÓN */}
+            <div className="text-xs text-muted-foreground mt-1">
+              Jefe seleccionado: {
+                  allHeadTeachers.find(ht => String(ht.id) === String(headTeacherId))?.name || 
+                  allHeadTeachers.find(ht => String(ht.id) === String(headTeacherId))?.user?.name || 
+                  allHeadTeachers.find(ht => String(ht.id) === String(headTeacherId))?.teacher?.user?.name || 
+                  headTeacherQuery || // Muestra el query si es "Auto-seleccionado" y no se resolvió el nombre
+                  "(ninguno)"
+              }
+            </div>
+          </div>
 
-          {/* MANUAL QUESTIONS UI (solo si es manual) */}
-          {isManual && (
-            <div className="space-y-4">
-              {/* Banco de preguntas con filtro en vivo */}
-              <div>
-                <label className="text-sm text-muted-foreground">Buscar en banco de preguntas</label>
-                <input
-                  value={questionSearch}
-                  onChange={(e) => setQuestionSearch(e.target.value)}
-                  className="w-full mt-1 p-2 border rounded"
-                  placeholder="Filtra por texto, asignatura, tema, subtema, tipo o dificultad..."
-                />
-                <div className="mt-2">
-                  {loadingQuestions ? (
-                    <div className="text-sm text-muted-foreground">Cargando preguntas...</div>
-                  ) : (
-                    <ul className="border rounded max-h-48 overflow-auto">
-                      {filteredQuestionSuggestions.map((q) => (
-                        <li key={q.id} className="p-2 hover:bg-slate-100 cursor-pointer" onClick={() => addSuggestionToManual(q)}>
-                          <div className="text-sm font-medium">{q.question_text}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {[q.subject_name, q.topic_name, q.sub_topic_name].filter(Boolean).join(" • ")}{" "}
-                            {q.type ? ` • ${q.type}` : ""} {q.difficulty ? ` • ${q.difficulty}` : ""}
-                          </div>
-                        </li>
-                      ))}
-                      {filteredQuestionSuggestions.length === 0 && (
-                        <li className="p-2 text-sm text-muted-foreground">No hay preguntas que coincidan.</li>
-                      )}
-                    </ul>
-                  )}
-                </div>
-              </div>
+          {/* MANUAL TOGGLE */}
+          <div className="flex items-center gap-2">
+            <input id="manualToggle" type="checkbox" checked={isManual} onChange={(e) => setIsManual(e.target.checked)} />
+            <label htmlFor="manualToggle" className="text-sm text-muted-foreground">
+              Manual
+            </label>
+          </div>
 
-              {/* Lista de preguntas añadidas */}
-              <ul className="border rounded p-2 space-y-2">
-                {manualQuestions.length === 0 && (
-                  <li className="text-sm text-muted-foreground">No hay preguntas añadidas.</li>
-                )}
-                {manualQuestions.map((q, idx) => (
-                  <li key={q.id} className="flex justify-between items-center">
-                    <span className="text-sm">{q.text}</span>
-                    <Button type="button" variant="ghost" size="sm" onClick={() => removeManualQuestion(idx)}>
-                      Quitar
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {/* ACTIONS */}
-          <div className="flex gap-3">
-            <Link href="/dashboard/teacher/exam">
-              <Button type="button" variant="outline">
-                Cancelar
-              </Button>
-            </Link>
+          {/* PARAMS SEARCH (solo si NO es manual) */}
+          {!isManual && (
+            <div>
+              <label className="text-sm text-muted-foreground">Parametrización (buscar)</label>
+              <input
+                value={paramsQuery}
+                onChange={(e) => setParamsQuery(e.target.value)}
+                className="w-full mt-1 p-2 border rounded"
+                placeholder="Escribe para buscar parametrizaciones..."
+              />
+              <div className="mt-2">
+                {loadingParams ? (
+                  <div className="text-sm text-muted-foreground">Cargando...</div>
+                ) : (
+                  <ul className="border rounded max-h-40 overflow-auto">
+                    {filteredParams.map((p) => (
+                      <li
+                        key={p.id}
+                        className={`p-2 cursor-pointer ${String(paramsId) === String(p.id) ? "bg-slate-100" : ""}`}
+                        onClick={() => onSelectParams(p)}
+                      >
+                        {[p.proportion, p.quest_topics, p.amount_quest].filter(Boolean).join(" — ")}
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
-            <Button type="submit">Crear examen</Button>
-          </div>
-        </form>
-      </div>
-    </main>
-  )
+                <div className="text-xs text-muted-foreground mt-1">Parametrización seleccionada: {paramsId || "(ninguna)"}</div>
+              </div>
+            </div>
+          )}
+
+          {/* MANUAL QUESTIONS UI (solo si es manual) */}
+          {isManual && (
+            <div className="space-y-4">
+              {/* Banco de preguntas con filtro en vivo */}
+              <div>
+                <label className="text-sm text-muted-foreground">Buscar en banco de preguntas</label>
+                <input
+                  value={questionSearch}
+                  onChange={(e) => setQuestionSearch(e.target.value)}
+                  className="w-full mt-1 p-2 border rounded"
+                  placeholder="Filtra por texto, asignatura, tema, subtema, tipo o dificultad..."
+                />
+                <div className="mt-2">
+                  {loadingQuestions ? (
+                    <div className="text-sm text-muted-foreground">Cargando preguntas...</div>
+                  ) : (
+                    <ul className="border rounded max-h-48 overflow-auto">
+                      {filteredQuestionSuggestions.map((q) => (
+                        <li key={q.id} className="p-2 hover:bg-slate-100 cursor-pointer" onClick={() => addSuggestionToManual(q)}>
+                          <div className="text-sm font-medium">{q.question_text}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {[q.subject_name, q.topic_name, q.sub_topic_name].filter(Boolean).join(" • ")}{" "}
+                            {q.type ? ` • ${q.type}` : ""} {q.difficulty ? ` • ${q.difficulty}` : ""}
+                          </div>
+                        </li>
+                      ))}
+                      {filteredQuestionSuggestions.length === 0 && (
+                        <li className="p-2 text-sm text-muted-foreground">No hay preguntas que coincidan.</li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              {/* Lista de preguntas añadidas */}
+              <ul className="border rounded p-2 space-y-2">
+                {manualQuestions.length === 0 && (
+                  <li className="text-sm text-muted-foreground">No hay preguntas añadidas.</li>
+                )}
+                {manualQuestions.map((q, idx) => (
+                  <li key={q.id} className="flex justify-between items-center">
+                    <span className="text-sm">{q.text}</span>
+                    <Button type="button" variant="ghost" size="sm" onClick={() => removeManualQuestion(idx)}>
+                      Quitar
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {/* ACTIONS */}
+          <div className="flex gap-3">
+            <Link href="/dashboard/teacher/exam">
+              <Button type="button" variant="outline">
+                Cancelar
+              </Button>
+            </Link>
+
+            <Button type="submit">Crear examen</Button>
+          </div>
+        </form>
+      </div>
+    </main>
+  )
 }
