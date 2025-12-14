@@ -107,7 +107,7 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
   }, [id]);
 
   const handleDelete = async () => {
-    if (!window.confirm("¿Seguro que deseas eliminar este examen? Esta acción es irreversible.")) return; // Mantengo window.confirm para una confirmación fuerte
+//     if (!window.confirm("¿Seguro que deseas eliminar este examen? Esta acción es irreversible.")) return; // Mantengo window.confirm para una confirmación fuerte
 
     // Usamos toast.promise para manejar la eliminación
     toast.promise(deleteExam(id), {

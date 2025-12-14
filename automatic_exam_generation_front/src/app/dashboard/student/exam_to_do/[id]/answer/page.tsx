@@ -136,12 +136,12 @@ export default function AnswerExamPage() {
 
     const unanswered = answersPayload.filter(a => a.answer_text.trim() === '')
 
-    if (unanswered.length > 0) {
-      const ok = window.confirm(
-        `Tienes ${unanswered.length} pregunta(s) sin responder. ¿Deseas enviar igualmente?`
-      )
-      if (!ok) throw new Error('Envío cancelado.')
-    }
+    // if (unanswered.length > 0) {
+    //   const ok = window.confirm(
+    //     `Tienes ${unanswered.length} pregunta(s) sin responder. ¿Deseas enviar igualmente?`
+    //   )
+    //   if (!ok) throw new Error('Envío cancelado.')
+    // }
 
     setIsSubmitting(true)
     try {

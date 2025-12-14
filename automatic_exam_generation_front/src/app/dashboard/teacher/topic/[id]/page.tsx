@@ -63,8 +63,8 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
       confirmMessage = `Este tema tiene ${subtopics.length} subtema(s). Se eliminarán todos los subtemas antes de eliminar el tema. ¿Deseas continuar?`
     }
     
-    const ok = window.confirm(confirmMessage) // Mantener confirm por simplicidad del flujo de validación condicional
-    if (!ok) return
+//     const ok = window.confirm(confirmMessage) // Mantener confirm por simplicidad del flujo de validación condicional
+//     if (!ok) return
 
     setIsDeleting(true)
 
