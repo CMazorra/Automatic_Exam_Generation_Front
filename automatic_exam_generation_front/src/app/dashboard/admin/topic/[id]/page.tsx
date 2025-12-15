@@ -56,13 +56,13 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
 const handleDelete = async () => {
   if (!topic) return
 
-  const ok = window.confirm(
-    subtopics.length > 0
-      ? `Este tema tiene ${subtopics.length} subtema(s). Se eliminarán todos antes de continuar. ¿Deseas continuar?`
-      : "¿Eliminar este tema?"
-  )
+  // const ok = window.confirm(
+  //   subtopics.length > 0
+  //     ? `Este tema tiene ${subtopics.length} subtema(s). Se eliminarán todos antes de continuar. ¿Deseas continuar?`
+  //     : "¿Eliminar este tema?"
+  // )
 
-  if (!ok) return
+  // if (!ok) return
 
   setIsDeleting(true)
   try {
