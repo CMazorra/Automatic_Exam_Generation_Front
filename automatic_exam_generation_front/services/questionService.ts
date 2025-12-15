@@ -21,7 +21,7 @@ export async function getQuestions() {
   }
 }
 
-export async function postQuestion(question: { question_text: string , difficulty: string, answer: string, type: string,
+export async function postQuestion(question: { question_text: string , difficulty: string, answer: string, type: string, score:number,
   subject_id: string, sub_topic_id: string, topic_id: string, teacher_id: string
 }) {
   try {
@@ -34,7 +34,7 @@ export async function postQuestion(question: { question_text: string , difficult
       body: JSON.stringify(question),
     });
     if (!response.ok) {
-      throw new Error("Error al crear la pregunta");
+      alert(response.statusText);
     }
     const data = await response.json();
     return data;

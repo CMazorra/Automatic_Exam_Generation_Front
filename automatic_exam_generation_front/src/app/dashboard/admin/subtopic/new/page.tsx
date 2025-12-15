@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { useRouter, useSearchParams } from "next/navigation"
 import { postSubtopic } from "@/services/subtopicService"
 import { getTopics } from "@/services/topicService"
-import { toast } from "sonner"
 
 type TopicOption = { id: string | number; name: string }
 
@@ -20,14 +19,10 @@ export default function Home() {
   const [selectedTopic, setSelectedTopic] = useState<TopicOption | null>(null)
   const [topicOpen, setTopicOpen] = useState(false)
   const [topicError, setTopicError] = useState<string | null>(null)
-
   const router = useRouter()
   const searchParams = useSearchParams()
   const topicIdParam = searchParams.get("topicId")
 
-  /* =======================
-     CARGAR TEMAS
-     ======================= */
   useEffect(() => {
     getTopics()
       .then((list: any[]) =>
@@ -38,17 +33,9 @@ export default function Home() {
           }))
         )
       )
-      .catch((e) => {
-        console.error("Error cargando temas:", e)
-        toast.error("Error de carga", {
-          description: "No se pudo obtener la lista de temas.",
-        })
-      })
+      .catch(console.error)
   }, [])
 
-  /* =======================
-     PRESELECCIÓN POR QUERY
-     ======================= */
   useEffect(() => {
     if (!topicIdParam || topics.length === 0 || selectedTopic) return
     const found = topics.find((t) => String(t.id) === String(topicIdParam))
@@ -71,58 +58,33 @@ export default function Home() {
     setTopicError(null)
   }
 
-  /* =======================
-     SUBMIT
-     ======================= */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (!nombre.trim()) {
-      toast.warning("Falta el nombre", {
-        description: "Debes ingresar un nombre para el subtema.",
-      })
-      return
-    }
-
+    if (!nombre.trim()) return
     if (!selectedTopic) {
       setTopicError("Selecciona un tema de la lista.")
       setTopicOpen(true)
-      toast.warning("Tema requerido", {
-        description: "Selecciona el tema al que pertenece el subtema.",
-      })
       return
     }
 
     setIsLoading(true)
     try {
       await postSubtopic(
-        ({
-          name: nombre.trim(),
-          topic_id: selectedTopic.id,
-        } as any)
+        ({ name: nombre.trim(), ...(selectedTopic ? { topic_id: selectedTopic.id } : {}) } as any)
       )
-
-      toast.success("Subtema creado", {
-        description: `El subtema "${nombre.trim()}" fue creado correctamente.`,
-      })
-
       router.push(`/dashboard/admin/subtopic`)
       setNombre("")
       setSelectedTopic(null)
       setTopicQuery("")
-    } catch (err: any) {
+    } catch (err) {
       console.error(err)
-      toast.error("Error al crear", {
-        description: err?.message || "Hubo un error al crear el subtema.",
-      })
+      alert("Hubo un error al crear el subtema.")
     } finally {
       setIsLoading(false)
     }
   }
 
-  /* =======================
-     UI
-     ======================= */
   return (
     <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <form onSubmit={handleSubmit} className="w-full max-w-2xl">
@@ -161,9 +123,7 @@ export default function Home() {
                       if (e.key === "Enter") {
                         e.preventDefault()
                         const exact = topics.find(
-                          (t) =>
-                            t.name.toLowerCase() ===
-                            topicQuery.trim().toLowerCase()
+                          (t) => t.name.toLowerCase() === topicQuery.trim().toLowerCase()
                         )
                         if (exact) {
                           selectTopic(exact)
@@ -178,10 +138,9 @@ export default function Home() {
                     }}
                     aria-invalid={!!topicError}
                   />
-
                   {topicOpen && (
                     <div
-                      className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md"
+                      className="absolute z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md"
                       onMouseDown={(e) => e.preventDefault()}
                     >
                       <ul className="max-h-60 overflow-auto py-1">
@@ -189,23 +148,18 @@ export default function Home() {
                           <li key={t.id}>
                             <button
                               type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-accent"
+                              className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground"
                               onClick={() => selectTopic(t)}
                             >
                               {t.name}
                             </button>
                           </li>
                         ))}
-
                         {topics.length === 0 && (
-                          <li className="px-3 py-2 text-sm text-muted-foreground">
-                            No hay temas.
-                          </li>
+                          <li className="px-3 py-2 text-sm text-muted-foreground">No hay temas.</li>
                         )}
-
                         {topics.length > 0 &&
-                          topicQuery.trim() &&
-                          visibleTopics.length === 0 && (
+                          (topicQuery.trim() ? visibleTopics.length === 0 : false) && (
                             <li className="px-3 py-2 text-sm text-muted-foreground">
                               Sin resultados para “{topicQuery}”.
                             </li>
@@ -214,7 +168,6 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-
                 {topicError && (
                   <p className="mt-1 text-sm text-destructive">{topicError}</p>
                 )}
@@ -226,7 +179,6 @@ export default function Home() {
             <Button type="submit" disabled={isLoading || !nombre.trim()}>
               {isLoading ? "Creando..." : "Crear Subtema"}
             </Button>
-
             <Button
               type="button"
               variant="outline"

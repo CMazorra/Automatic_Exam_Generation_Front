@@ -137,13 +137,13 @@ export default function SubjectPage() {
                   <span>Dificultad: {question.difficulty}</span>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/teacher/question/${question.id}`)}>
+              <Button variant="ghost" size="sm" onClick={() => router.push(`/dashboard/head_teacher/question/${question.id}`)}>
                 Ver detalles
               </Button>
             </div>
           </div>
         )}
-        onAdd={() => router.push("/dashboard/teacher/question/new")}
+        onAdd={() => router.push("/dashboard/head_teacher/question/new")}
       />
     )
 }
