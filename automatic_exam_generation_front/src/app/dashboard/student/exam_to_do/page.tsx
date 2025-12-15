@@ -4,10 +4,10 @@
 import { useEffect, useState } from 'react';
 import { getCurrentUser } from '@/services/authService';
 import { getExams } from '@/services/examService';
+import { getAnswers } from '@/services/answerService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import { getAnswers } from '@/services/answerService';
 
 interface ExamStudent {
     score: number;

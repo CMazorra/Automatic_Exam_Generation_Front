@@ -10,7 +10,6 @@ import * as z from "zod"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
 
 const formSchema = z.object({
   account: z.string(),
@@ -55,11 +54,7 @@ export default function LoginPage() {
         router.push(base)
       }
     } catch (err: any) {
-      const errorMessage = typeof err?.message === "string" ? err.message : "Error al iniciar sesión. Inténtalo de nuevo."
-      
-      toast.error("Fallo al iniciar sesión", { // Título del Toast
-          description: errorMessage, // Descripción del error detallada
-      })
+      alert(typeof err?.message === "string" ? err.message : "Error al iniciar sesión")
     }
   }
 
