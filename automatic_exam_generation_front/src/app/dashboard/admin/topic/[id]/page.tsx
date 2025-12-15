@@ -6,8 +6,6 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { getTopicById, deleteTopic } from "@/services/topicService"
 import { getSubtopics, deleteSubtopic } from "@/services/subtopicService"
-import { toast } from "sonner"
-
 
 interface Topic {
   id: string
@@ -53,42 +51,34 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
     fetchSubtopics()
   }, [id])
 
-const handleDelete = async () => {
-  if (!topic) return
-
-  const ok = window.confirm(
-    subtopics.length > 0
-      ? `Este tema tiene ${subtopics.length} subtema(s). Se eliminarán todos antes de continuar. ¿Deseas continuar?`
-      : "¿Eliminar este tema?"
-  )
-
-  if (!ok) return
-
-  setIsDeleting(true)
-  try {
+  const handleDelete = async () => {
+    if (!topic) return
     if (subtopics.length > 0) {
-      await Promise.all(
-        subtopics.map((s) => deleteSubtopic(s.id, s.topic_id))
+      const ok = window.confirm(
+        `Este tema tiene ${subtopics.length} subtema(s). Se eliminarán todos los subtemas antes de eliminar el tema. ¿Deseas continuar?`
       )
+      if (!ok) return
+    } else {
+      const ok = window.confirm("¿Eliminar este tema?")
+      if (!ok) return
     }
 
-    await deleteTopic(topic.id)
-
-    toast.success("Tema eliminado", {
-      description: `El tema "${topic.nombre || topic.name}" fue eliminado.`,
-    })
-
-    router.push("/dashboard/admin/topic")
-  } catch (e: any) {
-    console.error(e)
-    toast.error("Error al eliminar", {
-      description: e?.message || "No se pudo eliminar el tema.",
-    })
-  } finally {
-    setIsDeleting(false)
+    setIsDeleting(true)
+    try {
+      if (subtopics.length > 0) {
+        await Promise.all(
+          subtopics.map((s) => deleteSubtopic(s.id, s.topic_id))
+        )
+      }
+      await deleteTopic(topic.id)
+      router.push(`/dashboard/admin/topic`)
+    } catch (e) {
+      console.error(e)
+      alert("No se pudo eliminar el tema.")
+    } finally {
+      setIsDeleting(false)
+    }
   }
-}
-
 
   if (isLoadingTopic) {
     return (

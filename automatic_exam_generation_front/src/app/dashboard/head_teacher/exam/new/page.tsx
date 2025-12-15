@@ -11,7 +11,6 @@ import { getHeadTeachers } from "@/services/headTeacerService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
-import { toast } from "sonner"
 
 interface SubjectOption {
   id: number | string
@@ -273,19 +272,13 @@ export default function ExamCreatePage() {
     e.preventDefault()
 
     if (!teacherId) {
-      toast.error("Validación", { description: "No se pudo obtener el profesor." })
+      alert("No se pudo obtener el ID del profesor.")
       return
     }
 
     if (!headTeacherId) {
-      toast.error("Validación", { description: "Debes seleccionar un jefe de asignatura." })
+      alert("Debes seleccionar un jefe de asignatura.")
       return
-    }
-
-    // ** ➡️ NUEVA VALIDACIÓN AÑADIDA AQUÍ ⬅️ **
-    if (isManual && manualQuestions.length === 0) {
-        toast.error("Validación", { description: "Si es modo Manual, debe seleccionar al menos una pregunta." });
-        return;
     }
 
     try {
@@ -402,10 +395,9 @@ export default function ExamCreatePage() {
       }
 
       router.push("/dashboard/head_teacher/exam")
-    } catch (e: any) {
-      toast.error("Error al crear", {
-        description: e?.message || "Error inesperado.",
-      })
+    } catch (err: any) {
+      console.error("Error creando examen:", err)
+      alert(err?.message || "Error al crear examen.")
     }
   }
 
