@@ -159,7 +159,7 @@ export default function UserEdit({ params }: { params: { id: string } }) {
             </FieldGroup>
 
             <div className="flex gap-3">
-              <Link href={`/dashboard/admin/user/${user.id}`}>
+              <Link href={`/dashboard/admin/user/${params.id}`}>
                 <Button type="button" variant="outline">
                   Cancelar
                 </Button>
