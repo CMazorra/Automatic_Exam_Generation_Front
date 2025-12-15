@@ -41,6 +41,7 @@ export default function GradeExamPage() {
   const [answers, setAnswers] = useState<Answer[]>([])
   const [argScores, setArgScores] = useState<Record<number, number | undefined>>({})
   const [finalScore, setFinalScore] = useState<number | undefined>(undefined)
+  const [isFinalManual, setIsFinalManual] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -138,6 +139,24 @@ export default function GradeExamPage() {
     return Object.values(byQ)
   }, [questions, answers])
 
+  // Auto-recalcula la nota total cuando cambian las puntuaciones por pregunta,
+  // a menos que el profesor haya modificado manualmente la nota final.
+  useEffect(() => {
+    if (!grouped.length) return
+    if (isFinalManual) return
+
+    const total = grouped.reduce((acc, { question, answer }) => {
+      const isArg = question.type?.toLowerCase().includes("arg")
+      if (isArg) {
+        const val = argScores[question.id]
+        return acc + (typeof val === "number" ? val : 0)
+      }
+      return acc + (typeof answer?.score === "number" ? Number(answer.score) : 0)
+    }, 0)
+
+    setFinalScore(total)
+  }, [grouped, argScores, isFinalManual])
+
   async function handleSave() {
     try {
       setSaving(true)
@@ -193,7 +212,13 @@ export default function GradeExamPage() {
             value={finalScore ?? ""}
             onChange={(e) => {
               const v = e.target.value
-              setFinalScore(v === "" ? undefined : Number(v))
+              if (v === "") {
+                setIsFinalManual(false)
+                setFinalScore(undefined)
+                return
+              }
+              setIsFinalManual(true)
+              setFinalScore(Number(v))
             }}
             placeholder="Nota final"
           />

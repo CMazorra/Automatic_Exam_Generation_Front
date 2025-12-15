@@ -301,7 +301,7 @@ export default function ExamCreatePage() {
         payload.parameters_id = 1
         payload.questions = manualQuestions.map(q => q.id)
       } else {
-        if (!payload.parameters_id) {
+        if (paramsId) {
           toast.error("Validación", { description: "Si es modo Automático, debe seleccionar una parametrización." });
           return;
         }

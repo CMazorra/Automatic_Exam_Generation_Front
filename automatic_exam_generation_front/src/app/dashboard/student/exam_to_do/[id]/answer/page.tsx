@@ -164,13 +164,17 @@ export default function AnswerExamPage() {
             const scorePayload = { score: 0 }; 
             await updateExamStudent(exam.id, studentId, scorePayload);
             
-            alert("Examen enviado con éxito. Pendiente de Calificación.");
+            toast.success('Examen Enviado', {
+                description: 'Tu examen ha sido enviado correctamente.',
+            })
             
             router.push('/dashboard/student/exam_done'); 
             
         } catch (e) {
             console.error("Error al enviar el examen:", e);
-            alert("Error al enviar el examen. Inténtalo de nuevo.");
+            toast.error('Error al Enviar', {
+                description: 'No se pudo enviar el examen. Inténtalo nuevamente.',
+            })
         } finally {
             setIsSubmitting(false);
         }
