@@ -10,6 +10,7 @@ import { updateReevaluation, getReevaluationById } from "@/services/reevaluation
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { toast } from "sonner"
 
 type Question = {
   id: number
@@ -47,19 +48,34 @@ export default function GradeReevaluationPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [examData, examStudentData, questionsData, answersData, reevaluationData] = await Promise.all([
-          getExamById(examId),
-          getExamStudentById(examId, studentId),
-          getQuestions(),
-          getAnswers(),
+        const [
+          examData,
+          examStudentData,
+          questionsData,
+          answersData,
+          reevaluationData,
+        ] = await Promise.all([
+          getExamById(examId).catch(() => null),
+          getExamStudentById(examId, studentId).catch(() => null),
+          getQuestions().catch(() => []),
+          getAnswers().catch(() => []),
           getReevaluationById(examId, studentId, teacherId).catch(() => null),
         ])
+
+        if (!examData || !examStudentData || !reevaluationData) {
+          toast.error("Error de carga", {
+            description:
+              "No se pudo cargar el examen, el estudiante o la solicitud de recalificación.",
+          })
+        }
 
         setExam(examData || null)
         setExamStudent(examStudentData || null)
         setReeval(reevaluationData || null)
 
-        const parseQuestionId = (item: number | { question_id?: number; id?: number }): number => {
+        const parseQuestionId = (
+          item: number | { question_id?: number; id?: number }
+        ): number => {
           if (typeof item === "number") return item
           if (typeof item.question_id === "number") return item.question_id
           if (typeof item.id === "number") return item.id
@@ -80,25 +96,38 @@ export default function GradeReevaluationPage() {
           return []
         })()
 
-        const questionsList = (Array.isArray(questionsData) ? questionsData : []) as Question[]
-        const examQuestionsFromList = questionsList.filter(q => examQuestionIds.includes(Number(q.id)))
+        const questionsList = (Array.isArray(questionsData)
+          ? questionsData
+          : []) as Question[]
+
+        const examQuestionsFromList = questionsList.filter(q =>
+          examQuestionIds.includes(Number(q.id))
+        )
 
         const missingIds = examQuestionIds.filter(
-          (id: number) => !examQuestionsFromList.some(q => Number(q.id) === id)
+          id => !examQuestionsFromList.some(q => Number(q.id) === id)
         )
 
         let fetchedMissing: Question[] = []
         if (missingIds.length > 0) {
           const fetched = await Promise.all(
-            missingIds.map((id: number) => getQuestionById(String(id)).catch(() => null))
+            missingIds.map(id =>
+              getQuestionById(String(id)).catch(() => null)
+            )
           )
           fetchedMissing = fetched.filter(Boolean) as Question[]
         }
 
-        const combinedQuestions = [...examQuestionsFromList, ...fetchedMissing]
+        const combinedQuestions = [
+          ...examQuestionsFromList,
+          ...fetchedMissing,
+        ]
         setQuestions(combinedQuestions)
 
-        const answersAll = (Array.isArray(answersData) ? answersData : []) as Answer[]
+        const answersAll = (Array.isArray(answersData)
+          ? answersData
+          : []) as Answer[]
+
         const examAnswers = answersAll.filter(
           a => a.exam_id === examId && a.student_id === studentId
         )
@@ -106,25 +135,29 @@ export default function GradeReevaluationPage() {
 
         const initialArgScores: Record<number, number | undefined> = {}
         examAnswers.forEach(a => {
-          const q = combinedQuestions.find((question: Question) => question.id === a.question_id)
+          const q = combinedQuestions.find(q => q.id === a.question_id)
           if (q && q.type?.toLowerCase().includes("arg")) {
             initialArgScores[a.question_id] = typeof a.score === "number" ? a.score : undefined
           }
         })
         setArgScores(initialArgScores)
 
-        // Start from existing reevaluation score if present, else from exam_student
         const baseScore =
           typeof reevaluationData?.score === "number"
             ? reevaluationData.score
             : (typeof examStudentData?.score === "number" ? Number(examStudentData.score) : undefined)
         setFinalScore(baseScore)
       } catch (err) {
-        console.error("Error loading reevaluation grading data:", err)
+        console.error(err)
+        toast.error("Error inesperado", {
+          description:
+            "Ocurrió un error al cargar los datos de recalificación.",
+        })
       } finally {
         setLoading(false)
       }
     }
+
     load()
   }, [examId, studentId, teacherId])
 
@@ -134,8 +167,9 @@ export default function GradeReevaluationPage() {
       byQ[q.id] = { question: q }
     })
     answers.forEach(a => {
-      if (!byQ[a.question_id]) return
-      byQ[a.question_id].answer = a
+      if (byQ[a.question_id]) {
+        byQ[a.question_id].answer = a
+      }
     })
     return Object.values(byQ)
   }, [questions, answers])
@@ -143,7 +177,7 @@ export default function GradeReevaluationPage() {
   async function handleSave() {
     try {
       setSaving(true)
-      // 1) Persist argumentative answers' scores
+
       const argOps: Promise<unknown>[] = []
       grouped.forEach(({ question, answer }) => {
         if (!answer) return
@@ -153,6 +187,7 @@ export default function GradeReevaluationPage() {
           argOps.push(updateAnswer(examId, question.id, studentId, { score: scoreToSend }))
         }
       })
+
       await Promise.all(argOps)
 
       // 2) Update exam_student and reevaluation conditionally
@@ -160,16 +195,29 @@ export default function GradeReevaluationPage() {
       const currentExamScore = typeof examStudent?.score === "number" ? Number(examStudent.score) : 0
 
       if (sanitizedFinal > currentExamScore) {
-        await updateExamStudent(examId, studentId, { score: sanitizedFinal })
-        await updateReevaluation(examId, studentId, teacherId, { score: sanitizedFinal })
+        await updateExamStudent(examId, studentId, {
+          score: sanitizedFinal,
+        })
+        await updateReevaluation(examId, studentId, teacherId, {
+          score: sanitizedFinal,
+        })
       } else {
-        await updateReevaluation(examId, studentId, teacherId, { score: currentExamScore })
+        await updateReevaluation(examId, studentId, teacherId, {
+          score: currentExamScore,
+        })
       }
+
+      toast.success("Calificación guardada", {
+        description: `Nota final: ${sanitizedFinal}`,
+      })
 
       router.back()
     } catch (err) {
-      console.error("Error saving reevaluation grading:", err)
-      alert("Error al guardar la calificación de recalificación")
+      console.error(err)
+      toast.error("Error al guardar", {
+        description:
+          "No se pudo guardar la calificación de recalificación.",
+      })
     } finally {
       setSaving(false)
     }
@@ -188,10 +236,16 @@ export default function GradeReevaluationPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">
-            {exam?.name ?? `Examen ${examId}`} <span className="text-purple-700 text-sm ml-2">(Recalificación)</span>
+            {exam?.name ?? `Examen ${examId}`}{" "}
+            <span className="text-purple-700 text-sm ml-2">
+              (Recalificación)
+            </span>
           </h2>
-          <p className="text-sm text-muted-foreground">Estudiante: {studentId} • Profesor: {teacherId}</p>
+          <p className="text-sm text-muted-foreground">
+            Estudiante: {studentId} • Profesor: {teacherId}
+          </p>
         </div>
+
         <div className="flex items-center gap-2">
           <Input
             type="number"
@@ -213,28 +267,37 @@ export default function GradeReevaluationPage() {
       <div className="space-y-3">
         {grouped.map(({ question, answer }) => (
           <Card key={question.id} className="p-4 space-y-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Pregunta {question.id}</p>
-                <p className="text-sm">{question.question_text}</p>
-                <p className="text-xs text-muted-foreground">Tipo: {question.type}</p>
-              </div>
-            </div>
             <div>
-              <p className="text-sm font-medium">Respuesta del estudiante</p>
-              <p className="text-sm whitespace-pre-wrap">{answer?.answer_text ?? "Sin respuesta"}</p>
+              <p className="font-medium">Pregunta {question.id}</p>
+              <p className="text-sm">{question.question_text}</p>
+              <p className="text-xs text-muted-foreground">
+                Tipo: {question.type}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium">
+                Respuesta del estudiante
+              </p>
+              <p className="text-sm whitespace-pre-wrap">
+                {answer?.answer_text ?? "Sin respuesta"}
+              </p>
             </div>
 
             {question.answer && (
               <div>
-                <p className="text-sm font-medium">Respuesta esperada</p>
-                <p className="text-sm whitespace-pre-wrap">{question.answer}</p>
+                <p className="text-sm font-medium">
+                  Respuesta esperada
+                </p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {question.answer}
+                </p>
               </div>
             )}
 
             {question.type?.toLowerCase().includes("arg") ? (
               <div className="flex items-center gap-2">
-                <p className="text-sm">Puntuación (argumentación):</p>
+                <p className="text-sm">Puntuación:</p>
                 <Input
                   type="number"
                   min={0}
@@ -248,7 +311,10 @@ export default function GradeReevaluationPage() {
               </div>
             ) : (
               <div className="text-xs text-muted-foreground">
-                Puntuación calculada por el sistema: {typeof answer?.score === "number" ? answer?.score : "-"}
+                Puntuación automática:{" "}
+                {typeof answer?.score === "number"
+                  ? answer.score
+                  : "-"}
               </div>
             )}
           </Card>

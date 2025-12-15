@@ -5,98 +5,113 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useRouter, useParams } from "next/navigation"
 import { getUserById, deleteUser } from "@/services/userService"
+import { toast } from "sonner"
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog"
 
 export default function UserView() {
   const params = useParams()
   const id = params?.id as string
+  const router = useRouter()
+
   const [user, setUser] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (!id) return
+
     const fetchUser = async () => {
       try {
         const data = await getUserById(id)
         setUser({ ...data, id_us: data.id_us ?? data.id ?? data._id })
       } catch (error) {
         console.error("Error fetching user:", error)
+        toast.error("Error de carga", {
+          description: "No se pudo obtener la información del usuario.",
+        })
       } finally {
         setIsLoading(false)
       }
     }
+
     fetchUser()
   }, [id])
 
+  const handleDelete = async () => {
+    if (!user || isDeleting) return
+
+    setIsDeleting(true)
+    try {
+      await deleteUser(user.id_us)
+
+      toast.success("Usuario eliminado", {
+        description: `El usuario "${user.name}" ha sido eliminado correctamente.`,
+      })
+
+      router.push("/dashboard/admin/user")
+    } catch (error: any) {
+      console.error("Error deleting user:", error)
+      toast.error("Error al eliminar", {
+        description: error?.message || "No se pudo eliminar el usuario.",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center">Cargando...</div>
+      <main className="flex min-h-screen items-center justify-center">
+        <p>Cargando...</p>
       </main>
     )
   }
 
   if (!user) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center text-destructive">Usuario no encontrado</div>
+      <main className="flex min-h-screen items-center justify-center">
+        <p className="text-destructive">Usuario no encontrado</p>
       </main>
     )
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-2xl">
-        <div className="space-y-6 rounded-xl border bg-card p-6 shadow-sm">
-          <div>
-            <h2 className="font-semibold leading-none">{user.name}</h2>
-            <p className="text-sm text-muted-foreground">{user.account}</p>
-          </div>
+    <main className="flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-2xl space-y-6 rounded-xl border bg-card p-6 shadow-sm">
+        <div>
+          <h2 className="text-lg font-semibold">{user.name}</h2>
+          <p className="text-sm text-muted-foreground">{user.account}</p>
+        </div>
 
-          <div className="space-y-2">
-            {user.age && (
-              <p>
-                <strong>Edad:</strong> {user.age}
-              </p>
-            )}
-            {user.course && (
-              <p>
-                <strong>Curso:</strong> {user.course}
-              </p>
-            )}
-            <p>
-              <strong>Rol:</strong> {user.role}</p>
-          </div>
+        <div className="space-y-2">
+          {user.age && <p><strong>Edad:</strong> {user.age}</p>}
+          {user.course && <p><strong>Curso:</strong> {user.course}</p>}
+          <p><strong>Rol:</strong> {user.role}</p>
+        </div>
 
-          <div className="flex gap-3 pt-4">
-            <Link href="/dashboard/admin/user">
-              <Button variant="outline">Volver</Button>
-            </Link>
+        <div className="flex gap-3 pt-4">
+          <Link href="/dashboard/admin/user">
+            <Button variant="outline">Volver</Button>
+          </Link>
 
-            <Button
-              onClick={() =>
-                router.push(`/dashboard/admin/user/${user.id_us}/edit`)
-              }
-            >
-              Editar
+          <Button
+            onClick={() =>
+              router.push(`/dashboard/admin/user/${user.id_us}/edit`)
+            }
+          >
+            Editar
+          </Button>
+
+          {/* 🔥 CONFIRMACIÓN REAL */}
+          <ConfirmDeleteDialog
+            title={`Eliminar usuario "${user.name}"`}
+            description="¿Estás seguro de que deseas eliminar este usuario? Esta acción es irreversible."
+            onConfirm={handleDelete}
+          >
+            <Button variant="destructive" disabled={isDeleting}>
+              {isDeleting ? "Eliminando..." : "Eliminar"}
             </Button>
-
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                if (!confirm(`¿Seguro que deseas eliminar al usuario "${user.name}"?`)) return
-                try {
-                  await deleteUser(user.id_us)
-                  router.push("/dashboard/admin/user")
-                } catch (error) {
-                  console.error("Error deleting user:", error)
-                  alert("Hubo un error al eliminar el usuario.")
-                }
-              }}
-            >
-              Eliminar
-            </Button>
-          </div>
+          </ConfirmDeleteDialog>
         </div>
       </div>
     </main>

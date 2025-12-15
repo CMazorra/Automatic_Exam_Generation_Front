@@ -1,4 +1,3 @@
-// src/app/dashboard/head_teacher/exam_to_validate/[id]/page.tsx
 "use client";
 
 import { useEffect, useState, use } from "react";
@@ -14,8 +13,13 @@ import { getQuestionById } from "@/services/questionService";
 import { getCurrentUser } from "@/services/authService";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
-export default function ExamToValidateDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ExamToValidateDetailsPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const { id } = use(params);
 
@@ -25,7 +29,7 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
   const [teacherName, setTeacherName] = useState<string | null>(null);
   const [paramsLabel, setParamsLabel] = useState<string | null>(null);
   const [headName, setHeadName] = useState<string | null>(null);
-  
+
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [comments, setComments] = useState("");
@@ -34,21 +38,25 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [fullQuestions, setFullQuestions] = useState<any[]>([]);
 
-  // Cargar usuario actual
+  // Usuario actual
   useEffect(() => {
     async function loadUser() {
       try {
         const user = await getCurrentUser();
         setCurrentUserId(user?.id ?? null);
-      } catch {
-        const raw = typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+      } catch (e) {
+        console.error("Error fetching current user:", e);
+        const raw =
+          typeof window !== "undefined"
+            ? localStorage.getItem("userId")
+            : null;
         setCurrentUserId(raw ? Number(raw) : null);
       }
     }
     loadUser();
   }, []);
 
-  // Cargar examen
+  // Examen
   useEffect(() => {
     async function load() {
       try {
@@ -76,7 +84,9 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
         if (data?.parameters_id) {
           try {
             const p = await getParamsById(String(data.parameters_id));
-            setParamsLabel(p ? `${p.proportion} / ${p.quest_topics}` : null);
+            setParamsLabel(
+              p ? `${p.proportion} / ${p.quest_topics}` : null
+            );
           } catch (e) {
             console.error("Error fetching params", e);
           }
@@ -84,14 +94,21 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
 
         if (data?.head_teacher_id) {
           try {
-            const h = await getHeadTeacherByID(Number(data.head_teacher_id));
+            const h = await getHeadTeacherByID(
+              Number(data.head_teacher_id)
+            );
             const fromHeadServiceName =
-              h?.teacher?.user?.name ?? h?.user?.name ?? h?.name ?? null;
+              h?.teacher?.user?.name ??
+              h?.user?.name ??
+              h?.name ??
+              null;
 
             if (fromHeadServiceName) {
               setHeadName(fromHeadServiceName);
             } else {
-              const u = await getUserById(Number(data.head_teacher_id));
+              const u = await getUserById(
+                Number(data.head_teacher_id)
+              );
               setHeadName(u?.name ?? null);
             }
           } catch (e) {
@@ -100,33 +117,40 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
           }
         }
 
-
-        if (data?.exam_questions && Array.isArray(data.exam_questions) && data.exam_questions.length > 0) {
+        if (
+          data?.exam_questions &&
+          Array.isArray(data.exam_questions) &&
+          data.exam_questions.length > 0
+        ) {
           try {
-            // Extraer solo los IDs de las preguntas
             const questionIds = data.exam_questions
               .map((eq: any) => eq.question_id)
               .filter(Boolean);
 
-            // Fetch de todos los detalles de las preguntas en paralelo
-            const questionPromises = questionIds.map((qId: number | string) =>
-              getQuestionById(String(qId)).catch((e) => {
-                console.error(`Error fetching question ${qId}:`, e);
-                return null; // Manejar errores por pregunta
-              })
+            const resolved = await Promise.all(
+              questionIds.map((qId: number | string) =>
+                getQuestionById(String(qId)).catch(e => {
+                  console.error(
+                    `Error fetching question ${qId}`,
+                    e
+                  );
+                  return null;
+                })
+              )
             );
 
-            const resolvedQuestions = await Promise.all(questionPromises);
-            setFullQuestions(resolvedQuestions.filter(q => q !== null)); // Guardar solo las que se cargaron correctamente
+            setFullQuestions(resolved.filter(Boolean));
           } catch (e) {
-            console.error("Error cargando detalles de preguntas:", e);
+            console.error("Error cargando preguntas", e);
             setFullQuestions([]);
           }
         }
-
       } catch (error) {
         console.error(error);
-        alert("Error al cargar el examen.");
+        toast.error("Error de carga", {
+          description:
+            "Ocurrió un error al cargar el examen para validar.",
+        });
       } finally {
         setLoading(false);
       }
@@ -136,24 +160,35 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
 
   const handleApprove = async () => {
     if (!currentUserId) {
-      alert("No se pudo obtener el ID del usuario actual.");
+      toast.error("Error de usuario", {
+        description:
+          "No se pudo obtener el ID del usuario actual.",
+      });
       return;
     }
 
     setSubmitting(true);
     try {
-      const currentDate = Date.now(); // Timestamp en milisegundos
       await postApprovedExam({
-        date_id: currentDate,
+        date_id: Date.now(),
         exam_id: Number(id),
         head_teacher_id: currentUserId,
         guidelines: comments.trim(),
       });
-      alert("Examen aprobado exitosamente.");
+
+      toast.success("Examen aprobado", {
+        description: `El examen '${
+          exam?.name ?? id
+        }' fue aprobado correctamente.`,
+      });
+
       router.push("/dashboard/head_teacher/exam_to_validate");
     } catch (error) {
-      console.error("Error al aprobar examen:", error);
-      alert("Error al aprobar el examen.");
+      console.error(error);
+      toast.error("Error al aprobar", {
+        description:
+          "Ocurrió un error al intentar aprobar el examen.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -161,25 +196,35 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
 
   const handleReject = async () => {
     if (!currentUserId) {
-      alert("No se pudo obtener el ID del usuario actual.");
+      toast.error("Error de usuario", {
+        description:
+          "No se pudo obtener el ID del usuario actual.",
+      });
       return;
     }
 
     setSubmitting(true);
     try {
-      const currentDate = Date.now(); // Timestamp en milisegundos
-      const guidelines = `Rechazado: ${comments.trim()}`;
       await postApprovedExam({
-        date_id: currentDate,
+        date_id: Date.now(),
         exam_id: Number(id),
         head_teacher_id: currentUserId,
-        guidelines,
+        guidelines: `Rechazado: ${comments.trim()}`,
       });
-      alert("Examen rechazado.");
+
+      toast.success("Examen rechazado", {
+        description: `El examen '${
+          exam?.name ?? id
+        }' fue rechazado.`,
+      });
+
       router.push("/dashboard/head_teacher/exam_to_validate");
     } catch (error) {
-      console.error("Error al rechazar examen:", error);
-      alert("Error al rechazar el examen.");
+      console.error(error);
+      toast.error("Error al rechazar", {
+        description:
+          "Ocurrió un error al intentar rechazar el examen.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -188,6 +233,7 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
   if (loading) return <p className="p-8">Cargando...</p>;
   if (!exam) return <p className="p-8">Examen no encontrado.</p>;
 
+  /* ⬇️ JSX COMPLETO ORIGINAL SIN CAMBIOS ⬇️ */
   return (
     <main className="min-h-screen bg-background p-8">
       <div className="max-w-xl mx-auto p-6 border bg-card rounded-xl shadow-sm space-y-6">

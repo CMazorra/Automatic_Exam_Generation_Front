@@ -5,6 +5,7 @@ import { Button } from "./ui/button"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "./ui/card"
+import { toast } from "sonner"
 
 type Tab = "question" | "exam" | "subject"
 
@@ -27,7 +28,9 @@ function CreateQuestionForm({ onCreate }: { onCreate?: (payload: any) => void })
     const payload = { texto: qTexto, dificultad: qDificultad, respuesta: qRespuesta, tipo: qTipo, subtema: qSubtema, asignatura: qAsignatura }
     console.log("Crear pregunta:", payload)
     onCreate?.(payload)
-    alert("Pregunta creada (simulado). Revisa la consola.")
+    toast.success("Pregunta creada exitosamente.", {
+        description: "Revisa la consola para ver los datos de simulación."
+    })
   }
 
   return (
@@ -89,7 +92,9 @@ function CreateExamForm({ onCreate }: { onCreate?: (payload: any) => void }) {
     const payload = { nombre: eNombre, dificultad: eDificultad, estado: eEstado, asignatura: eAsignatura, parametrizacion: eParam }
     console.log("Crear examen:", payload)
     onCreate?.(payload)
-    alert("Examen creado (simulado). Revisa la consola.")
+    toast.success("Examen creado exitosamente.", {
+        description: "Revisa la consola para ver los datos de simulación."
+    })
   }
 
   return (
@@ -149,7 +154,9 @@ function CreateSubjectForm({ onCreate }: { onCreate?: (payload: any) => void }) 
     const payload = { programa: sPrograma, nombre: sNombre }
     console.log("Crear asignatura:", payload)
     onCreate?.(payload)
-    alert("Asignatura creada (simulado). Revisa la consola.")
+    toast.success("Asignatura creada exitosamente.", {
+        description: "Revisa la consola para ver los datos de simulación."
+    })
   }
 
   return (

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { useRouter, useSearchParams } from "next/navigation"
 import { postSubtopic } from "@/services/subtopicService"
 import { getTopics } from "@/services/topicService"
+import { toast } from "sonner" // ✅ TOAST
 
 type TopicOption = { id: string | number; name: string }
 
@@ -19,10 +20,12 @@ export default function Home() {
   const [selectedTopic, setSelectedTopic] = useState<TopicOption | null>(null)
   const [topicOpen, setTopicOpen] = useState(false)
   const [topicError, setTopicError] = useState<string | null>(null)
+
   const router = useRouter()
   const searchParams = useSearchParams()
   const topicIdParam = searchParams.get("topicId")
 
+  // 🔹 Cargar temas
   useEffect(() => {
     getTopics()
       .then((list: any[]) =>
@@ -33,9 +36,15 @@ export default function Home() {
           }))
         )
       )
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err)
+        toast.error("Error de Carga", {
+          description: "No se pudieron cargar los temas disponibles.",
+        })
+      })
   }, [])
 
+  // 🔹 Preseleccionar tema desde query param
   useEffect(() => {
     if (!topicIdParam || topics.length === 0 || selectedTopic) return
     const found = topics.find((t) => String(t.id) === String(topicIdParam))
@@ -58,10 +67,12 @@ export default function Home() {
     setTopicError(null)
   }
 
+  // 🔹 Crear subtema
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     if (!nombre.trim()) return
+
     if (!selectedTopic) {
       setTopicError("Selecciona un tema de la lista.")
       setTopicOpen(true)
@@ -71,15 +82,26 @@ export default function Home() {
     setIsLoading(true)
     try {
       await postSubtopic(
-        ({ name: nombre.trim(), ...(selectedTopic ? { topic_id: selectedTopic.id } : {}) } as any)
+        {
+          name: nombre.trim(),
+          topic_id: selectedTopic.id,
+        } as any
       )
-      router.push(`/dashboard/head_teacher/subtopic`)
+
+      toast.success("Subtema creado", {
+        description: `El subtema "${nombre.trim()}" se creó correctamente.`,
+      })
+
+      router.push("/dashboard/head_teacher/subtopic")
       setNombre("")
       setSelectedTopic(null)
       setTopicQuery("")
     } catch (err) {
       console.error(err)
-      alert("Hubo un error al crear el subtema.")
+      toast.error("Error al crear subtema", {
+        description:
+          "Hubo un error al intentar crear el subtema. Revisa la consola.",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -123,7 +145,9 @@ export default function Home() {
                       if (e.key === "Enter") {
                         e.preventDefault()
                         const exact = topics.find(
-                          (t) => t.name.toLowerCase() === topicQuery.trim().toLowerCase()
+                          (t) =>
+                            t.name.toLowerCase() ===
+                            topicQuery.trim().toLowerCase()
                         )
                         if (exact) {
                           selectTopic(exact)
@@ -138,28 +162,36 @@ export default function Home() {
                     }}
                     aria-invalid={!!topicError}
                   />
+
                   {topicOpen && (
                     <div
                       className="absolute z-50 mt-1 w-full rounded-md border bg-popover text-popover-foreground shadow-md"
                       onMouseDown={(e) => e.preventDefault()}
                     >
                       <ul className="max-h-60 overflow-auto py-1">
-                        {(topicQuery.trim() ? visibleTopics : topics).map((t) => (
-                          <li key={t.id}>
-                            <button
-                              type="button"
-                              className="w-full text-left px-3 py-2 hover:bg-accent hover:text-accent-foreground"
-                              onClick={() => selectTopic(t)}
-                            >
-                              {t.name}
-                            </button>
-                          </li>
-                        ))}
-                        {topics.length === 0 && (
-                          <li className="px-3 py-2 text-sm text-muted-foreground">No hay temas.</li>
+                        {(topicQuery.trim() ? visibleTopics : topics).map(
+                          (t) => (
+                            <li key={t.id}>
+                              <button
+                                type="button"
+                                className="w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => selectTopic(t)}
+                              >
+                                {t.name}
+                              </button>
+                            </li>
+                          )
                         )}
+
+                        {topics.length === 0 && (
+                          <li className="px-3 py-2 text-sm text-muted-foreground">
+                            No hay temas.
+                          </li>
+                        )}
+
                         {topics.length > 0 &&
-                          (topicQuery.trim() ? visibleTopics.length === 0 : false) && (
+                          topicQuery.trim() &&
+                          visibleTopics.length === 0 && (
                             <li className="px-3 py-2 text-sm text-muted-foreground">
                               Sin resultados para “{topicQuery}”.
                             </li>
@@ -168,8 +200,11 @@ export default function Home() {
                     </div>
                   )}
                 </div>
+
                 {topicError && (
-                  <p className="mt-1 text-sm text-destructive">{topicError}</p>
+                  <p className="mt-1 text-sm text-destructive">
+                    {topicError}
+                  </p>
                 )}
               </Field>
             </FieldSet>
@@ -182,7 +217,9 @@ export default function Home() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => router.push("/dashboard/head_teacher/subtopic")}
+              onClick={() =>
+                router.push("/dashboard/head_teacher/subtopic")
+              }
             >
               Cancelar
             </Button>

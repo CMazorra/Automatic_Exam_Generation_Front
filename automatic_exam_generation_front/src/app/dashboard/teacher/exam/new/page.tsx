@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { getHeadTeachers } from "@/services/headTeacerService"
+import { toast } from "sonner" // <-- Importamos TOAST
 
 interface SubjectOption {
   id: number | string
@@ -262,16 +263,21 @@ export default function ExamCreatePage() {
     e.preventDefault()
 
     if (!teacherId) {
-      alert("No se pudo obtener el ID del profesor.")
+      toast.error("Error de autenticación. No se pudo obtener el ID del profesor.") // <-- Reemplazo de alert
       return
     }
 
     if (!headTeacherId) {
-      alert("Debes seleccionar un jefe de asignatura.")
+      toast.error("Debes seleccionar un jefe de asignatura.") // <-- Reemplazo de alert
       return
     }
+    // ** ➡️ NUEVA VALIDACIÓN AÑADIDA AQUÍ ⬅️ **
+    if (isManual && manualQuestions.length === 0) {
+        toast.error("Validación", { description: "Si es modo Manual, debe seleccionar al menos una pregunta." });
+        return;
+    }
 
-    try {
+    // Construcción del payload
       const payload: any = {
         name: name.trim(),
         difficulty: difficulty || null,
@@ -291,7 +297,10 @@ export default function ExamCreatePage() {
         payload.questions = []
       }
 
-      await createExam(payload)
+// Reemplaza todo el bloque desde `<<<<<<< HEAD` hasta `>>>>>>> e670c6e` con este código
+    // Usamos toast.promise para manejar la creación y la navegación
+    toast.promise(new Promise<void>(async (resolve, reject) => {
+        try {
       const created = await createExam(payload)
 
       // Si es automático, generar el examen con distribución de preguntas
@@ -377,13 +386,26 @@ export default function ExamCreatePage() {
         })
       }
 
-      router.push("/dashboard/teacher/exam")
-    } catch (err: any) {
-      console.error("Error creando examen:", err)
-      alert(err?.message || "Error al crear examen.")
-    }
-  }
+            // Si todo sale bien, resolvemos la promesa.
+            resolve() 
 
+    } catch (err: any) {
+            console.error("Error creando o generando examen:", err)
+            // Rechazamos la promesa para que toast.promise maneje el error.
+            reject(err)
+        }
+    }), {
+        loading: 'Creando examen y generando preguntas...',
+        success: () => {
+            router.push("/dashboard/teacher/exam")
+            return "Examen creado y enviado para revisión.";
+        },
+        error: (err) => {
+            // El error ya viene del reject de la promesa
+            return err?.message || "Error al crear o generar examen. Inténtalo de nuevo."; 
+        },
+    });
+}
   return (
     <main className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-3xl">
