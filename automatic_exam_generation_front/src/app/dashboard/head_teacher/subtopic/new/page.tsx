@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { useRouter, useSearchParams } from "next/navigation"
 import { postSubtopic } from "@/services/subtopicService"
 import { getTopics } from "@/services/topicService"
+import { toast } from "sonner"
 
 type TopicOption = { id: string | number; name: string }
 
@@ -33,7 +34,12 @@ export default function Home() {
           }))
         )
       )
-      .catch(console.error)
+      .catch((err) => {
+        console.error(err)
+        toast.error("Error de Carga", {
+          description: "No se pudieron cargar los temas disponibles.",
+        })
+      })
   }, [])
 
   useEffect(() => {
@@ -73,6 +79,9 @@ export default function Home() {
       await postSubtopic(
         ({ name: nombre.trim(), ...(selectedTopic ? { topic_id: selectedTopic.id } : {}) } as any)
       )
+      toast.success("Subtema creado", {
+        description: `El subtema "${nombre.trim()}" se creó correctamente.`,
+      })
       router.push(`/dashboard/head_teacher/subtopic`)
       setNombre("")
       setSelectedTopic(null)

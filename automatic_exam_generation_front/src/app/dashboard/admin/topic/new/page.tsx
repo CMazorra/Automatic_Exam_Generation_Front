@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { postTopic, updateTopic_Subject } from "@/services/topicService"
+import { toast } from "sonner"
 
 export default function TopicNewPage() {
   const router = useRouter()
@@ -16,7 +17,12 @@ export default function TopicNewPage() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!name.trim()) return
+    if (!name.trim()) {
+      toast.warning("Nombre requerido", {
+        description: "El nombre del tema no puede estar vacío.",
+      })
+      return
+    }
     setSaving(true)
     try {
       const created = await postTopic({ name: name.trim() })
@@ -27,6 +33,10 @@ export default function TopicNewPage() {
         await updateTopic_Subject(topicId,subjectId)
       }
 
+      toast.success("Tema creado", {
+        description: `El tema "${name.trim()}" se creó correctamente.`,
+      })
+
       if (returnTo) {
         router.push(returnTo)
       } else if (subjectId) {
@@ -36,7 +46,9 @@ export default function TopicNewPage() {
       }
     } catch (err: any) {
       console.error(err)
-      alert(err?.message || "Error al crear el tema.")
+      toast.error("Error al crear el tema", {
+        description: err?.message || "Ocurrió un error inesperado.",
+      })
     } finally {
       setSaving(false)
     }

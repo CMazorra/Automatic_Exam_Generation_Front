@@ -5,12 +5,15 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useRouter, useParams } from "next/navigation"
 import { getUserById, deleteUser } from "@/services/userService"
+import { toast } from "sonner"
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog"
 
 export default function UserView() {
   const params = useParams()
   const id = params?.id as string
   const [user, setUser] = useState<any | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -27,6 +30,28 @@ export default function UserView() {
     }
     fetchUser()
   }, [id])
+
+  const handleDelete = async () => {
+    if (!user || isDeleting) return
+
+    setIsDeleting(true)
+    try {
+      await deleteUser(user.id_us)
+
+      toast.success("Usuario eliminado", {
+        description: `El usuario "${user.name}" ha sido eliminado correctamente.`,
+      })
+
+      router.push("/dashboard/admin/user")
+    } catch (error: any) {
+      console.error("Error deleting user:", error)
+      toast.error("Error al eliminar", {
+        description: error?.message || "No se pudo eliminar el usuario.",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -81,21 +106,15 @@ export default function UserView() {
               Editar
             </Button>
 
-            <Button
-              variant="destructive"
-              onClick={async () => {
-                if (!confirm(`¿Seguro que deseas eliminar al usuario "${user.name}"?`)) return
-                try {
-                  await deleteUser(user.id_us)
-                  router.push("/dashboard/admin/user")
-                } catch (error) {
-                  console.error("Error deleting user:", error)
-                  alert("Hubo un error al eliminar el usuario.")
-                }
-              }}
-            >
-              Eliminar
+            <ConfirmDeleteDialog
+            title={`Eliminar usuario "${user.name}"`}
+            description="¿Estás seguro de que deseas eliminar este usuario? Esta acción es irreversible."
+            onConfirm={handleDelete}
+          >
+            <Button variant="destructive" disabled={isDeleting}>
+              {isDeleting ? "Eliminando..." : "Eliminar"}
             </Button>
+          </ConfirmDeleteDialog>
           </div>
         </div>
       </div>

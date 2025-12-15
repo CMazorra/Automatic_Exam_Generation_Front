@@ -10,6 +10,7 @@ import { getHeadTeacherByID } from "@/services/headTeacerService"
 import { getUserById } from "@/services/userService"
 import { getQuestionById } from "@/services/questionService"
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function ExamDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -37,6 +38,7 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
             setSubjectName(s?.name ?? null)
           } catch (e) {
             console.error('Error fetching subject name', e)
+            toast.error("Error al cargar la asignatura relacionada.")
           }
         }
         if (data?.teacher_id) {
@@ -45,6 +47,7 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
             setTeacherName(t?.user?.name ?? t?.name ?? null)
           } catch (e) {
             console.error('Error fetching teacher name', e)
+            toast.error("Error al cargar el profesor relacionado.")
           }
         }
         if (data?.parameters_id) {
@@ -53,6 +56,7 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
             setParamsLabel(p ? `${p.proportion} / ${p.quest_topics}` : null)
           } catch (e) {
             console.error('Error fetching params', e)
+            toast.error("Error al cargar la parametrización relacionada.")
           }
         }
         if (data?.head_teacher_id) {
@@ -72,6 +76,7 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
             }
           } catch (e) {
             console.error('Error fetching head teacher', e)
+            toast.error("Error al cargar el jefe de asignatura relacionado.")
             setHeadName(null)
           }
         }
@@ -83,6 +88,7 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
               const questionId = eq.question_id || eq.id
               return getQuestionById(questionId).catch(err => {
                 console.error(`Error fetching question ${questionId}:`, err)
+                toast.error(`Error al cargar la pregunta ${questionId}.`)
                 return null
               })
             })
@@ -90,12 +96,13 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
             setQuestions(questionsData.filter(q => q !== null))
           } catch (e) {
             console.error('Error fetching questions', e)
+            toast.error("Error al cargar las preguntas relacionadas.")
             setQuestions([])
           }
         }
       } catch (error) {
         console.error(error);
-        alert("Error al cargar el examen.");
+        toast.error("Error al cargar el examen.");
       } finally {
         setLoading(false);
       }

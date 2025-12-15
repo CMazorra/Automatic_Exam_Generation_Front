@@ -10,6 +10,7 @@ import { getCurrentUser } from "@/services/authService"
 import { getHeadTeachers } from "@/services/headTeacerService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
 import Link from "next/link"
 
 interface SubjectOption {
@@ -272,12 +273,12 @@ export default function ExamCreatePage() {
     e.preventDefault()
 
     if (!teacherId) {
-      alert("No se pudo obtener el ID del profesor.")
+      toast.error("Validación", { description: "No se pudo obtener el profesor." })
       return
     }
 
     if (!headTeacherId) {
-      alert("Debes seleccionar un jefe de asignatura.")
+      toast.error("Validación", { description: "Debes seleccionar un jefe de asignatura." })
       return
     }
 
@@ -292,10 +293,18 @@ export default function ExamCreatePage() {
       }
 
       if (isManual) {
+        if (manualQuestions.length === 0) {
+          toast.error("Validación", { description: "Si es modo Manual, debe seleccionar al menos una pregunta." });
+          return;
+        }
         // Modo manual: parameters_id con valor por defecto, questions con IDs
         payload.parameters_id = 1
         payload.questions = manualQuestions.map(q => q.id)
       } else {
+        if (!payload.parameters_id) {
+          toast.error("Validación", { description: "Si es modo Automático, debe seleccionar una parametrización." });
+          return;
+        }
         // Modo automático: parameters_id con datos, questions vacío
         payload.parameters_id = paramsId || null
         payload.questions = []
@@ -395,9 +404,10 @@ export default function ExamCreatePage() {
       }
 
       router.push("/dashboard/head_teacher/exam")
-    } catch (err: any) {
-      console.error("Error creando examen:", err)
-      alert(err?.message || "Error al crear examen.")
+    } catch (e: any) {
+      toast.error("Error al crear", {
+        description: e?.message || "Error inesperado.",
+      })
     }
   }
 

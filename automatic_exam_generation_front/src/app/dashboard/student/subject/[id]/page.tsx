@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/services/authService"
 import { getSubjectById, getSubjectsByStudentID } from "@/services/subjectService"
 import { getTopicsBySubjectId } from "@/services/topicService"
 import { postStudentSubject } from "@/services/studentService"
+import { toast } from "sonner"
 
 interface Subject {
 	id: number | string
@@ -36,6 +37,7 @@ export default function StudentSubjectView({ params }: { params: Promise<{ id: s
 				setSubject(data)
 			} catch (e) {
 				console.error("Error fetching subject:", e)
+				toast.error("No se pudo cargar la asignatura.")
 			} finally {
 				setIsLoadingSubject(false)
 			}
@@ -51,6 +53,7 @@ export default function StudentSubjectView({ params }: { params: Promise<{ id: s
 				setTopics(arr)
 			} catch (e) {
 				console.error("Error fetching topics by subject:", e)
+				toast.error("No se pudieron cargar los temas de la asignatura.")
 			} finally {
 				setIsLoadingTopics(false)
 			}
@@ -79,6 +82,7 @@ export default function StudentSubjectView({ params }: { params: Promise<{ id: s
 				setIsEnrolled(enrolled)
 			} catch (e) {
 				console.warn("No se pudieron cargar las asignaturas del estudiante", e)
+				toast.error("No se pudieron cargar las asignaturas del estudiante.")
 			}
 		}
 		checkEnrollment()
@@ -90,15 +94,17 @@ export default function StudentSubjectView({ params }: { params: Promise<{ id: s
 			const user = await getCurrentUser()
 			const studentId = user?.id ?? user?.id_us ?? user?._id
 			if (!studentId) {
-				alert("Error de autenticación. Estudiante no identificado.")
+				toast.error("Usuario no identificado.")
 				return
 			}
 			await postStudentSubject(studentId, id)
 			setIsEnrolled(true)
-			alert("Asignatura añadida correctamente.")
+			toast.success("Asignatura cursada", {
+				description: `Ahora estás cursando la asignatura "${subject?.name || ""}".`,
+			})
 		} catch (e) {
 			console.error("Error al cursar asignatura:", e)
-			alert("No se pudo cursar la asignatura.")
+			toast.error("No se pudo cursar la asignatura.")
 		} finally {
 			setIsSubmitting(false)
 		}

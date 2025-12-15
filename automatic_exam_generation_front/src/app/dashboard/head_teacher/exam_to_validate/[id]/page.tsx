@@ -14,6 +14,7 @@ import { getQuestionById } from "@/services/questionService";
 import { getCurrentUser } from "@/services/authService";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 export default function ExamToValidateDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -126,7 +127,10 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
 
       } catch (error) {
         console.error(error);
-        alert("Error al cargar el examen.");
+        toast.error("Error de carga", {
+          description:
+            "Ocurrió un error al cargar el examen para validar.",
+        });
       } finally {
         setLoading(false);
       }
@@ -136,7 +140,10 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
 
   const handleApprove = async () => {
     if (!currentUserId) {
-      alert("No se pudo obtener el ID del usuario actual.");
+      toast.error("Error de usuario", {
+        description:
+          "No se pudo obtener el ID del usuario actual.",
+      });
       return;
     }
 
@@ -149,11 +156,19 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
         head_teacher_id: currentUserId,
         guidelines: comments.trim(),
       });
-      alert("Examen aprobado exitosamente.");
+      toast.success("Examen aprobado", {
+        description: `El examen '${
+          exam?.name ?? id
+        }' fue aprobado correctamente.`,
+      });
       router.push("/dashboard/head_teacher/exam_to_validate");
     } catch (error) {
       console.error("Error al aprobar examen:", error);
-      alert("Error al aprobar el examen.");
+      console.error(error);
+      toast.error("Error al aprobar", {
+        description:
+          "Ocurrió un error al intentar aprobar el examen.",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -161,7 +176,10 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
 
   const handleReject = async () => {
     if (!currentUserId) {
-      alert("No se pudo obtener el ID del usuario actual.");
+      toast.error("Error de usuario", {
+        description:
+          "No se pudo obtener el ID del usuario actual.",
+      });
       return;
     }
 
@@ -175,11 +193,18 @@ export default function ExamToValidateDetailsPage({ params }: { params: Promise<
         head_teacher_id: currentUserId,
         guidelines,
       });
-      alert("Examen rechazado.");
+      toast.success("Examen rechazado", {
+        description: `El examen '${
+          exam?.name ?? id
+        }' fue rechazado.`,
+      });
       router.push("/dashboard/head_teacher/exam_to_validate");
     } catch (error) {
       console.error("Error al rechazar examen:", error);
-      alert("Error al rechazar el examen.");
+      toast.error("Error al rechazar", {
+        description:
+          "Ocurrió un error al intentar rechazar el examen.",
+      });
     } finally {
       setSubmitting(false);
     }

@@ -8,6 +8,7 @@ import { getParams } from "@/services/paramsService"
 import { getQuestions, getQuestionById } from "@/services/questionService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
 import Link from "next/link"
 
 interface SubjectOption {
@@ -160,6 +161,7 @@ export default function ExamEditPage({ params }: { params: Promise<{ id: string 
         }
       } catch (e: any) {
         console.error("Error cargando editor de examen:", e)
+        toast.error("Error", { description: e?.message || "Error cargando datos" })
         if (mounted) setError(e?.message || "Error cargando datos")
       } finally {
         if (mounted) {
@@ -213,12 +215,25 @@ export default function ExamEditPage({ params }: { params: Promise<{ id: string 
         parameters_id: paramsId || null,
         questions: selectedQuestions.map(q => q.id),
       }
-
+      if (selectedQuestions.length === 0) {
+        toast.error("No se pueden guardar exámenes sin preguntas.", {
+          description: "Añade al menos una pregunta antes de guardar.",
+        })
+        setSaving(false)
+        return
+      }
+      if (!parametersId) {
+        toast.error("La parametrización es obligatoria.", {
+          description: "Selecciona una parametrización antes de guardar.",
+        })
+        setSaving(false)
+        return
+      }
       await updateExam(id, payload)
       router.push(`/dashboard/teacher/exam/${id}`)
     } catch (e: any) {
       console.error("Error actualizando examen:", e)
-      alert(e?.message || "Error al guardar examen")
+      toast.error(e?.message || "Error al guardar examen")
     } finally {
       setSaving(false)
     }

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { useRouter, useSearchParams } from "next/navigation"
 import { postSubtopic } from "@/services/subtopicService"
 import { getTopics } from "@/services/topicService"
+import { toast } from "sonner"
 
 type TopicOption = { id: string | number; name: string }
 
@@ -33,7 +34,10 @@ export default function Home() {
           }))
         )
       )
-      .catch(console.error)
+      .catch((error) => {
+        console.error(error)
+        toast.error("Error al cargar los temas.")
+      })
   }, [])
 
   useEffect(() => {
@@ -61,10 +65,16 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (!nombre.trim()) return
+    if (!nombre.trim()) {
+      toast.warning("El nombre del subtema es obligatorio.")
+      return
+    }
     if (!selectedTopic) {
       setTopicError("Selecciona un tema de la lista.")
       setTopicOpen(true)
+      toast.error("Falta información", {
+        description: "Debes seleccionar un tema para crear el subtema.",
+      })
       return
     }
 
@@ -73,13 +83,18 @@ export default function Home() {
       await postSubtopic(
         ({ name: nombre.trim(), ...(selectedTopic ? { topic_id: selectedTopic.id } : {}) } as any)
       )
+      toast.success("Subtema creado", {
+        description: `El subtema "${nombre}" fue creado correctamente.`,
+      })
       router.push(`/dashboard/teacher/subtopic`)
       setNombre("")
       setSelectedTopic(null)
       setTopicQuery("")
     } catch (err) {
       console.error(err)
-      alert("Hubo un error al crear el subtema.")
+      toast.error("Error al crear subtema", {
+        description: "No se pudo crear el subtema. Intenta nuevamente.",
+      })
     } finally {
       setIsLoading(false)
     }

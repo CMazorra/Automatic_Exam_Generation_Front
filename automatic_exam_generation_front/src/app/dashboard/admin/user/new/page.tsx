@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Field, FieldLabel, FieldGroup, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { postUser } from "@/services/userService"
+import { toast } from "sonner"
 
 type Role = "ADMIN" | "TEACHER" | "STUDENT"
 
@@ -23,6 +24,7 @@ export default function NewUserPage() {
     age: "",
     course: "",
     role: "" as Role | "",
+    specialty: "",
   })
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -35,25 +37,51 @@ export default function NewUserPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.name.trim() || !form.account.trim() || !form.role) {
-      alert("Por favor, completa los campos obligatorios.")
+      toast.warning("Faltan campos obligatorios", {
+        description: "Nombre, Cuenta y Rol son obligatorios.",
+      })
+      return
+    }
+
+    if (form.role === "TEACHER" && !form.specialty.trim()) {
+      toast.warning("Falta especialidad", {
+        description: "La especialidad es obligatoria para profesores.",
+      })
       return
     }
 
     setIsLoading(true)
     try {
-      await postUser({
-        name: form.name.trim(),
-        account: form.account.trim(),
-        password: form.password || "default123", // 🔹 si el backend lo requiere
-        age: form.age ? Number(form.age) : undefined,
-        course: form.course.trim() || undefined,
-        role: form.role,
+      const payload: any = {
+        user: {
+          name: form.name.trim(),
+          account: form.account.trim(),
+          password: form.password || "default123",
+          age: form.age ? Number(form.age) : undefined,
+          course: form.course.trim() || undefined,
+          role: form.role,
+        },
+      }
+
+      if (form.role === "TEACHER") {
+        payload.teacher = {
+          specialty: form.specialty.trim(),
+          isHeadTeacher: false,
+        }
+      }
+
+      await postUser(payload)
+      
+      toast.success("Usuario creado", {
+        description: `El usuario "${form.name}" fue creado correctamente.`,
       })
-      alert("✅ Usuario creado correctamente.")
+
       router.push("/dashboard/admin/user")
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert("❌ Hubo un error al crear el usuario.")
+      toast.error("Error al crear usuario", {
+        description: err?.message || "No se pudo crear el usuario.",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -140,6 +168,19 @@ export default function NewUserPage() {
                   ))}
                 </select>
               </Field>
+
+              {form.role === "TEACHER" && (
+                <Field>
+                  <FieldLabel htmlFor="specialty">Especialidad</FieldLabel>
+                  <Input
+                    id="specialty"
+                    placeholder="Especialidad del profesor"
+                    value={form.specialty}
+                    onChange={handleChange}
+                    required
+                  />
+                </Field>
+              )}
             </FieldSet>
           </FieldGroup>
 

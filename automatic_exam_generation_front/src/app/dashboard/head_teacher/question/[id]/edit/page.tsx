@@ -8,6 +8,7 @@ import { getTopicsBySubjectId } from "@/services/topicService"
 import { getSubtopics } from "@/services/subtopicService"
 import { getTeacherByID } from "@/services/teacherService"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import Link from "next/link"
 
 interface Question {
@@ -152,6 +153,9 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
         }
       } catch (e) {
         console.error("Error initializing editor:", e)
+        toast.error("Error de carga", {
+          description: "No se pudo inicializar el editor de preguntas.",
+        })
       } finally {
         if (mounted) setLoading(false)
       }
@@ -230,10 +234,15 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
         score: typeof score === "number" ? score : null,
       }
       await updateQuestion(String(question.id), payload)
+      toast.success("Pregunta actualizada", {
+        description: "La pregunta ha sido guardada exitosamente.",
+      })
       router.push("/dashboard/head_teacher/question")
     } catch (err) {
       console.error("Error updating question:", err)
-      alert("Error al guardar. Revisa la consola.")
+      toast.error("Error al guardar", {
+        description: "Ocurrió un error al actualizar la pregunta.",
+      })
     } finally {
       setSaving(false)
     }

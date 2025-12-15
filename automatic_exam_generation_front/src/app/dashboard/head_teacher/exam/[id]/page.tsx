@@ -3,13 +3,15 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { getExamById, deleteExam } from "@/services/examService";
-import { getSubjectById } from "@/services/subjectService"
-import { getTeacherByID } from "@/services/teacherService"
-import { getParamsById } from "@/services/paramsService"
-import { getHeadTeacherByID } from "@/services/headTeacerService"
-import { getUserById } from "@/services/userService"
-import { getQuestionById } from "@/services/questionService"
+import { getSubjectById } from "@/services/subjectService";
+import { getTeacherByID } from "@/services/teacherService";
+import { getParamsById } from "@/services/paramsService";
+import { getHeadTeacherByID } from "@/services/headTeacerService";
+import { getUserById } from "@/services/userService";
+import { getQuestionById } from "@/services/questionService";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 
 export default function ExamDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -17,6 +19,7 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
 
   const [exam, setExam] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [subjectName, setSubjectName] = useState<string | null>(null)
   const [teacherName, setTeacherName] = useState<string | null>(null)
   const [paramsLabel, setParamsLabel] = useState<string | null>(null)
@@ -35,24 +38,24 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
           try {
             const s = await getSubjectById(Number(data.subject_id))
             setSubjectName(s?.name ?? null)
-          } catch (e) {
-            console.error('Error fetching subject name', e)
+          } catch {
+            toast.error("No se pudo cargar la asignatura");
           }
         }
         if (data?.teacher_id) {
           try {
             const t = await getTeacherByID(Number(data.teacher_id))
             setTeacherName(t?.user?.name ?? t?.name ?? null)
-          } catch (e) {
-            console.error('Error fetching teacher name', e)
+          } catch {
+            toast.error("No se pudo cargar el profesor");
           }
         }
         if (data?.parameters_id) {
           try {
             const p = await getParamsById(String(data.parameters_id))
             setParamsLabel(p ? `${p.proportion} / ${p.quest_topics}` : null)
-          } catch (e) {
-            console.error('Error fetching params', e)
+          } catch {
+            toast.error("No se pudieron cargar los parámetros");
           }
         }
         if (data?.head_teacher_id) {
@@ -70,8 +73,8 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
               const u = await getUserById(Number(data.head_teacher_id))
               setHeadName(u?.name ?? null)
             }
-          } catch (e) {
-            console.error('Error fetching head teacher', e)
+          } catch {
+            toast.error("No se pudo cargar el jefe de asignatura");
             setHeadName(null)
           }
         }
@@ -88,8 +91,10 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
             })
             const questionsData = await Promise.all(questionPromises)
             setQuestions(questionsData.filter(q => q !== null))
-          } catch (e) {
-            console.error('Error fetching questions', e)
+          } catch (e: any) {
+            toast.error("Error al cargar el examen", {
+              description: e?.message,
+            });
             setQuestions([])
           }
         }
@@ -104,13 +109,17 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
   }, [id]);
 
   const handleDelete = async () => {
-    if (!confirm("¿Seguro que deseas eliminar este examen?")) return;
-
+    setIsDeleting(true);
     try {
       await deleteExam(id);
+      toast.success("Examen eliminado correctamente");
       router.push("/dashboard/head_teacher/exam");
-    } catch {
-      alert("Error al eliminar el examen.");
+    } catch (e: any) {
+      toast.error("Error al eliminar el examen", {
+        description: e?.message,
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -161,9 +170,16 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
               </Button>
             )}
 
-            <Button variant="destructive" onClick={handleDelete}>
-              Eliminar
-            </Button>
+            <ConfirmDeleteDialog
+              title={`Eliminar examen "${exam.name}"`}
+              description="Esta acción es irreversible."
+              onConfirm={handleDelete}
+              buttonText={isDeleting ? "Eliminando..." : "Eliminar"}
+            >
+              <Button variant="destructive" disabled={isDeleting}>
+                {isDeleting ? "Eliminando..." : "Eliminar"}
+              </Button>
+            </ConfirmDeleteDialog>
           </div>
         </div>
       </div>

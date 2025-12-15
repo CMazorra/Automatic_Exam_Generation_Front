@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { getHeadTeachers } from "@/services/headTeacerService"
+import { toast } from "sonner"
 
 interface SubjectOption {
   id: number | string
@@ -107,6 +108,7 @@ export default function ExamCreatePage() {
         }
       } catch (error) {
         console.error("Error obteniendo usuario actual:", error)
+        toast.error("Error al obtener el usuario actual.")
         const raw = typeof window !== "undefined" ? localStorage.getItem("userId") : null
         if (raw) setTeacherId(Number(raw))
       }
@@ -129,6 +131,7 @@ export default function ExamCreatePage() {
         }
       } catch (err) {
         console.error("Error cargando asignaturas del profesor:", err)
+        toast.error("Error al cargar las asignaturas del profesor.")
       } finally {
         if (mounted) {
           setLoadingSubjects(false)
@@ -158,6 +161,7 @@ export default function ExamCreatePage() {
         setAllParams(Array.isArray(paramsList) ? paramsList : [])
       } catch (err) {
         console.error("Error cargando listas de parámetros:", err)
+        toast.error("Error al cargar las parametrizaciones.")
       } finally {
         if (mounted) {
           setLoadingParams(false)
@@ -188,6 +192,7 @@ export default function ExamCreatePage() {
         if (mounted) setAllQuestions(normalized)
       } catch (e) {
         console.error("Error cargando preguntas:", e)
+        toast.error("Error al cargar las preguntas.")
         if (mounted) setAllQuestions([])
       } finally {
         if (mounted) setLoadingQuestions(false)
@@ -216,6 +221,7 @@ export default function ExamCreatePage() {
         setHeadTeacherQuery(htName || "")
       } catch (e) {
         console.warn("No se pudo resolver el nombre del jefe de asignatura", e)
+        toast.warning("No se pudo resolver el nombre del jefe de asignatura.")
         setHeadTeacherQuery("")
       }
     } else {
@@ -262,12 +268,12 @@ export default function ExamCreatePage() {
     e.preventDefault()
 
     if (!teacherId) {
-      alert("No se pudo obtener el ID del profesor.")
+      toast.error("ID de profesor no disponible.")
       return
     }
 
     if (!headTeacherId) {
-      alert("Debes seleccionar un jefe de asignatura.")
+      toast.error("Debe seleccionar un jefe de asignatura.")
       return
     }
 
@@ -282,10 +288,18 @@ export default function ExamCreatePage() {
       }
 
       if (isManual) {
+        if (manualQuestions.length === 0) {
+          toast.error("Validación", { description: "Si es modo Manual, debe seleccionar al menos una pregunta." });
+          return;
+        }
         // Modo manual: parameters_id con valor por defecto, questions con IDs
         payload.parameters_id = 1
         payload.questions = manualQuestions.map(q => q.id)
       } else {
+        if (!payload.parameters_id) {
+          toast.error("Validación", { description: "Si es modo Automático, debe seleccionar una parametrización." });
+          return;
+        }
         // Modo automático: parameters_id con datos, questions vacío
         payload.parameters_id = paramsId || null
         payload.questions = []
@@ -374,11 +388,15 @@ export default function ExamCreatePage() {
           questionDistribution: tempDistribution,
         })
       }
-
+      toast.success("Examen creado", {
+        description: `El examen "${name}" fue creado correctamente.`,
+      })
       router.push("/dashboard/teacher/exam")
     } catch (err: any) {
       console.error("Error creando examen:", err)
-      alert(err?.message || "Error al crear examen.")
+      toast.error("Error al crear examen", {
+        description: err?.message || "No se pudo crear el examen.",
+      })
     }
   }
 

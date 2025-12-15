@@ -9,6 +9,7 @@ import { getAnswers, updateAnswer } from "@/services/answerService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { toast } from "sonner"
 
 type Question = {
   id: number
@@ -50,6 +51,14 @@ export default function GradeExamPage() {
           getQuestions(),
           getAnswers(),
         ])
+
+        if (!examData || !examStudentData) {
+          toast.error("Error de carga", {
+            description: "No se pudo cargar el examen o el estudiante.",
+          })
+          setLoading(false)
+          return
+        }
 
         setExam(examData || null)
         setExamStudent(examStudentData || null)
@@ -115,6 +124,9 @@ export default function GradeExamPage() {
         )
       } catch (err) {
         console.error("Error loading grading data:", err)
+        toast.error("Error de carga", {
+          description: "Ocurrió un error al cargar los datos de calificación.",
+        })
       } finally {
         setLoading(false)
       }
@@ -156,7 +168,9 @@ export default function GradeExamPage() {
       router.back()
     } catch (err) {
       console.error("Error saving grading:", err)
-      alert("Error al guardar la calificación")
+      toast.error("Error al guardar", {
+        description: "No se pudo guardar la calificación.",
+      })
     } finally {
       setSaving(false)
     }

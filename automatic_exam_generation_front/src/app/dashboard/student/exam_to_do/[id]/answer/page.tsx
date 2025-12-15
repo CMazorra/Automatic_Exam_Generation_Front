@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { useParams, useRouter } from 'next/navigation';
 import { ChangeEvent } from 'react'; // Importamos ChangeEvent
 import { updateExamStudent } from '@/services/examStudentService';
+import { toast } from 'sonner'
 
 interface Question {
     id: number;
@@ -67,7 +68,9 @@ export default function AnswerExamPage() {
 
             } catch (e) {
                 console.error("Error al cargar el examen o preguntas:", e);
-                alert("Error al cargar el examen. Inténtalo de nuevo.");
+                toast.error('Error de Carga', {
+                    description: 'No se pudo cargar el examen. Inténtalo nuevamente.',
+                })
             } finally {
                 setLoading(false);
             }

@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { postSubject } from "@/services/subjectService"
 import { getTeachers } from "@/services/teacherService"
 import { postHeadTeacher } from "@/services/headTeacerService"
+import { toast } from "sonner"
 
 type TeacherApi = {
   id: number | string
@@ -54,7 +55,12 @@ export default function SubjectCreatePage() {
           }))
         )
       )
-      .catch(console.error)
+      .catch((e) => {
+          console.error("Error cargando profesores:", e)
+          toast.error("Error de carga", {
+              description: "No se pudo obtener la lista de profesores. Intenta de nuevo.",
+          })
+      })
   }, [])
 
   const normalizedQuery = teacherQuery.trim().toLowerCase()
@@ -75,6 +81,9 @@ export default function SubjectCreatePage() {
     if (!selectedTeacher) {
       setTeacherError("Selecciona un jefe de asignatura de la lista.")
       setTeacherOpen(true)
+       toast.warning("Jefe Requerido", {
+          description: "Debes seleccionar un jefe de asignatura de la lista.",
+      })
       return
     }
 
@@ -90,10 +99,16 @@ export default function SubjectCreatePage() {
         head_teacher_id: headId,
       })
 
+      toast.success("¡Asignatura Creada!", {
+          description: `La asignatura "${nombre.trim()}" se ha creado con éxito.`,
+      })
+
       router.push("/dashboard/admin/subject")
     } catch (err: any) {
       console.error("Crear asignatura falló:", err)
-      alert(err?.message || "No se pudo crear la asignatura.")
+      toast.error("Error de Creación", {
+          description: err?.message || "Ocurrió un error inesperado al intentar crear la asignatura.",
+      })
     } finally {
       setIsSaving(false)
     }

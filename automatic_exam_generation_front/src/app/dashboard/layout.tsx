@@ -10,6 +10,7 @@ import { getCurrentUser } from "@/services/authService"
 import { getTeacherByID } from "@/services/teacherService"
 import { getStudentByID } from "@/services/studentService"
 import { updateUser } from "@/services/userService"
+import { toast } from "sonner"
 
 interface User {
   id?: string | number
@@ -79,14 +80,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       } catch (error) {
         console.error("Error al cargar los datos del usuario:", error)
         setUser({ account: "Usuario" })
+        toast.error("Error de conexión", {
+          description:
+            "No se pudieron cargar los datos del usuario. Intenta recargar la página.",
+        })
       }
     }
     loadUserData()
   }, [])
-
-  const openNotifications = () => {
-    alert("Notificaciones (panel pendiente)")
-  }
 
   const handleLogout = async () => {
     try {
@@ -97,9 +98,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       })
       if (!res.ok) {
         console.error("Logout failed", res.status)
+        toast.warning("Cierre parcial", {
+          description:
+            "El servidor no respondió correctamente. Cerrando sesión localmente.",
+        })
+      } else {
+        toast.success("Sesión cerrada", {
+          description: "Has cerrado sesión correctamente.",
+        })
       }
     } catch (err) {
       console.error("Error logout:", err)
+      toast.error("Error de red", {
+        description:
+          "No se pudo contactar al servidor. Cierre de sesión forzado.",
+      })
     } finally {
       if (typeof document !== "undefined") {
         document.cookie = "aeg_role=; Path=/; Max-Age=0; SameSite=Lax"
@@ -160,11 +173,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="ml-auto flex items-center gap-3">
-            <button onClick={openNotifications} aria-label="notificaciones" className="inline-flex items-center justify-center rounded-md px-3 py-2 bg-muted text-muted-foreground hover:bg-muted/80">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </button>
 
             <Button onClick={handleLogout} className="px-3 py-2 rounded-md">
               Cerrar sesión

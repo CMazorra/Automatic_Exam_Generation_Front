@@ -10,6 +10,7 @@ import { updateReevaluation, getReevaluationById } from "@/services/reevaluation
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { toast } from "sonner"
 
 type Question = {
   id: number
@@ -119,7 +120,10 @@ export default function GradeReevaluationPage() {
             ? reevaluationData.score
             : (typeof examStudentData?.score === "number" ? Number(examStudentData.score) : undefined)
         setFinalScore(baseScore)
-      } catch (err) {
+      } catch (err: any) {
+        toast.error("Error al cargar la calificación de recalificación", {
+          description: err?.message || "No se pudo cargar la calificación de recalificación.",
+        })
         console.error("Error loading reevaluation grading data:", err)
       } finally {
         setLoading(false)
@@ -165,11 +169,15 @@ export default function GradeReevaluationPage() {
       } else {
         await updateReevaluation(examId, studentId, teacherId, { score: currentExamScore })
       }
-
+      toast.success("Calificación guardada", {
+        description: "La calificación de recalificación se ha guardado correctamente.",
+      })
       router.back()
     } catch (err) {
       console.error("Error saving reevaluation grading:", err)
-      alert("Error al guardar la calificación de recalificación")
+      toast.error("Error al guardar", {
+        description: "No se pudo guardar la calificación de recalificación.",
+      })
     } finally {
       setSaving(false)
     }

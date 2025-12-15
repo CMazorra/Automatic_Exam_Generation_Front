@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { getSubjectById, updateSubject, getSubjects } from "@/services/subjectService"
 import { getTeachers, updateTeacher } from "@/services/teacherService"
 import { postHeadTeacher, deleteHeadTeacher } from "@/services/headTeacerService"
+import { toast } from "sonner"
 
 type TeacherApi = {
   id: number | string
@@ -58,8 +59,11 @@ export default function SubjectEdit({ params }: { params: Promise<{ id: string }
         setNombre((data?.name || "").toString())
         setPrograma((data?.program || "").toString())
         setOriginalHeadId(data?.head_teacher_id ?? null)
-      } catch (e) {
-        console.error(e)
+      } catch (e:any) {
+        console.error("Error cargando asignatura:", e)
+        toast.error("Error al cargar", {
+          description: e?.message || "No se pudo cargar la asignatura.",
+        })
       } finally {
         setIsLoading(false)
       }
@@ -79,7 +83,12 @@ export default function SubjectEdit({ params }: { params: Promise<{ id: string }
           }))
         )
       )
-      .catch(console.error)
+      .catch((e) => {
+        console.error("Error cargando profesores:", e)
+        toast.warning("Lista incompleta", {
+          description: "No se pudieron cargar todos los profesores.",
+        })
+      })
   }, [])
 
   useEffect(() => {
@@ -111,6 +120,9 @@ export default function SubjectEdit({ params }: { params: Promise<{ id: string }
     if (!selectedTeacher) {
       setTeacherError("Selecciona un jefe de asignatura de la lista.")
       setTeacherOpen(true)
+      toast.warning("Faltan datos", {
+        description: "Debes seleccionar un jefe de asignatura.",
+      })
       return
     }
 
@@ -144,6 +156,10 @@ export default function SubjectEdit({ params }: { params: Promise<{ id: string }
               await updateTeacher(originalHeadId, { isHeadTeacher: false })
             } catch (e) {
               console.error("No se pudo bajar flag isHeadTeacher antiguo:", e)
+              toast.warning("Advertencia", {
+                description:
+                  "No se pudo actualizar el rol del jefe anterior.",
+              })
             }
           }
         }
@@ -156,10 +172,16 @@ export default function SubjectEdit({ params }: { params: Promise<{ id: string }
         head_teacher_id: selectedTeacher.id,
       })
 
+      toast.success("Asignatura actualizada", {
+        description: `La asignatura "${nombre.trim()}" se guardó correctamente.`,
+      })
+
       router.push(`/dashboard/admin/subject/${id}`)
     } catch (err: any) {
       console.error("Error guardando asignatura:", err)
-      alert(err?.message || "Error al guardar.")
+      toast.error("Error al guardar", {
+        description: err?.message || "Ocurrió un error inesperado.",
+      })
     } finally {
       setIsSaving(false)
     }

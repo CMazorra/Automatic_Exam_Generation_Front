@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getCurrentUser } from "@/services/authService";
 import { getExams, updateExamStatus } from "@/services/examService";
 import { postExamStudent, getExamStudents } from "@/services/examStudentService"; // **VERIFICA ESTA RUTA**
+import { toast } from "sonner";
 
 // ASUMIMOS estas funciones de servicio
 import { getSubjectsFlatByTeacherID } from "@/services/subjectService"; // 🎯 Añadido para obtener la lista del Jefe de Estudios
@@ -71,7 +72,10 @@ export default function AssignExamHeadTeacherPage({ params }: { params: Promise<
         setHeadTeacherId(currentHeadTeacherId);
 
         if (!currentHeadTeacherId) {
-          alert("Error: No se pudo obtener el ID del Jefe de Estudios actual.");
+          toast.error("Error de autenticación", {
+            description:
+              "No se pudo identificar al Jefe de Estudios actual.",
+          });
           router.back();
           return;
         }
@@ -129,7 +133,10 @@ export default function AssignExamHeadTeacherPage({ params }: { params: Promise<
 
       } catch (e) {
         console.error("Error loading data:", e);
-        alert("Error al cargar los datos de asignación.");
+        toast.error("Error de carga", {
+          description:
+            "No se pudieron cargar los datos de asignación.",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -140,7 +147,9 @@ export default function AssignExamHeadTeacherPage({ params }: { params: Promise<
 
   const handleAssign = async () => {
     if (!selectedExamId || !headTeacherId) {
-      alert("Selecciona un examen y asegúrate de que el Jefe de Estudios esté identificado.");
+      toast.error("Selección incompleta", {
+        description: "Selecciona un examen válido.",
+      });
       return;
     }
 
@@ -150,7 +159,9 @@ export default function AssignExamHeadTeacherPage({ params }: { params: Promise<
       const selectedExam = availableExams.find(e => e.id === examId);
 
       if (!selectedExam) {
-        alert("Examen no encontrado en la lista disponible.");
+        toast.error("Examen no encontrado", {
+          description: "El examen seleccionado no está disponible para asignar.",
+        });
         return;
       }
 
@@ -167,16 +178,25 @@ export default function AssignExamHeadTeacherPage({ params }: { params: Promise<
       // 2. ACTUALIZAR EL ESTADO DEL EXAMEN 
       try {
         await updateExamStatus(examId, "Asignado");
-      } catch (statusError) {
-        console.warn("La asignación se creó, pero falló la actualización del estado del examen:", statusError);
+      } catch {
+        toast.warning("Advertencia", {
+          description:
+            "El examen se asignó, pero no se pudo actualizar su estado.",
+        });
       }
 
-      alert("Examen asignado y estado actualizado exitosamente.");
+      toast.success("Examen asignado", {
+        description:
+          "El examen fue asignado correctamente al estudiante.",
+      });
       // Redirigir de vuelta a la vista del estudiante del Jefe de Estudios
       router.push(`/dashboard/head_teacher/students/${studentId}`); 
     } catch (error) {
       console.error("Error crítico en la asignación:", error);
-      alert("Error crítico al asignar el examen. Intenta de nuevo.");
+      toast.error("Error crítico", {
+        description:
+          "Ocurrió un error al asignar el examen.",
+      });
     } finally {
       setIsSubmitting(false);
     }

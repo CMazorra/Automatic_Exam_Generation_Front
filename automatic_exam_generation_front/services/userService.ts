@@ -13,6 +13,16 @@ interface UserPayload {
   role: Role
 }
 
+interface TeacherPayload {
+  specialty: string
+  isHeadTeacher?: boolean
+}
+
+interface CreateUserPayload {
+  user: UserPayload
+  teacher?: TeacherPayload
+}
+
 // 🔹 Función auxiliar para manejo de errores
 async function handleResponse(response: Response) {
   if (!response.ok) {
@@ -52,20 +62,23 @@ export async function getUserById(id: string | number) {
   }
 }
 
-export async function postUser(user: UserPayload) {
+export async function postUser(payload: CreateUserPayload) {
   try {
-    const payload: UserPayload = {
-      ...user,
-      role: user.role.toUpperCase() as Role,
+    const finalPayload: CreateUserPayload = {
+      user: {
+        ...payload.user,
+        role: payload.user.role.toUpperCase() as Role,
+      },
+      ...(payload.teacher && { teacher: payload.teacher }),
     }
 
-    console.log("📦 Enviando payload al backend:", payload)
+    console.log("📦 Enviando payload al backend:", finalPayload)
 
     const response = await fetch(`${BASE_URL}/user`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(finalPayload),
     })
 
     const data = await handleResponse(response)

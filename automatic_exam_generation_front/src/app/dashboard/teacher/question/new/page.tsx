@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/services/authService"
 import { postQuestion } from "@/services/questionService"
 import { getTeacherByID } from "@/services/teacherService"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import Link from "next/link"
 
 interface Option {
@@ -78,16 +79,22 @@ export default function NewQuestionPage() {
             if (!mounted) return
             const tname = teacher?.user?.name ?? teacher?.user?.account ?? tentativeName ?? String(tid)
             setCreatorName(tname)
-          } catch (err) {
+          } catch (err: any) {
             // fallback to tentative name or id
             if (!mounted) return
             setCreatorName(tentativeName ?? (tid ? String(tid) : null))
+            toast.error("Error de carga", {
+              description: err?.message || "No se pudo cargar el nombre del profesor.",
+            })
             console.error("Error fetching teacher details:", err)
           }
         } else {
           setCreatorName(tentativeName ?? null)
         }
-      } catch (err) {
+      } catch (err: any) {
+        toast.error("Error de carga", {
+          description: err?.message || "Ocurrió un error al cargar el editor de preguntas.",
+        })
         console.error("Inicializando creador y listas:", err)
       } finally {
         if (mounted) setLoading(false)
@@ -116,6 +123,9 @@ export default function NewQuestionPage() {
         setAllTopics(list || [])
       } catch (e) {
         console.error("Error fetching topics for subject:", e)
+        toast.error("Error de carga", {
+          description: "No se pudo cargar la lista de temas.",
+        })
         setAllTopics([])
       } finally {
         if (mounted) setLoadingTopics(false)
@@ -167,10 +177,15 @@ export default function NewQuestionPage() {
         teacher_id: teacherId || null,
       }
       await postQuestion(payload)
+      toast.success("Pregunta creada", {
+        description: `La pregunta fue creada correctamente.`,
+      })
       router.push("/dashboard/teacher/question")
     } catch (err) {
       console.error("Error creando pregunta:", err)
-      alert("Error al crear la pregunta. Revisa la consola.")
+      toast.error("Error al crear la pregunta", {
+        description: "Revisa la consola para más detalles.",
+      })
     } finally {
       setSaving(false)
     }

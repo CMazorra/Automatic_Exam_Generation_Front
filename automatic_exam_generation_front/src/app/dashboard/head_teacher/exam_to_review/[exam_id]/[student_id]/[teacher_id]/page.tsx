@@ -10,6 +10,7 @@ import { updateReevaluation, getReevaluationById } from "@/services/reevaluation
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { toast } from "sonner"
 
 type Question = {
   id: number
@@ -66,6 +67,13 @@ export default function GradeReevaluationPage() {
           return NaN
         }
 
+        if (!examData || !examStudentData || !reevaluationData) {
+          toast.error("Error de carga", {
+            description:
+              "No se pudo cargar el examen, el estudiante o la solicitud de recalificación.",
+          })
+        }
+
         const examQuestionIds: number[] = (() => {
           if (Array.isArray(examData?.exam_questions)) {
             return examData.exam_questions
@@ -120,7 +128,11 @@ export default function GradeReevaluationPage() {
             : (typeof examStudentData?.score === "number" ? Number(examStudentData.score) : undefined)
         setFinalScore(baseScore)
       } catch (err) {
-        console.error("Error loading reevaluation grading data:", err)
+        console.error(err)
+        toast.error("Error inesperado", {
+          description:
+            "Ocurrió un error al cargar los datos de recalificación.",
+        })
       } finally {
         setLoading(false)
       }
@@ -168,8 +180,11 @@ export default function GradeReevaluationPage() {
 
       router.back()
     } catch (err) {
-      console.error("Error saving reevaluation grading:", err)
-      alert("Error al guardar la calificación de recalificación")
+      console.error(err)
+      toast.error("Error al guardar", {
+        description:
+          "No se pudo guardar la calificación de recalificación.",
+      })
     } finally {
       setSaving(false)
     }

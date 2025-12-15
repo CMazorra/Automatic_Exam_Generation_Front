@@ -13,6 +13,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Check, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { checkIfRecalificationExists } from '@/services/reevaluationService';
+import { toast } from 'sonner'
 
 // ------------------------------------------------------------
 
@@ -162,7 +163,10 @@ export default function ExamReviewPage() {
 
             } catch (e) {
                 console.error("Error al cargar la revisión del examen:", e);
-                alert("Error al cargar la revisión.");
+                toast.error('Error de carga', {
+                    description:
+                        'No se pudo cargar la revisión del examen. Inténtalo nuevamente.',
+                })
             } finally {
                 setLoading(false);
             }

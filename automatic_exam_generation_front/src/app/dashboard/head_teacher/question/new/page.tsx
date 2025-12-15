@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/services/authService"
 import { postQuestion } from "@/services/questionService"
 import { getTeacherByID } from "@/services/teacherService"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import Link from "next/link"
 
 interface Option {
@@ -89,6 +90,9 @@ export default function NewQuestionPage() {
         }
       } catch (err) {
         console.error("Inicializando creador y listas:", err)
+        toast.error("Error de inicialización", {
+          description: "No se pudieron cargar los datos iniciales.",
+        })
       } finally {
         if (mounted) setLoading(false)
       }
@@ -167,10 +171,15 @@ export default function NewQuestionPage() {
         score: typeof score === "number" ? score : null,
       }
       await postQuestion(payload)
+      toast.success("Pregunta creada", {
+        description: "La pregunta fue registrada correctamente.",
+      })
       router.push("/dashboard/head_teacher/question")
     } catch (err) {
       console.error("Error creando pregunta:", err)
-      alert("Error al crear la pregunta. Revisa la consola.")
+      toast.error("Error al crear", {
+        description: "Ocurrió un error al crear la pregunta.",
+      })
     } finally {
       setSaving(false)
     }

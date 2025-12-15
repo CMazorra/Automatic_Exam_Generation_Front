@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { getTopicById, deleteTopic } from "@/services/topicService"
 import { getSubtopics, deleteSubtopic } from "@/services/subtopicService"
+import { toast } from "sonner"
 
 interface Topic {
   id: string
@@ -71,10 +72,15 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
         )
       }
       await deleteTopic(topic.id)
+      toast.success("Tema eliminado", {
+        description: `El tema "${topic.nombre || topic.name}" fue eliminado.`,
+      })
       router.push(`/dashboard/admin/topic`)
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
-      alert("No se pudo eliminar el tema.")
+      toast.error("Error al eliminar", {
+        description: e?.message || "No se pudo eliminar el tema.",
+      })
     } finally {
       setIsDeleting(false)
     }

@@ -8,6 +8,7 @@ import { getParams } from "@/services/paramsService"
 import { getQuestions, getQuestionById } from "@/services/questionService"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
 import Link from "next/link"
 
 interface SubjectOption {
@@ -92,10 +93,22 @@ export default function ExamEditPage({ params }: { params: Promise<{ id: string 
 
         // load lists in parallel
         const [subjectsList, paramsList, examData, questionsList] = await Promise.all([
-          getSubjects().catch(() => []),
-          getParams().catch(() => []),
+          getSubjects().catch((e) => {
+            console.error(e)
+            toast.error("Error de carga", { description: "No se pudieron cargar las asignaturas" })
+            return []
+          }),
+          getParams().catch((e) => {
+            console.error(e)
+            toast.error("Error de carga", { description: "No se pudieron cargar las parametrizaciones" })
+            return []
+          }),
           getExamById(id).catch(() => null),
-          getQuestions().catch(() => []),
+          getQuestions().catch((e) => {
+            console.error(e)
+            toast.error("Error de carga", { description: "No se pudo cargar el banco de preguntas" })
+            return []
+          }),
         ])
 
         if (!mounted) return
@@ -112,7 +125,9 @@ export default function ExamEditPage({ params }: { params: Promise<{ id: string 
         setAllQuestions(normalizedQuestions)
 
         if (!examData) {
-          setError("No se encontró el examen.")
+          const msg = "No se encontró el examen."
+          setError(msg)
+          toast.error("Error", { description: msg })
           setLoading(false)
           return
         }
@@ -154,12 +169,16 @@ export default function ExamEditPage({ params }: { params: Promise<{ id: string 
                 text: q.question_text || q.text || q.statement || "Sin texto"
               }))
             if (mounted) setSelectedQuestions(validQuestions)
-          } catch (e) {
-            console.error('Error fetching questions', e)
+          } catch (e: any) {
+            console.error(e)
+            setError("Error cargando datos")
+            toast.error("Error", { description: e?.message || "Error cargando datos" })
           }
         }
       } catch (e: any) {
-        console.error("Error cargando editor de examen:", e)
+        console.error(e)
+        setError("Error cargando datos")
+        toast.error("Error", { description: e?.message || "Error cargando datos" })
         if (mounted) setError(e?.message || "Error cargando datos")
       } finally {
         if (mounted) {
@@ -213,12 +232,30 @@ export default function ExamEditPage({ params }: { params: Promise<{ id: string 
         parameters_id: paramsId || null,
         questions: selectedQuestions.map(q => q.id),
       }
-
+      if (selectedQuestions.length === 0) {
+        toast.error("No se pueden guardar exámenes sin preguntas.", {
+          description: "Añade al menos una pregunta antes de guardar.",
+        })
+        setSaving(false)
+        return
+      }
+      if (!paramsId) {
+        toast.error("La parametrización es obligatoria.", {
+          description: "Selecciona una parametrización antes de guardar.",
+        })
+        setSaving(false)
+        return
+      }
       await updateExam(id, payload)
+      toast.success("Examen actualizado", {
+        description: `El examen "${name}" se guardó correctamente`,
+      })
       router.push(`/dashboard/head_teacher/exam/${id}`)
     } catch (e: any) {
-      console.error("Error actualizando examen:", e)
-      alert(e?.message || "Error al guardar examen")
+      console.error(e)
+      toast.error("Error al guardar", {
+        description: e?.message || "Error al guardar examen",
+      })
     } finally {
       setSaving(false)
     }

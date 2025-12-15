@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { getTopicById, deleteTopic } from "@/services/topicService"
 import { getSubtopics, deleteSubtopic } from "@/services/subtopicService"
+import { toast } from "sonner"
 
 interface Topic {
   id: string
@@ -29,6 +30,7 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
         setTopic(data)
       } catch (error) {
         console.error("Error fetching topic:", error)
+        toast.error("Error al cargar el tema.")
       } finally {
         setIsLoadingTopic(false)
       }
@@ -44,6 +46,7 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
         setSubtopics(filtered)
       } catch (e) {
         console.error("Error fetching subtopics:", e)
+        toast.error("Error al cargar los subtemas.")
       } finally {
         setIsLoadingSubs(false)
       }
@@ -71,10 +74,13 @@ export default function TopicView({ params }: { params: Promise<{ id: string }> 
         )
       }
       await deleteTopic(topic.id)
+      toast.success("Tema eliminado", {
+        description: `El tema "${topic.nombre || topic.name || ""}" fue eliminado correctamente.`,
+      })
       router.push(`/dashboard/teacher/topic`)
     } catch (e) {
       console.error(e)
-      alert("No se pudo eliminar el tema.")
+      toast.error("No se pudo eliminar el tema.")
     } finally {
       setIsDeleting(false)
     }

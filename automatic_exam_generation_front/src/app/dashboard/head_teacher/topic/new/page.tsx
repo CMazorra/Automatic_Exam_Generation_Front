@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { postTopic, updateTopic_Subject } from "@/services/topicService"
+import { toast } from "sonner"
 
 export default function TopicNewPage() {
   const router = useRouter()
@@ -35,7 +36,9 @@ export default function TopicNewPage() {
       }
     } catch (err: any) {
       console.error(err)
-      alert(err?.message || "Error al crear el tema.")
+      toast.error("Error al crear tema", {
+        description: err?.message || "Ocurrió un error inesperado.",
+      })
     } finally {
       setSaving(false)
     }

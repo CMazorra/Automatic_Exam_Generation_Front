@@ -8,6 +8,7 @@ import { getTopicsBySubjectId } from "@/services/topicService"
 import { getSubtopics } from "@/services/subtopicService"
 import { getTeacherByID } from "@/services/teacherService"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import Link from "next/link"
 
 interface Question {
@@ -126,8 +127,11 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
             setAllTopics(topicsForSubj || [])
             const selTopic = (topicsForSubj || []).find((t: any) => String(t.id) === String(q.topic_id))
             if (selTopic) setTopicQuery(selTopic.name || "")
-          } catch (err) {
+          } catch (err: any) {
             console.error("Error fetching topics inicial:", err)
+            toast.error("Error de carga", {
+              description: err?.message || "No se pudo cargar la lista de temas.",
+            })
             setAllTopics([])
           } finally {
             if (mounted) setLoadingTopics(false)
@@ -145,8 +149,11 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
             if (!mounted) return
             const name = t?.user?.name || t?.user?.account || String(q.teacher_id)
             setCreatorName(name)
-          } catch (err) {
+          } catch (err: any) {
             console.error("Error fetching teacher name:", err)
+            toast.error("Error de carga", {
+              description: err?.message || "No se pudo cargar el nombre del profesor.",
+            })
             setCreatorName(String(q.teacher_id))
           }
         } else {
@@ -154,6 +161,9 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
         }
       } catch (e) {
         console.error("Error initializing editor:", e)
+        toast.error("Error de carga", {
+          description: "Ocurrió un error al cargar el editor de preguntas.",
+        })
       } finally {
         if (mounted) setLoading(false)
       }
@@ -181,6 +191,9 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
         setAllTopics(list || [])
       } catch (e) {
         console.error("Error fetching topics for subject:", e)
+        toast.error("Error de carga", {
+          description: "No se pudo cargar la lista de temas.",
+        })
         setAllTopics([])
       } finally {
         if (mounted) setLoadingTopics(false)
@@ -232,10 +245,15 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
         sub_topic_id: subtopicId || null,
       }
       await updateQuestion(String(question.id), payload)
+      toast.success("Pregunta actualizada", {
+        description: `La pregunta fue actualizada correctamente.`,
+      })
       router.push("/dashboard/teacher/question")
     } catch (err) {
       console.error("Error updating question:", err)
-      alert("Error al guardar. Revisa la consola.")
+      toast.error("Error al actualizar", {
+        description: "No se pudo actualizar la pregunta.",
+      })
     } finally {
       setSaving(false)
     }

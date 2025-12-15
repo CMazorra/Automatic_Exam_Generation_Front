@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Exam {
   id: number;
@@ -71,7 +72,7 @@ export default function AssignExamTeacherPage({ params }: { params: Promise<{ id
         setTeacherId(currentTeacherId);
 
         if (!currentTeacherId) {
-          alert("Error: No se pudo obtener el ID del Jefe de Estudios actual.");
+          toast.error("Error: No se pudo obtener el ID del Jefe de Estudios actual.");
           router.back();
           return;
         }
@@ -127,9 +128,11 @@ export default function AssignExamTeacherPage({ params }: { params: Promise<{ id
             setSelectedSubjectId(String(commonSubjectObjects[0].id));
         }
 
-      } catch (e) {
+      } catch (e: any) {
         console.error("Error loading data:", e);
-        alert("Error al cargar los datos de asignación.");
+        toast.error("Error al cargar los datos de asignación.", {
+          description: e?.message || "Ocurrió un error al cargar los datos de asignación.",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -140,7 +143,7 @@ export default function AssignExamTeacherPage({ params }: { params: Promise<{ id
 
   const handleAssign = async () => {
     if (!selectedExamId || !TeacherId) {
-      alert("Selecciona un examen y asegúrate de que el Jefe de Estudios esté identificado.");
+      toast.error("Selecciona un examen y asegúrate de que el Jefe de Estudios esté identificado.");
       return;
     }
 
@@ -150,7 +153,7 @@ export default function AssignExamTeacherPage({ params }: { params: Promise<{ id
       const selectedExam = availableExams.find(e => e.id === examId);
 
       if (!selectedExam) {
-        alert("Examen no encontrado en la lista disponible.");
+        toast.error("Examen no encontrado en la lista disponible.");
         return;
       }
 
@@ -169,14 +172,15 @@ export default function AssignExamTeacherPage({ params }: { params: Promise<{ id
         await updateExamStatus(examId, "Asignado");
       } catch (statusError) {
         console.warn("La asignación se creó, pero falló la actualización del estado del examen:", statusError);
+        toast.warning("Asignación creada, pero no se pudo actualizar el estado del examen.");
       }
 
-      alert("Examen asignado y estado actualizado exitosamente.");
+      toast.success("Examen asignado y estado actualizado exitosamente.");
       // Redirigir de vuelta a la vista del estudiante del Jefe de Estudios
       router.push(`/dashboard/teacher/students/${studentId}`); 
     } catch (error) {
       console.error("Error crítico en la asignación:", error);
-      alert("Error crítico al asignar el examen. Intenta de nuevo.");
+      toast.error("Error crítico al asignar el examen. Intenta de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
