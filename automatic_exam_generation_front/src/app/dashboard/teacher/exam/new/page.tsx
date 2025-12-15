@@ -271,6 +271,11 @@ export default function ExamCreatePage() {
       toast.error("Debes seleccionar un jefe de asignatura.") // <-- Reemplazo de alert
       return
     }
+    // ** ➡️ NUEVA VALIDACIÓN AÑADIDA AQUÍ ⬅️ **
+    if (isManual && manualQuestions.length === 0) {
+        toast.error("Validación", { description: "Si es modo Manual, debe seleccionar al menos una pregunta." });
+        return;
+    }
 
     // Construcción del payload
       const payload: any = {

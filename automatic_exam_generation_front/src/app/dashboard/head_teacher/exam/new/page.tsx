@@ -282,6 +282,12 @@ export default function ExamCreatePage() {
       return
     }
 
+    // ** ➡️ NUEVA VALIDACIÓN AÑADIDA AQUÍ ⬅️ **
+    if (isManual && manualQuestions.length === 0) {
+        toast.error("Validación", { description: "Si es modo Manual, debe seleccionar al menos una pregunta." });
+        return;
+    }
+
     try {
       const payload: any = {
         name: name.trim(),
