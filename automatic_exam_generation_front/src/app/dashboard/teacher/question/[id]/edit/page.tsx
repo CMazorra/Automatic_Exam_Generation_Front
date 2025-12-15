@@ -16,6 +16,7 @@ interface Question {
   difficulty?: string
   answer?: string
   type?: string
+  score?: number | null
   subject_id?: number | string
   topic_id?: number | string
   sub_topic_id?: number | string
@@ -39,6 +40,7 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
   const [difficulty, setDifficulty] = useState<"Fácil" | "Medio" | "Difícil" | "">("")
   const [answer, setAnswer] = useState("")
   const [type, setType] = useState<"VoF" | "Opcion Multiple" | "Argumentacion" | "">("")
+  const [score, setScore] = useState<string>("")
   const [subjectId, setSubjectId] = useState<string | number | "">("")
   const [topicId, setTopicId] = useState<string | number | "">("")
   const [subtopicId, setSubtopicId] = useState<string | number | "">("")
@@ -104,6 +106,9 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
         setDifficulty(normalizeDifficulty(q.difficulty))
         setAnswer(q.answer || "")
         setType(normalizeType(q.type))
+        setScore(
+          typeof q.score === "number" && !Number.isNaN(q.score) ? String(q.score) : ""
+        )
         setSubjectId(q.subject_id ?? "")
         setTopicId(q.topic_id ?? "")
         setSubtopicId(q.sub_topic_id ?? "")
@@ -221,6 +226,7 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
         difficulty: difficulty || null,
         answer,
         type: type || null,
+        score: score === "" ? null : Number(score),
         subject_id: subjectId || null,
         topic_id: topicId || null,
         sub_topic_id: subtopicId || null,
@@ -280,6 +286,19 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
                 <option value="Argumentacion">Argumentacion</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="text-sm text-muted-foreground">Puntaje</label>
+            <input
+              type="number"
+              value={score}
+              onChange={(e) => setScore(e.target.value)}
+              className="w-full mt-1 p-2 border rounded"
+              placeholder="(opcional)"
+              min="0"
+              step="1"
+            />
           </div>
 
           <div>

@@ -21,6 +21,7 @@ interface Question {
   sub_topic_id?: number | string
   topic_id?: number | string
   teacher_id?: number | string
+  score?: number
 }
 
 interface Subject {
@@ -216,6 +217,13 @@ export default function QuestionView({ params }: { params: Promise<{ id: string 
             </div>
 
             <div className="flex items-center gap-2">
+              <div className="text-sm text-muted-foreground">Puntaje</div>
+              <p className="mt-1 whitespace-pre-wrap">
+                {typeof question.score === "number" ? String(question.score) : "(Sin puntaje)"}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
               <div className="text-sm text-muted-foreground">Asignatura</div>
               {isLoadingSubject ? (
                 <p className="mt-1 text-sm text-muted-foreground">Cargando asignatura...</p>
@@ -256,7 +264,7 @@ export default function QuestionView({ params }: { params: Promise<{ id: string 
             <Link href="/dashboard/teacher/question">
               <Button variant="outline">Volver</Button>
             </Link>
-            <Link href={`/dashboard/teacher/question/${question.id}/edit`}>
+            <Link href={`/dashboard/head_teacher/question/${question.id}/edit`}>
               <Button>Editar</Button>
             </Link>
           </div>

@@ -27,6 +27,7 @@ export default function NewQuestionPage() {
   const [difficulty, setDifficulty] = useState<"" | "Fácil" | "Medio" | "Difícil">("")
   const [answer, setAnswer] = useState("")
   const [type, setType] = useState<"" | "VoF" | "Opción Múltiple" | "Argumentación">("")
+  const [score, setScore] = useState<string>("")
   const [subjectId, setSubjectId] = useState<string | number | "">("")
   const [topicId, setTopicId] = useState<string | number | "">("")
   const [subtopicId, setSubtopicId] = useState<string | number | "">("")
@@ -159,6 +160,7 @@ export default function NewQuestionPage() {
         difficulty: difficulty || null,
         answer: answer || null,
         type: type || null,
+        score: score === "" ? null : Number(score),
         subject_id: subjectId || null,
         topic_id: topicId || null,
         sub_topic_id: subtopicId || null,
@@ -219,6 +221,19 @@ export default function NewQuestionPage() {
                 <option value="Argumentacion">Argumentacion</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="text-sm text-muted-foreground">Puntaje</label>
+            <input
+              type="number"
+              value={score}
+              onChange={(e) => setScore(e.target.value)}
+              className="w-full mt-1 p-2 border rounded"
+              placeholder="(opcional)"
+              min="0"
+              step="1"
+            />
           </div>
 
           <div>

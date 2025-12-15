@@ -26,6 +26,7 @@ export default function NewQuestionPage() {
   const [text, setText] = useState("")
   const [difficulty, setDifficulty] = useState<"" | "Fácil" | "Medio" | "Difícil">("")
   const [answer, setAnswer] = useState("")
+  const [score, setScore] = useState<number | "">("")
   const [type, setType] = useState<"" | "VoF" | "Opción Múltiple" | "Argumentación">("")
   const [subjectId, setSubjectId] = useState<string | number | "">("")
   const [topicId, setTopicId] = useState<string | number | "">("")
@@ -163,9 +164,10 @@ export default function NewQuestionPage() {
         topic_id: topicId || null,
         sub_topic_id: subtopicId || null,
         teacher_id: teacherId || null,
+        score: typeof score === "number" ? score : null,
       }
       await postQuestion(payload)
-      router.push("/dashboard/teacher/question")
+      router.push("/dashboard/head_teacher/question")
     } catch (err) {
       console.error("Error creando pregunta:", err)
       alert("Error al crear la pregunta. Revisa la consola.")
@@ -224,6 +226,22 @@ export default function NewQuestionPage() {
           <div>
             <label className="text-sm text-muted-foreground">Respuesta</label>
             <textarea value={answer} onChange={(e) => setAnswer(e.target.value)} className="w-full mt-1 p-2 border rounded" rows={3} />
+          </div>
+
+          <div>
+            <label className="text-sm text-muted-foreground">Puntaje</label>
+            <input
+              type="number"
+              value={score}
+              onChange={(e) => {
+                const v = e.target.value
+                setScore(v === "" ? "" : Number(v))
+              }}
+              className="w-full mt-1 p-2 border rounded"
+              placeholder="Ej: 5"
+              min={0}
+              step={1}
+            />
           </div>
 
           <div>
@@ -301,7 +319,7 @@ export default function NewQuestionPage() {
 
           <div className="flex gap-3">
             <Button type="submit" disabled={saving}>{saving ? "Creando..." : "Crear"}</Button>
-            <Link href="/dashboard/teacher/question"><Button variant="outline">Cancelar</Button></Link>
+            <Link href="/dashboard/head_teacher/question"><Button variant="outline">Cancelar</Button></Link>
           </div>
         </form>
       </div>

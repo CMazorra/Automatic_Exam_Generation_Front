@@ -9,6 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { getCurrentUser } from "@/services/authService"
 import { getTeacherByID } from "@/services/teacherService"
 import { getStudentByID } from "@/services/studentService"
+import { updateUser } from "@/services/userService"
 
 interface User {
   id?: string | number
@@ -27,6 +28,11 @@ interface User {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const [user, setUser] = useState<User>({ account: "Usuario" })
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [passwordError, setPasswordError] = useState("")
+  const [passwordLoading, setPasswordLoading] = useState(false)
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -100,6 +106,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         document.cookie = "aeg_head=; Path=/; Max-Age=0; SameSite=Lax"
       }
       router.push("/auth/login")
+    }
+  }
+
+  const handleChangePassword = async () => {
+    setPasswordError("")
+    if (!newPassword.trim()) {
+      setPasswordError("La nueva contraseña no puede estar vacía")
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Las contraseñas no coinciden")
+      return
+    }
+    setPasswordLoading(true)
+    try {
+      const userId = user.id
+      if (!userId) {
+        setPasswordError("No se pudo identificar el usuario")
+        return
+      }
+      await updateUser(userId, { password: newPassword })
+      alert("Contraseña actualizada exitosamente")
+      setShowPasswordModal(false)
+      setNewPassword("")
+      setConfirmPassword("")
+      setPasswordError("")
+    } catch (err) {
+      console.error("Error al cambiar contraseña:", err)
+      setPasswordError("Error al cambiar la contraseña. Intenta de nuevo.")
+    } finally {
+      setPasswordLoading(false)
     }
   }
 
@@ -193,6 +230,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       </div>
                     )}
                   </div>
+                  <Button
+                    className="w-full"
+                    onClick={() => setShowPasswordModal(true)}
+                  >
+                    Cambiar contraseña
+                  </Button>
                 </div>
               </PopoverContent>
             </Popover>
@@ -206,6 +249,66 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </main>
       </div>
+
+      {/* Modal de cambiar contraseña */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
+            <h3 className="font-semibold text-lg mb-4">Cambiar contraseña</h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Nueva contraseña</label>
+                <Input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Ingresa tu nueva contraseña"
+                  className="mt-1"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">Confirmación de contraseña</label>
+                <Input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirma tu nueva contraseña"
+                  className="mt-1"
+                />
+              </div>
+
+              {passwordError && (
+                <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                  {passwordError}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6 flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowPasswordModal(false)
+                  setNewPassword("")
+                  setConfirmPassword("")
+                  setPasswordError("")
+                }}
+                disabled={passwordLoading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleChangePassword}
+                disabled={passwordLoading}
+              >
+                {passwordLoading ? "Guardando..." : "Guardar"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

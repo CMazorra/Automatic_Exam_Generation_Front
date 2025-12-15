@@ -20,6 +20,7 @@ interface Question {
   topic_id?: number | string
   sub_topic_id?: number | string
   teacher_id?: number | string
+  score?: number
 }
 
 interface Option {
@@ -42,6 +43,7 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
   const [subjectId, setSubjectId] = useState<string | number | "">("")
   const [topicId, setTopicId] = useState<string | number | "">("")
   const [subtopicId, setSubtopicId] = useState<string | number | "">("")
+  const [score, setScore] = useState<number | "">("")
 
   // creator name
   const [creatorName, setCreatorName] = useState<string | null>(null)
@@ -107,6 +109,7 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
         setSubjectId(q.subject_id ?? "")
         setTopicId(q.topic_id ?? "")
         setSubtopicId(q.sub_topic_id ?? "")
+        setScore(typeof q.score === "number" ? q.score : "")
 
         // pre-fill query inputs with names if available from lists
         const selSubj = (subjectsList || []).find((s: any) => String(s.id) === String(q.subject_id))
@@ -224,9 +227,10 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
         subject_id: subjectId || null,
         topic_id: topicId || null,
         sub_topic_id: subtopicId || null,
+        score: typeof score === "number" ? score : null,
       }
       await updateQuestion(String(question.id), payload)
-      router.push("/dashboard/teacher/question")
+      router.push("/dashboard/head_teacher/question")
     } catch (err) {
       console.error("Error updating question:", err)
       alert("Error al guardar. Revisa la consola.")
@@ -285,6 +289,22 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
           <div>
             <label className="text-sm text-muted-foreground">Respuesta</label>
             <textarea value={answer} onChange={(e) => setAnswer(e.target.value)} className="w-full mt-1 p-2 border rounded" rows={3} />
+          </div>
+
+          <div>
+            <label className="text-sm text-muted-foreground">Puntaje</label>
+            <input
+              type="number"
+              value={score}
+              onChange={(e) => {
+                const v = e.target.value
+                setScore(v === "" ? "" : Number(v))
+              }}
+              className="w-full mt-1 p-2 border rounded"
+              placeholder="Ej: 5"
+              min={0}
+              step={1}
+            />
           </div>
 
           <div>
@@ -366,7 +386,7 @@ export default function EditQuestionPage({ params }: { params: Promise<{ id: str
 
           <div className="flex gap-3">
             <Button type="submit" disabled={saving}>{saving ? "Guardando..." : "Guardar"}</Button>
-            <Link href="/dashboard/teacher/question"><Button variant="outline">Cancelar</Button></Link>
+            <Link href="/dashboard/head_teacher/question"><Button variant="outline">Cancelar</Button></Link>
           </div>
         </form>
       </div>

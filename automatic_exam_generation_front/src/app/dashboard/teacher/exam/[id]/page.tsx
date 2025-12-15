@@ -155,9 +155,11 @@ export default function ExamDetailsPage({ params }: { params: Promise<{ id: stri
           </Button>
 
           <div className="flex gap-3">
-            <Button onClick={() => router.push(`/dashboard/teacher/exam/${id}/edit`)}>
-              Editar
-            </Button>
+            {exam?.status === "Pendiente" && (
+              <Button onClick={() => router.push(`/dashboard/teacher/exam/${id}/edit`)}>
+                Editar
+              </Button>
+            )}
 
             <Button variant="destructive" onClick={handleDelete}>
               Eliminar

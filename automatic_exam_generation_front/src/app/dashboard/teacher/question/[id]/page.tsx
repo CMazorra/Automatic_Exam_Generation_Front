@@ -17,6 +17,7 @@ interface Question {
   difficulty?: string
   answer?: string
   type?: string
+  score?: number | null
   subject_id?: number | string
   sub_topic_id?: number | string
   topic_id?: number | string
@@ -212,6 +213,13 @@ export default function QuestionView({ params }: { params: Promise<{ id: string 
               <div className="text-sm text-muted-foreground">Tipo de pregunta</div>
               <p className="mt-1 whitespace-pre-wrap">
                 {question.type || "(Sin tipo)"}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-muted-foreground">Puntaje</div>
+              <p className="mt-1 whitespace-pre-wrap">
+                {typeof question.score === "number" ? String(question.score) : "(Sin puntaje)"}
               </p>
             </div>
 

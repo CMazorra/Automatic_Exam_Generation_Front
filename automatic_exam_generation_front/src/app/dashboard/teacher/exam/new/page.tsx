@@ -291,7 +291,6 @@ export default function ExamCreatePage() {
         payload.questions = []
       }
 
-      await createExam(payload)
       const created = await createExam(payload)
 
       // Si es automático, generar el examen con distribución de preguntas
@@ -367,7 +366,6 @@ export default function ExamCreatePage() {
           }
           if (amount > 0) tempDistribution.push({ type, amount })
         }
-
         await generateExam({
           exam_id: String(created.id),
           subject_id: String(subjectId),

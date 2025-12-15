@@ -7,7 +7,7 @@ import { Field, FieldLabel, FieldGroup, FieldSet } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { postSubject } from "@/services/subjectService"
-import { getTeachers, updateTeacher } from "@/services/teacherService"
+import { getTeachers } from "@/services/teacherService"
 import { postHeadTeacher } from "@/services/headTeacerService"
 
 type TeacherApi = {
@@ -81,8 +81,6 @@ export default function SubjectCreatePage() {
     setIsSaving(true)
     try {
       await postHeadTeacher(selectedTeacher.id)
-
-      await updateTeacher(selectedTeacher.id, { isHeadTeacher: true })
 
       const headId = selectedTeacher.id
 
